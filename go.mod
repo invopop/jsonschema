@@ -1,6 +1,6 @@
-module github.com/alecthomas/jsonschema
+module github.com/invopop/jsonschema
 
-go 1.12
+go 1.16
 
 require (
 	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0

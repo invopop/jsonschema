@@ -1,8 +1,8 @@
 # Go JSON Schema Reflection
 
-[![CI](https://github.com/alecthomas/jsonschema/actions/workflows/ci.yml/badge.svg)](https://github.com/alecthomas/jsonschema/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/alecthomas/jsonschema)](https://goreportcard.com/report/github.com/alecthomas/jsonschema)
-[![GoDoc](https://godoc.org/github.com/alecthomas/jsonschema?status.svg)](https://godoc.org/github.com/alecthomas/jsonschema)
+[![CI](https://github.com/invopop/jsonschema/actions/workflows/ci.yml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/ci.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/invopop/jsonschema)](https://goreportcard.com/report/github.com/invopop/jsonschema)
+[![GoDoc](https://godoc.org/github.com/invopop/jsonschema?status.svg)](https://godoc.org/github.com/invopop/jsonschema)
 
 This package can be used to generate [JSON Schemas](http://json-schema.org/latest/json-schema-validation.html) from Go types through reflection.
 
@@ -10,6 +10,8 @@ This package can be used to generate [JSON Schemas](http://json-schema.org/lates
 - Supports json-schema features such as minLength, maxLength, pattern, format, etc.
 - Supports simple string and numeric enums.
 - Supports custom property fields via the `jsonschema_extras` struct tag.
+
+This repository is a fork of the original [jsonschema](https://github.com/alecthomas/jsonschema) by [@alecthomas](https://github.com/alecthomas). At [Invopop](https://invopop.com) we use jsonschema as a cornerstone in our [GOBL library](https://github.com/invopop/gobl), and wanted to be able to continue building and adding features without taking up Alec's time.
 
 ## Example
 
@@ -71,10 +73,7 @@ jsonschema.Reflect(&TestUser{})
           "title": "the name",
           "description": "The name of a friend",
           "default": "alex",
-          "examples": [
-            "joe",
-            "lucy"
-          ]
+          "examples": ["joe", "lucy"]
         },
         "tags": {
           "type": "object",
@@ -84,33 +83,22 @@ jsonschema.Reflect(&TestUser{})
             }
           },
           "a": "b",
-          "foo": [
-            "bar",
-            "bar1"
-          ]
+          "foo": ["bar", "bar1"]
         },
         "fav_color": {
           "type": "string",
-          "enum": [
-            "red",
-            "green",
-            "blue"
-          ]
+          "enum": ["red", "green", "blue"]
         }
       },
       "additionalProperties": false,
       "required": ["id", "name"],
       "oneOf": [
         {
-          "required": [
-            "birth_date"
-          ],
+          "required": ["birth_date"],
           "title": "date"
         },
         {
-          "required": [
-            "year_of_birth"
-          ],
+          "required": ["year_of_birth"],
           "title": "year"
         }
       ]
@@ -118,6 +106,7 @@ jsonschema.Reflect(&TestUser{})
   }
 }
 ```
+
 ## Configurable behaviour
 
 The behaviour of the schema generator can be altered with parameters when a `jsonschema.Reflector`
@@ -125,7 +114,7 @@ instance is created.
 
 ### ExpandedStruct
 
-If set to ```true```, makes the top level struct not to reference itself in the definitions. But type passed should be a struct type.
+If set to `true`, makes the top level struct not to reference itself in the definitions. But type passed should be a struct type.
 
 eg.
 
@@ -153,11 +142,7 @@ will output:
 ```json
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "required": [
-    "some_base_property",
-    "grand",
-    "SomeUntaggedBaseProperty"
-  ],
+  "required": ["some_base_property", "grand", "SomeUntaggedBaseProperty"],
   "properties": {
     "SomeUntaggedBaseProperty": {
       "type": "boolean"
@@ -173,9 +158,7 @@ will output:
   "type": "object",
   "definitions": {
     "GrandfatherType": {
-      "required": [
-        "family_name"
-      ],
+      "required": ["family_name"],
       "properties": {
         "family_name": {
           "type": "string"
@@ -198,6 +181,7 @@ flag, that will switch this behavior: `yaml:` tags will be preferred over
 `json:` tags.
 
 With `PreferYAMLSchema: true`, the following struct:
+
 ```go
 type Person struct {
 	FirstName string `json:"FirstName" yaml:"first_name"`
@@ -205,6 +189,7 @@ type Person struct {
 ```
 
 would result in this schema:
+
 ```json
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
@@ -225,6 +210,7 @@ would result in this schema:
 ```
 
 whereas without the flag one obtains:
+
 ```json
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
@@ -266,7 +252,7 @@ To get the comments provided into your JSON schema, use a regular `Reflector` an
 
 ```go
 r := new(Reflector)
-if err := r.AddGoComments("github.com/alecthomas/jsonschema", "./"); err != nil {
+if err := r.AddGoComments("github.com/invopop/jsonschema", "./"); err != nil {
   // deal with error
 }
 s := r.Reflect(&User{})
@@ -281,9 +267,7 @@ Expect the results to be similar to:
   "$ref": "#/definitions/User",
   "definitions": {
     "User": {
-      "required": [
-        "id",
-      ],
+      "required": ["id"],
       "properties": {
         "id": {
           "type": "integer",
@@ -291,7 +275,7 @@ Expect the results to be similar to:
         },
         "name": {
           "type": "string",
-          "description": "Name of the user",
+          "description": "Name of the user"
         }
       },
       "additionalProperties": false,
@@ -366,4 +350,3 @@ The resulting schema generated for this struct would look like:
   }
 }
 ```
-
