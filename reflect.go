@@ -7,6 +7,7 @@
 package jsonschema
 
 import (
+	"bytes"
 	"encoding/json"
 	"net"
 	"net/url"
@@ -21,34 +22,9 @@ import (
 // Version is the JSON Schema version.
 var Version = "http://json-schema.org/draft/2020-12/schema"
 
-// Schema is a "JSON Schema", which is either an object description
-// or a boolean.
+// Schema represents a JSON Schema object type.
 // RFC draft-bhutton-json-schema-00 section 4.3
 type Schema struct {
-	*Type
-	Definitions Definitions
-}
-
-// customSchemaType is used to detect if the type provides it's own
-// custom Schema Type definition to use instead. Very useful for situations
-// where there are custom JSON Marshal and Unmarshal methods.
-type customSchemaType interface {
-	JSONSchemaType() *Type
-}
-
-var customType = reflect.TypeOf((*customSchemaType)(nil)).Elem()
-
-// customSchemaGetFieldDocString
-type customSchemaGetFieldDocString interface {
-	GetFieldDocString(fieldName string) string
-}
-
-type customGetFieldDocString func(fieldName string) string
-
-var customStructGetFieldDocString = reflect.TypeOf((*customSchemaGetFieldDocString)(nil)).Elem()
-
-// Type represents a JSON Schema object type.
-type Type struct {
 	// RFC draft-bhutton-json-schema-00
 	Version     string      `json:"$schema,omitempty"`     // section 8.1.1
 	ID          string      `json:"$id,omitempty"`         // section 8.2.1
@@ -58,24 +34,24 @@ type Type struct {
 	Definitions Definitions `json:"$defs,omitempty"`       // section 8.2.4
 	Comments    string      `json:"$comment,omitempty"`    // section 8.3
 	// RFC draft-bhutton-json-schema-00 section 10.2.1 (Sub-schemas with logic)
-	AllOf []*Type `json:"allOf,omitempty"` // section 10.2.1.1
-	AnyOf []*Type `json:"anyOf,omitempty"` // section 10.2.1.2
-	OneOf []*Type `json:"oneOf,omitempty"` // section 10.2.1.3
-	Not   *Type   `json:"not,omitempty"`   // section 10.2.1.4
+	AllOf []*Schema `json:"allOf,omitempty"` // section 10.2.1.1
+	AnyOf []*Schema `json:"anyOf,omitempty"` // section 10.2.1.2
+	OneOf []*Schema `json:"oneOf,omitempty"` // section 10.2.1.3
+	Not   *Schema   `json:"not,omitempty"`   // section 10.2.1.4
 	// RFC draft-bhutton-json-schema-00 section 10.2.2 (Apply sub-schemas conditionally)
-	If               *Type            `json:"if,omitempty"`               // section 10.2.2.1
-	Then             *Type            `json:"then,omitempty"`             // section 10.2.2.2
-	Else             *Type            `json:"else,omitempty"`             // section 10.2.2.3
-	DependentSchemas map[string]*Type `json:"dependentSchemas,omitempty"` // section 10.2.2.4
+	If               *Schema            `json:"if,omitempty"`               // section 10.2.2.1
+	Then             *Schema            `json:"then,omitempty"`             // section 10.2.2.2
+	Else             *Schema            `json:"else,omitempty"`             // section 10.2.2.3
+	DependentSchemas map[string]*Schema `json:"dependentSchemas,omitempty"` // section 10.2.2.4
 	// RFC draft-bhutton-json-schema-00 section 10.3.1 (arrays)
-	PrefixItems []*Type `json:"prefixItems,omitempty"` // section 10.3.1.1
-	Items       *Type   `json:"items,omitempty"`       // section 10.3.1.2  (replaces additionalItems)
-	Contains    *Type   `json:"contains,omitempty"`    // section 10.3.1.3
+	PrefixItems []*Schema `json:"prefixItems,omitempty"` // section 10.3.1.1
+	Items       *Schema   `json:"items,omitempty"`       // section 10.3.1.2  (replaces additionalItems)
+	Contains    *Schema   `json:"contains,omitempty"`    // section 10.3.1.3
 	// RFC draft-bhutton-json-schema-00 section 10.3.2 (sub-schemas)
 	Properties           *orderedmap.OrderedMap `json:"properties,omitempty"`           // section 10.3.2.1
-	PatternProperties    map[string]*Type       `json:"patternProperties,omitempty"`    // section 10.3.2.2
-	AdditionalProperties json.RawMessage        `json:"additionalProperties,omitempty"` // section 10.3.2.3
-	PropertyNames        *Type                  `json:"propertyNames,omitempty"`        // section 10.3.2.4
+	PatternProperties    map[string]*Schema     `json:"patternProperties,omitempty"`    // section 10.3.2.2
+	AdditionalProperties *Schema                `json:"additionalProperties,omitempty"` // section 10.3.2.3
+	PropertyNames        *Schema                `json:"propertyNames,omitempty"`        // section 10.3.2.4
 	// RFC draft-bhutton-json-schema-validation-00, section 6
 	Type              string              `json:"type,omitempty"`              // section 6.1.1
 	Enum              []interface{}       `json:"enum,omitempty"`              // section 6.1.2
@@ -100,9 +76,9 @@ type Type struct {
 	// RFC draft-bhutton-json-schema-validation-00, section 7
 	Format string `json:"format,omitempty"`
 	// RFC draft-bhutton-json-schema-validation-00, section 8
-	ContentEncoding  string `json:"contentEncoding,omitempty"`  // section 8.3
-	ContentMediaType string `json:"contentMediaType,omitempty"` // section 8.4
-	ContentSchema    *Type  `json:"contentSchema,omitempty"`    // section 8.5
+	ContentEncoding  string  `json:"contentEncoding,omitempty"`  // section 8.3
+	ContentMediaType string  `json:"contentMediaType,omitempty"` // section 8.4
+	ContentSchema    *Schema `json:"contentSchema,omitempty"`    // section 8.5
 	// RFC draft-bhutton-json-schema-validation-00, section 9
 	Title       string        `json:"title,omitempty"`       // section 9.1
 	Description string        `json:"description,omitempty"` // section 9.1
@@ -113,7 +89,35 @@ type Type struct {
 	Examples    []interface{} `json:"examples,omitempty"`    // section 9.5
 
 	Extras map[string]interface{} `json:"-"`
+
+	// Special boolean representation of the Schema - section 4.3.2
+	boolean *bool
 }
+
+var (
+	// TrueSchema defines a schema with a true value
+	TrueSchema = &Schema{boolean: &[]bool{true}[0]}
+	// FalseSchema defines a schema with a false value
+	FalseSchema = &Schema{boolean: &[]bool{false}[0]}
+)
+
+// customSchemaImpl is used to detect if the type provides it's own
+// custom Schema Type definition to use instead. Very useful for situations
+// where there are custom JSON Marshal and Unmarshal methods.
+type customSchemaImpl interface {
+	JSONSchema() *Schema
+}
+
+var customType = reflect.TypeOf((*customSchemaImpl)(nil)).Elem()
+
+// customSchemaGetFieldDocString
+type customSchemaGetFieldDocString interface {
+	GetFieldDocString(fieldName string) string
+}
+
+type customGetFieldDocString func(fieldName string) string
+
+var customStructGetFieldDocString = reflect.TypeOf((*customSchemaGetFieldDocString)(nil)).Elem()
 
 // Reflect reflects to Schema from a value using the default Reflector
 func Reflect(v interface{}) *Schema {
@@ -171,11 +175,11 @@ type Reflector struct {
 	// switching to just allowing additional properties instead.
 	IgnoredTypes []interface{}
 
-	// TypeMapper is a function that can be used to map custom Go types to jsonschema types.
-	TypeMapper func(reflect.Type) *Type
+	// Mapper is a function that can be used to map custom Go types to jsonschema schemas.
+	Mapper func(reflect.Type) *Schema
 
-	// TypeNamer allows customizing of type names
-	TypeNamer func(reflect.Type) string
+	// Namer allows customizing of type names
+	Namer func(reflect.Type) string
 
 	// AdditionalFields allows adding structfields for a given type
 	AdditionalFields func(reflect.Type) []reflect.StructField
@@ -206,32 +210,35 @@ func (r *Reflector) Reflect(v interface{}) *Schema {
 func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	definitions := Definitions{}
 	if r.ExpandedStruct {
-		st := &Type{
+		st := &Schema{
 			Version:              Version,
 			Type:                 "object",
 			Properties:           orderedmap.New(),
-			AdditionalProperties: []byte("false"),
+			AdditionalProperties: FalseSchema,
 		}
 		if r.AllowAdditionalProperties {
-			st.AdditionalProperties = []byte("true")
+			st.AdditionalProperties = TrueSchema
 		}
 		r.reflectStructFields(st, definitions, t)
 		r.reflectStruct(definitions, t)
 		delete(definitions, r.typeName(t))
-		return &Schema{Type: st, Definitions: definitions}
+		st.Definitions = definitions
+		return st
 	}
 
-	s := &Schema{
-		Type:        r.reflectTypeToSchema(definitions, t),
-		Definitions: definitions,
-	}
+	// Copy to the base schema so we don't duplicate instances
+	// of the root
+	s := &Schema{}
+	*s = *r.reflectTypeToSchema(definitions, t)
+	s.Definitions = definitions
+
 	return s
 }
 
 // Definitions hold schema definitions.
 // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.26
 // RFC draft-wright-json-schema-validation-00, section 5.26
-type Definitions map[string]*Type
+type Definitions map[string]*Schema
 
 // Available Go defined types for JSON Schema Validation.
 // RFC draft-wright-json-schema-validation-00, section 7.3
@@ -254,14 +261,14 @@ type protoEnum interface {
 
 var protoEnumType = reflect.TypeOf((*protoEnum)(nil)).Elem()
 
-func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Type {
+func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
 	// Already added to definitions?
 	if _, ok := definitions[r.typeName(t)]; ok && !r.DoNotReference {
-		return &Type{Ref: "#/$defs/" + r.typeName(t)}
+		return &Schema{Ref: "#/$defs/" + r.typeName(t)}
 	}
 
-	if r.TypeMapper != nil {
-		if t := r.TypeMapper(t); t != nil {
+	if r.Mapper != nil {
+		if t := r.Mapper(t); t != nil {
 			return t
 		}
 	}
@@ -273,7 +280,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	// jsonpb will marshal protobuf enum options as either strings or integers.
 	// It will unmarshal either.
 	if t.Implements(protoEnumType) {
-		return &Type{OneOf: []*Type{
+		return &Schema{OneOf: []*Schema{
 			{Type: "string"},
 			{Type: "integer"},
 		}}
@@ -284,16 +291,16 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	// TODO email RFC section 7.3.2, hostname RFC section 7.3.3, uriref RFC section 7.3.7
 	if t == ipType {
 		// TODO differentiate ipv4 and ipv6 RFC section 7.3.4, 7.3.5
-		return &Type{Type: "string", Format: "ipv4"} // ipv4 RFC section 7.3.4
+		return &Schema{Type: "string", Format: "ipv4"} // ipv4 RFC section 7.3.4
 	}
 
 	switch t.Kind() {
 	case reflect.Struct:
 		switch t {
 		case timeType: // date-time RFC section 7.3.1
-			return &Type{Type: "string", Format: "date-time"}
+			return &Schema{Type: "string", Format: "date-time"}
 		case uriType: // uri RFC section 7.3.6
-			return &Type{Type: "string", Format: "uri"}
+			return &Schema{Type: "string", Format: "uri"}
 		default:
 			return r.reflectStruct(definitions, t)
 		}
@@ -301,19 +308,19 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	case reflect.Map:
 		switch t.Key().Kind() {
 		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			rt := &Type{
+			rt := &Schema{
 				Type: "object",
-				PatternProperties: map[string]*Type{
+				PatternProperties: map[string]*Schema{
 					"^[0-9]+$": r.reflectTypeToSchema(definitions, t.Elem()),
 				},
-				AdditionalProperties: []byte("false"),
+				AdditionalProperties: FalseSchema,
 			}
 			return rt
 		}
 
-		rt := &Type{
+		rt := &Schema{
 			Type: "object",
-			PatternProperties: map[string]*Type{
+			PatternProperties: map[string]*Schema{
 				".*": r.reflectTypeToSchema(definitions, t.Elem()),
 			},
 		}
@@ -321,11 +328,9 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		return rt
 
 	case reflect.Slice, reflect.Array:
-		returnType := &Type{}
+		returnType := &Schema{}
 		if t == rawMessageType {
-			return &Type{
-				AdditionalProperties: []byte("true"),
-			}
+			return TrueSchema
 		}
 		if t.Kind() == reflect.Array {
 			returnType.MinItems = t.Len()
@@ -342,22 +347,22 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		return returnType
 
 	case reflect.Interface:
-		return &Type{
-			AdditionalProperties: []byte("true"),
+		return &Schema{
+			AdditionalProperties: TrueSchema,
 		}
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return &Type{Type: "integer"}
+		return &Schema{Type: "integer"}
 
 	case reflect.Float32, reflect.Float64:
-		return &Type{Type: "number"}
+		return &Schema{Type: "number"}
 
 	case reflect.Bool:
-		return &Type{Type: "boolean"}
+		return &Schema{Type: "boolean"}
 
 	case reflect.String:
-		return &Type{Type: "string"}
+		return &Schema{Type: "string"}
 
 	case reflect.Ptr:
 		return r.reflectTypeToSchema(definitions, t.Elem())
@@ -365,20 +370,20 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	panic("unsupported type " + t.String())
 }
 
-func (r *Reflector) reflectCustomType(definitions Definitions, t reflect.Type) *Type {
+func (r *Reflector) reflectCustomType(definitions Definitions, t reflect.Type) *Schema {
 	if t.Kind() == reflect.Ptr {
 		return r.reflectCustomType(definitions, t.Elem())
 	}
 
 	if t.Implements(customType) {
 		v := reflect.New(t)
-		o := v.Interface().(customSchemaType)
-		st := o.JSONSchemaType()
+		o := v.Interface().(customSchemaImpl)
+		st := o.JSONSchema()
 		definitions[r.typeName(t)] = st
 		if r.DoNotReference {
 			return st
 		} else {
-			return &Type{
+			return &Schema{
 				Version: Version,
 				Ref:     "#/$defs/" + r.typeName(t),
 			}
@@ -389,24 +394,24 @@ func (r *Reflector) reflectCustomType(definitions Definitions, t reflect.Type) *
 }
 
 // Reflects a struct to a JSON Schema type.
-func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type) *Type {
+func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type) *Schema {
 	if st := r.reflectCustomType(definitions, t); st != nil {
 		return st
 	}
 
 	for _, ignored := range r.IgnoredTypes {
 		if reflect.TypeOf(ignored) == t {
-			st := &Type{
+			st := &Schema{
 				Type:                 "object",
 				Properties:           orderedmap.New(),
-				AdditionalProperties: []byte("true"),
+				AdditionalProperties: TrueSchema,
 			}
 			definitions[r.typeName(t)] = st
 
 			if r.DoNotReference {
 				return st
 			} else {
-				return &Type{
+				return &Schema{
 					Version: Version,
 					Ref:     "#/$defs/" + r.typeName(t),
 				}
@@ -414,14 +419,14 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type) *Type
 		}
 	}
 
-	st := &Type{
+	st := &Schema{
 		Type:                 "object",
 		Properties:           orderedmap.New(),
-		AdditionalProperties: []byte("false"),
+		AdditionalProperties: FalseSchema,
 		Description:          r.lookupComment(t, ""),
 	}
 	if r.AllowAdditionalProperties {
-		st.AdditionalProperties = []byte("true")
+		st.AdditionalProperties = TrueSchema
 	}
 	definitions[r.typeName(t)] = st
 	r.reflectStructFields(st, definitions, t)
@@ -429,14 +434,14 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type) *Type
 	if r.DoNotReference {
 		return st
 	} else {
-		return &Type{
+		return &Schema{
 			Version: Version,
 			Ref:     "#/$defs/" + r.typeName(t),
 		}
 	}
 }
 
-func (r *Reflector) reflectStructFields(st *Type, definitions Definitions, t reflect.Type) {
+func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t reflect.Type) {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
@@ -472,8 +477,8 @@ func (r *Reflector) reflectStructFields(st *Type, definitions Definitions, t ref
 		}
 
 		if nullable {
-			property = &Type{
-				OneOf: []*Type{
+			property = &Schema{
+				OneOf: []*Schema{
 					property,
 					{
 						Type: "null",
@@ -514,10 +519,10 @@ func (r *Reflector) lookupComment(t reflect.Type, name string) string {
 	return r.CommentMap[n]
 }
 
-func (t *Type) structKeywordsFromTags(f reflect.StructField, parentType *Type, propertyName string) {
+func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, propertyName string) {
 	t.Description = f.Tag.Get("jsonschema_description")
 	tags := strings.Split(f.Tag.Get("jsonschema"), ",")
-	t.genericKeywords(tags, parentType, propertyName)
+	t.genericKeywords(tags, parent, propertyName)
 	switch t.Type {
 	case "string":
 		t.stringKeywords(tags)
@@ -533,7 +538,7 @@ func (t *Type) structKeywordsFromTags(f reflect.StructField, parentType *Type, p
 }
 
 // read struct tags for generic keyworks
-func (t *Type) genericKeywords(tags []string, parentType *Type, propertyName string) {
+func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -546,28 +551,28 @@ func (t *Type) genericKeywords(tags []string, parentType *Type, propertyName str
 			case "type":
 				t.Type = val
 			case "oneof_required":
-				var typeFound *Type
-				for i := range parentType.OneOf {
-					if parentType.OneOf[i].Title == nameValue[1] {
-						typeFound = parentType.OneOf[i]
+				var typeFound *Schema
+				for i := range parent.OneOf {
+					if parent.OneOf[i].Title == nameValue[1] {
+						typeFound = parent.OneOf[i]
 					}
 				}
 				if typeFound == nil {
-					typeFound = &Type{
+					typeFound = &Schema{
 						Title:    nameValue[1],
 						Required: []string{},
 					}
-					parentType.OneOf = append(parentType.OneOf, typeFound)
+					parent.OneOf = append(parent.OneOf, typeFound)
 				}
 				typeFound.Required = append(typeFound.Required, propertyName)
 			case "oneof_type":
 				if t.OneOf == nil {
-					t.OneOf = make([]*Type, 0, 1)
+					t.OneOf = make([]*Schema, 0, 1)
 				}
 				t.Type = ""
 				types := strings.Split(nameValue[1], ";")
 				for _, ty := range types {
-					t.OneOf = append(t.OneOf, &Type{
+					t.OneOf = append(t.OneOf, &Schema{
 						Type: ty,
 					})
 				}
@@ -588,7 +593,7 @@ func (t *Type) genericKeywords(tags []string, parentType *Type, propertyName str
 }
 
 // read struct tags for string type keyworks
-func (t *Type) stringKeywords(tags []string) {
+func (t *Schema) stringKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -624,7 +629,7 @@ func (t *Type) stringKeywords(tags []string) {
 }
 
 // read struct tags for numberic type keyworks
-func (t *Type) numbericKeywords(tags []string) {
+func (t *Schema) numbericKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -674,7 +679,7 @@ func (t *Type) numbericKeywords(tags []string) {
 // }
 
 // read struct tags for array type keyworks
-func (t *Type) arrayKeywords(tags []string) {
+func (t *Schema) arrayKeywords(tags []string) {
 	var defaultValues []interface{}
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -710,7 +715,7 @@ func (t *Type) arrayKeywords(tags []string) {
 	}
 }
 
-func (t *Type) extraKeywords(tags []string) {
+func (t *Schema) extraKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -719,7 +724,7 @@ func (t *Type) extraKeywords(tags []string) {
 	}
 }
 
-func (t *Type) setExtra(key, val string) {
+func (t *Schema) setExtra(key, val string) {
 	if t.Extras == nil {
 		t.Extras = map[string]interface{}{}
 	}
@@ -854,31 +859,34 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 	return name, embed, required, nullable
 }
 
-func (s *Schema) MarshalJSON() ([]byte, error) {
-	b, err := json.Marshal(s.Type)
-	if err != nil {
-		return nil, err
+// UnmarshalJSON is used to parse a schema object or boolean.
+func (t *Schema) UnmarshalJSON(data []byte) error {
+	if bytes.Equal(data, []byte("true")) {
+		*t = *TrueSchema
+		return nil
+	} else if bytes.Equal(data, []byte("false")) {
+		*t = *FalseSchema
+		return nil
 	}
-	if s.Definitions == nil || len(s.Definitions) == 0 {
-		return b, nil
+	type Schema_ Schema
+	aux := &struct {
+		*Schema_
+	}{
+		Schema_: (*Schema_)(t),
 	}
-	d, err := json.Marshal(struct {
-		Definitions Definitions `json:"$defs,omitempty"` // section 8.2.4
-	}{s.Definitions})
-	if err != nil {
-		return nil, err
-	}
-	if len(b) == 2 {
-		return d, nil
-	} else {
-		b[len(b)-1] = ','
-		return append(b, d[1:]...), nil
-	}
+	return json.Unmarshal(data, aux)
 }
 
-func (t *Type) MarshalJSON() ([]byte, error) {
-	type Type_ Type
-	b, err := json.Marshal((*Type_)(t))
+func (t *Schema) MarshalJSON() ([]byte, error) {
+	if t.boolean != nil {
+		if *t.boolean {
+			return []byte("true"), nil
+		} else {
+			return []byte("false"), nil
+		}
+	}
+	type Schema_ Schema
+	b, err := json.Marshal((*Schema_)(t))
 	if err != nil {
 		return nil, err
 	}
@@ -891,15 +899,14 @@ func (t *Type) MarshalJSON() ([]byte, error) {
 	}
 	if len(b) == 2 {
 		return m, nil
-	} else {
-		b[len(b)-1] = ','
-		return append(b, m[1:]...), nil
 	}
+	b[len(b)-1] = ','
+	return append(b, m[1:]...), nil
 }
 
 func (r *Reflector) typeName(t reflect.Type) string {
-	if r.TypeNamer != nil {
-		if name := r.TypeNamer(t); name != "" {
+	if r.Namer != nil {
+		if name := r.Namer(t); name != "" {
 			return name
 		}
 	}
