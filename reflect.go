@@ -21,8 +21,9 @@ import (
 // Version is the JSON Schema version.
 var Version = "http://json-schema.org/draft/2020-12/schema"
 
-// Schema is the root schema.
-// RFC draft-bhutton-json-schema-00, section 4.3.5
+// Schema is a "JSON Schema", which is either an object description
+// or a boolean.
+// RFC draft-bhutton-json-schema-00 section 4.3
 type Schema struct {
 	*Type
 	Definitions Definitions

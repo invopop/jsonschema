@@ -1,32 +1,32 @@
 {
-	"$schema": "http://json-schema.org/draft-04/schema#",
-	"$ref": "#/definitions/CustomSliceOuter",
-	"definitions": {
-		"CustomSliceOuter": {
-			"type": "object",
-			"required": [
-				"slice"
-			],
-			"additionalProperties": false,
-			"properties": {
-				"slice": {
-					"$schema": "http://json-schema.org/draft-04/schema#",
-					"$ref": "#/definitions/CustomSliceType"
-				}
-			}
+	"$schema": "http://json-schema.org/draft/2020-12/schema",
+	"$ref": "#/$defs/CustomSliceOuter",
+	"$defs": {
+	  "CustomSliceOuter": {
+		"properties": {
+		  "slice": {
+			"$schema": "http://json-schema.org/draft/2020-12/schema",
+			"$ref": "#/$defs/CustomSliceType"
+		  }
 		},
-		"CustomSliceType": {
-			"oneOf": [
-				{
-					"type": "string"
-				},
-				{
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				}
-			]
-		}
+		"additionalProperties": false,
+		"type": "object",
+		"required": [
+		  "slice"
+		]
+	  },
+	  "CustomSliceType": {
+		"oneOf": [
+		  {
+			"type": "string"
+		  },
+		  {
+			"items": {
+			  "type": "string"
+			},
+			"type": "array"
+		  }
+		]
+	  }
 	}
-}
+  }

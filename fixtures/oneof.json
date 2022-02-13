@@ -1,32 +1,8 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/RootOneOf",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/RootOneOf",
+  "$defs": {
     "ChildOneOf": {
-      "properties": {
-        "child1": {
-          "type": "string"
-        },
-        "child2": {
-          "type": "string"
-        },
-        "child3": {
-          "additionalProperties": true,
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "array"
-            }
-          ]
-        },
-        "child4": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object",
       "oneOf": [
         {
           "required": [
@@ -42,18 +18,15 @@
           ],
           "title": "group2"
         }
-      ]
-    },
-    "RootOneOf": {
+      ],
       "properties": {
-        "field1": {
+        "child1": {
           "type": "string"
         },
-        "field2": {
+        "child2": {
           "type": "string"
         },
-        "field3": {
-          "additionalProperties": true,
+        "child3": {
           "oneOf": [
             {
               "type": "string"
@@ -61,18 +34,17 @@
             {
               "type": "array"
             }
-          ]
+          ],
+          "additionalProperties": true
         },
-        "field4": {
+        "child4": {
           "type": "string"
-        },
-        "child": {
-          "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/ChildOneOf"
         }
       },
       "additionalProperties": false,
-      "type": "object",
+      "type": "object"
+    },
+    "RootOneOf": {
       "oneOf": [
         {
           "required": [
@@ -87,7 +59,35 @@
           ],
           "title": "group2"
         }
-      ]
+      ],
+      "properties": {
+        "field1": {
+          "type": "string"
+        },
+        "field2": {
+          "type": "string"
+        },
+        "field3": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array"
+            }
+          ],
+          "additionalProperties": true
+        },
+        "field4": {
+          "type": "string"
+        },
+        "child": {
+          "$schema": "http://json-schema.org/draft/2020-12/schema",
+          "$ref": "#/$defs/ChildOneOf"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
     }
   }
 }

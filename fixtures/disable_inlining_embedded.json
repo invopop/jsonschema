@@ -1,36 +1,36 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "required": [
-    "inner"
-  ],
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
   "properties": {
     "inner": {
-      "required": [
-        "foo"
-      ],
       "properties": {
         "foo": {
           "type": "string"
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "required": [
+        "foo"
+      ]
     }
   },
   "additionalProperties": false,
   "type": "object",
-  "definitions": {
+  "required": [
+    "inner"
+  ],
+  "$defs": {
     "Inner": {
-      "required": [
-        "foo"
-      ],
       "properties": {
         "foo": {
           "type": "string"
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "required": [
+        "foo"
+      ]
     }
   }
 }

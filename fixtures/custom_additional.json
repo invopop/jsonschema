@@ -1,12 +1,8 @@
 {
-  "$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
-  "$ref": "#\/definitions\/GrandfatherType",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/GrandfatherType",
+  "$defs": {
     "GrandfatherType": {
-      "required": [
-        "family_name",
-        "ip_addr"
-      ],
       "properties": {
         "family_name": {
           "type": "string"
@@ -17,7 +13,11 @@
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "required": [
+        "family_name",
+        "ip_addr"
+      ]
     }
   }
 }

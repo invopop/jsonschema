@@ -1,23 +1,23 @@
 {
-	"$schema": "http://json-schema.org/draft-04/schema#",
-	"$ref": "#/definitions/CustomTypeFieldWithInterface",
-	"definitions": {
-		"CustomTypeFieldWithInterface": {
-			"required": [
-				"CreatedAt"
-			],
-			"properties": {
-				"CreatedAt": {
-					"$schema": "http://json-schema.org/draft-04/schema#",
-					"$ref": "#/definitions/CustomTimeWithInterface"
-				}
-			},
-			"additionalProperties": false,
-			"type": "object"
+	"$schema": "http://json-schema.org/draft/2020-12/schema",
+	"$ref": "#/$defs/CustomTypeFieldWithInterface",
+	"$defs": {
+	  "CustomTimeWithInterface": {
+		"type": "string",
+		"format": "date-time"
+	  },
+	  "CustomTypeFieldWithInterface": {
+		"properties": {
+		  "CreatedAt": {
+			"$schema": "http://json-schema.org/draft/2020-12/schema",
+			"$ref": "#/$defs/CustomTimeWithInterface"
+		  }
 		},
-		"CustomTimeWithInterface": {
-			"type": "string",
-			"format": "date-time"
-		}
+		"additionalProperties": false,
+		"type": "object",
+		"required": [
+		  "CreatedAt"
+		]
+	  }
 	}
-}
+  }

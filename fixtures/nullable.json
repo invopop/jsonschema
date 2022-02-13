@@ -1,9 +1,8 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/TestNullable",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/TestNullable",
+  "$defs": {
     "TestNullable": {
-      "required": ["child1"],
       "properties": {
         "child1": {
           "oneOf": [
@@ -17,7 +16,10 @@
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "required": [
+        "child1"
+      ]
     }
   }
 }
