@@ -39,32 +39,20 @@ jsonschema.Reflect(&TestUser{})
 ```json
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
-  "$ref": "#/$defs/TestUser",
+  "$ref": "#/$defs/SampleUser",
   "$defs": {
-    "TestUser": {
-      "type": "object",
+    "SampleUser": {
+      "oneOf": [
+        {
+          "required": ["birth_date"],
+          "title": "date"
+        },
+        {
+          "required": ["year_of_birth"],
+          "title": "year"
+        }
+      ],
       "properties": {
-        "metadata": {
-          "oneOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "array"
-            }
-          ]
-        },
-        "birth_date": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "friends": {
-          "type": "array",
-          "items": {
-            "type": "integer"
-          },
-          "description": "The list of IDs, omitted when empty"
-        },
         "id": {
           "type": "integer"
         },
@@ -75,15 +63,34 @@ jsonschema.Reflect(&TestUser{})
           "default": "alex",
           "examples": ["joe", "lucy"]
         },
+        "friends": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array",
+          "description": "The list of IDs, omitted when empty"
+        },
         "tags": {
           "type": "object",
-          "patternProperties": {
-            ".*": {
-              "additionalProperties": true
-            }
-          },
           "a": "b",
           "foo": ["bar", "bar1"]
+        },
+        "birth_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "year_of_birth": {
+          "type": "string"
+        },
+        "metadata": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array"
+            }
+          ]
         },
         "fav_color": {
           "type": "string",
@@ -91,17 +98,8 @@ jsonschema.Reflect(&TestUser{})
         }
       },
       "additionalProperties": false,
-      "required": ["id", "name"],
-      "oneOf": [
-        {
-          "required": ["birth_date"],
-          "title": "date"
-        },
-        {
-          "required": ["year_of_birth"],
-          "title": "year"
-        }
-      ]
+      "type": "object",
+      "required": ["id", "name"]
     }
   }
 }
@@ -141,14 +139,14 @@ will output:
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
   "required": ["some_base_property", "grand", "SomeUntaggedBaseProperty"],
   "properties": {
     "SomeUntaggedBaseProperty": {
       "type": "boolean"
     },
     "grand": {
-      "$schema": "http://json-schema.org/draft-04/schema#",
+      "$schema": "http://json-schema.org/draft/2020-12/schema",
       "$ref": "#/definitions/GrandfatherType"
     },
     "some_base_property": {
@@ -156,7 +154,7 @@ will output:
     }
   },
   "type": "object",
-  "definitions": {
+  "$defs": {
     "GrandfatherType": {
       "required": ["family_name"],
       "properties": {
@@ -192,9 +190,9 @@ would result in this schema:
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/TestYamlAndJson",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/TestYamlAndJson",
+  "$defs": {
     "Person": {
       "required": ["first_name"],
       "properties": {
@@ -213,9 +211,9 @@ whereas without the flag one obtains:
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/TestYamlAndJson",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/TestYamlAndJson",
+  "$defs": {
     "Person": {
       "required": ["FirstName"],
       "properties": {
@@ -263,9 +261,9 @@ Expect the results to be similar to:
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/User",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/User",
+  "$defs": {
     "User": {
       "required": ["id"],
       "properties": {
@@ -290,7 +288,7 @@ Expect the results to be similar to:
 
 Sometimes it can be useful to have custom JSON Marshal and Unmarshal methods in your structs that automatically convert for example a string into an object.
 
-To override auto-generating an object type for your type, implement the `JSONSchemaType() *Type` method and whatever is defined will be provided in the schema definitions.
+To override auto-generating an object type for your type, implement the `JSONSchema() *Type` method and whatever is defined will be provided in the schema definitions.
 
 Take the following simplified example of a `CompactDate` that only includes the Year and Month:
 
@@ -324,7 +322,7 @@ func (d *CompactDate) MarshalJSON() ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (CompactDate) JSONSchemaType() *Type {
+func (CompactDate) JSONSchema() *Type {
 	return &Type{
 		Type:        "string",
 		Title:       "Compact Date",
@@ -338,9 +336,9 @@ The resulting schema generated for this struct would look like:
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/CompactDate",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/CompactDate",
+  "$defs": {
     "CompactDate": {
       "pattern": "^[0-9]{4}-[0-1][0-9]$",
       "type": "string",

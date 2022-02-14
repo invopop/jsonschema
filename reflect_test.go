@@ -62,7 +62,8 @@ type TestUser struct {
 	Name     string                 `json:"name" jsonschema:"required,minLength=1,maxLength=20,pattern=.*,description=this is a property,title=the name,example=joe,example=lucy,default=alex,readOnly=true"`
 	Password string                 `json:"password" jsonschema:"writeOnly=true"`
 	Friends  []int                  `json:"friends,omitempty" jsonschema_description:"list of IDs, omitted when empty"`
-	Tags     map[string]interface{} `json:"tags,omitempty"`
+	Tags     map[string]string      `json:"tags,omitempty"`
+	Options  map[string]interface{} `json:"options,omitempty"`
 
 	TestFlag       bool
 	IgnoredCounter int `json:"-"`
@@ -95,7 +96,8 @@ type TestUser struct {
 	Offsets    []float64 `json:"offsets,omitempty" jsonschema:"enum=1.570796,enum=3.141592,enum=6.283185"`
 
 	// Test for raw JSON
-	Raw json.RawMessage `json:"raw"`
+	Anything interface{}     `json:"anything,omitempty"`
+	Raw      json.RawMessage `json:"raw"`
 }
 
 type CustomTime time.Time
