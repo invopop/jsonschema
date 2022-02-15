@@ -27,7 +27,7 @@ var Version = "http://json-schema.org/draft/2020-12/schema"
 type Schema struct {
 	// RFC draft-bhutton-json-schema-00
 	Version     string      `json:"$schema,omitempty"`     // section 8.1.1
-	ID          string      `json:"$id,omitempty"`         // section 8.2.1
+	ID          ID          `json:"$id,omitempty"`         // section 8.2.1
 	Anchor      string      `json:"$anchor,omitempty"`     // section 8.2.2
 	Ref         string      `json:"$ref,omitempty"`        // section 8.2.3.1
 	DynamicRef  string      `json:"$dynamicRef,omitempty"` // section 8.2.3.2
@@ -132,6 +132,29 @@ func ReflectFromType(t reflect.Type) *Schema {
 
 // A Reflector reflects values into a Schema.
 type Reflector struct {
+	// BaseSchemaID defines the URI that will be used as a base to determine Schema
+	// IDs for models. For example, a base Schema ID of `https://invopop.com/schemas`
+	// when defined with a struct called `User{}`, will result in a schema with an
+	// ID set to `https://invopop.com/schemas/user`.
+	//
+	// If no `BaseSchemaID` is provided, we'll take the type's complete package path
+	// and use that as a base instead. Set `Anonymous` to try if you do not want to
+	// include a schema ID.
+	BaseSchemaID ID
+
+	// Anonymous when true will hide the auto-generated Schema ID and provide what is
+	// known as an "anonymous schema". As a rule, this is not recommended.
+	Anonymous bool
+
+	// AssignAnchor when true will use the original struct's name as an anchor inside
+	// every definition, including the root schema. These can be useful for having a
+	// reference to the original struct's name in CamelCase instead of the snake-case used
+	// by default for URI compatibility.
+	//
+	// Anchors do not appear to be widely used out in the wild, so at this time the
+	// anchors themselves will not be used inside generated schema.
+	AssignAnchor bool
+
 	// AllowAdditionalProperties will cause the Reflector to generate a schema
 	// without additionalProperties set to 'false' for all struct types. This means
 	// the presence of additional keys in JSON objects will not cause validation
@@ -153,23 +176,16 @@ type Reflector struct {
 	// are present
 	PreferYAMLSchema bool
 
-	// ExpandedStruct will cause the toplevel definitions of the schema not
-	// be referenced itself to a definition.
-	ExpandedStruct bool
-
-	// Do not reference definitions.
-	// All types are still registered under the "definitions" top-level object,
-	// but instead of $ref fields in containing types, the entire definition
-	// of the contained type is inserted.
-	// This will cause the entire structure of types to be output in one tree.
+	// Do not reference definitions. This will remove the top-level $defs map and
+	// instead cause the entire structure of types to be output in one tree. The
+	// list of type definitions (`$defs`) will not be included.
 	DoNotReference bool
 
-	// Use package paths as well as type names, to avoid conflicts.
-	// Without this setting, if two packages contain a type with the same name,
-	// and both are present in a schema, they will conflict and overwrite in
-	// the definition map and produce bad output.  This is particularly
-	// noticeable when using DoNotReference.
-	FullyQualifyTypeNames bool
+	// ExpandedStruct when true will include the reflected type's definition in the
+	// root as opposed to a definition with a reference. Using a reference in the root
+	// is useful as it allows us to maintain the struct's original name, but it is
+	// not common practice.
+	ExpandedStruct bool
 
 	// IgnoredTypes defines a slice of types that should be ignored in the schema,
 	// switching to just allowing additional properties instead.
@@ -178,7 +194,8 @@ type Reflector struct {
 	// Mapper is a function that can be used to map custom Go types to jsonschema schemas.
 	Mapper func(reflect.Type) *Schema
 
-	// Namer allows customizing of type names
+	// Namer allows customizing of type names. The default is to use the type's name
+	// provided by the reflect package.
 	Namer func(reflect.Type) string
 
 	// AdditionalFields allows adding structfields for a given type
@@ -208,28 +225,32 @@ func (r *Reflector) Reflect(v interface{}) *Schema {
 
 // ReflectFromType generates root schema
 func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
-	definitions := Definitions{}
-	if r.ExpandedStruct {
-		st := &Schema{
-			Version:    Version,
-			Type:       "object",
-			Properties: orderedmap.New(),
-		}
-		if !r.AllowAdditionalProperties {
-			st.AdditionalProperties = FalseSchema
-		}
-		r.reflectStructFields(st, definitions, t)
-		r.reflectStruct(definitions, t)
-		delete(definitions, r.typeName(t))
-		st.Definitions = definitions
-		return st
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem() // re-assign from pointer
 	}
 
-	// Copy to the base schema so we don't duplicate instances
-	// of the root
-	s := &Schema{}
-	*s = *r.reflectTypeToSchema(definitions, t)
-	s.Definitions = definitions
+	// Set default base schema ID
+	if r.BaseSchemaID == "" {
+		r.BaseSchemaID = ID("https://" + t.PkgPath())
+	}
+	name := r.typeName(t)
+	definitions := Definitions{}
+
+	s := new(Schema)
+	bs := r.reflectTypeToSchema(definitions, t)
+	if r.ExpandedStruct {
+		*s = *definitions[name]
+		delete(definitions, name)
+	} else {
+		*s = *bs
+	}
+	if !r.Anonymous {
+		s.ID = r.BaseSchemaID.Add(ToSnakeCase(name))
+	}
+	s.Version = Version
+	if !r.DoNotReference {
+		s.Definitions = definitions
+	}
 
 	return s
 }
@@ -260,10 +281,16 @@ type protoEnum interface {
 
 var protoEnumType = reflect.TypeOf((*protoEnum)(nil)).Elem()
 
+// SetBaseSchemaID is a helper use to be able to set the reflectors base
+// schema ID from a string as opposed to then ID instance.
+func (r *Reflector) SetBaseSchemaID(id string) {
+	r.BaseSchemaID = ID(id)
+}
+
 func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
 	// Already added to definitions?
 	if _, ok := definitions[r.typeName(t)]; ok && !r.DoNotReference {
-		return &Schema{Ref: "#/$defs/" + r.typeName(t)}
+		return r.refDefinition(definitions, t)
 	}
 
 	if r.Mapper != nil {
@@ -272,7 +299,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		}
 	}
 
-	if rt := r.reflectCustomType(definitions, t); rt != nil {
+	if rt := r.reflectCustomSchema(definitions, t); rt != nil {
 		return rt
 	}
 
@@ -301,7 +328,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		case uriType: // uri RFC section 7.3.6
 			return &Schema{Type: "string", Format: "uri"}
 		default:
-			return r.reflectStruct(definitions, t)
+			return r.reflectOrRefStruct(definitions, t)
 		}
 
 	case reflect.Map:
@@ -373,74 +400,62 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	panic("unsupported type " + t.String())
 }
 
-func (r *Reflector) reflectCustomType(definitions Definitions, t reflect.Type) *Schema {
+func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type) *Schema {
 	if t.Kind() == reflect.Ptr {
-		return r.reflectCustomType(definitions, t.Elem())
+		return r.reflectCustomSchema(definitions, t.Elem())
 	}
 
 	if t.Implements(customType) {
 		v := reflect.New(t)
 		o := v.Interface().(customSchemaImpl)
 		st := o.JSONSchema()
-		definitions[r.typeName(t)] = st
+		r.addDefinition(definitions, t, st)
 		if r.DoNotReference {
 			return st
 		} else {
-			return &Schema{
-				Version: Version,
-				Ref:     "#/$defs/" + r.typeName(t),
-			}
+			return r.refDefinition(definitions, t)
 		}
 	}
 
 	return nil
 }
 
+func (r *Reflector) reflectOrRefStruct(definitions Definitions, t reflect.Type) *Schema {
+	st := r.reflectStruct(definitions, t)
+	r.addDefinition(definitions, t, st)
+	if r.DoNotReference {
+		return st
+	} else {
+		return r.refDefinition(definitions, t)
+	}
+}
+
 // Reflects a struct to a JSON Schema type.
 func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type) *Schema {
-	if st := r.reflectCustomType(definitions, t); st != nil {
-		return st
-	}
-
-	for _, ignored := range r.IgnoredTypes {
-		if reflect.TypeOf(ignored) == t {
-			st := &Schema{
-				Type:                 "object",
-				Properties:           orderedmap.New(),
-				AdditionalProperties: TrueSchema,
-			}
-			definitions[r.typeName(t)] = st
-
-			if r.DoNotReference {
-				return st
-			} else {
-				return &Schema{
-					Version: Version,
-					Ref:     "#/$defs/" + r.typeName(t),
-				}
-			}
-		}
-	}
-
-	st := &Schema{
+	s := &Schema{
 		Type:        "object",
 		Properties:  orderedmap.New(),
 		Description: r.lookupComment(t, ""),
 	}
-	if !r.AllowAdditionalProperties {
-		st.AdditionalProperties = FalseSchema
+	if r.AssignAnchor {
+		s.Anchor = t.Name()
 	}
-	definitions[r.typeName(t)] = st
-	r.reflectStructFields(st, definitions, t)
+	if !r.AllowAdditionalProperties {
+		s.AdditionalProperties = FalseSchema
+	}
 
-	if r.DoNotReference {
-		return st
-	} else {
-		return &Schema{
-			Version: Version,
-			Ref:     "#/$defs/" + r.typeName(t),
+	ignored := false
+	for _, ignored := range r.IgnoredTypes {
+		if reflect.TypeOf(ignored) == t {
+			ignored = true
+			break
 		}
 	}
+	if !ignored {
+		r.reflectStructFields(s, definitions, t)
+	}
+
+	return s
 }
 
 func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t reflect.Type) {
@@ -521,6 +536,27 @@ func (r *Reflector) lookupComment(t reflect.Type, name string) string {
 	return r.CommentMap[n]
 }
 
+// addDefinition will append the provided schema. If needed, an ID and anchor will also be added.
+func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Schema) {
+	name := r.typeName(t)
+	definitions[name] = s
+}
+
+// refDefinition will provide a schema with a reference to an existing definition.
+func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Schema {
+	name := r.typeName(t)
+	if def, ok := definitions[name]; ok {
+		if def.Anchor != "" {
+			return &Schema{
+				Ref: "#" + def.Anchor,
+			}
+		}
+	}
+	return &Schema{
+		Ref: "#/$defs/" + name,
+	}
+}
+
 func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, propertyName string) {
 	t.Description = f.Tag.Get("jsonschema_description")
 	tags := strings.Split(f.Tag.Get("jsonschema"), ",")
@@ -552,6 +588,8 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 				t.Description = val
 			case "type":
 				t.Type = val
+			case "anchor":
+				t.Anchor = val
 			case "oneof_required":
 				var typeFound *Schema
 				for i := range parent.OneOf {
@@ -915,9 +953,6 @@ func (r *Reflector) typeName(t reflect.Type) string {
 		if name := r.Namer(t); name != "" {
 			return name
 		}
-	}
-	if r.FullyQualifyTypeNames {
-		return fullyQualifiedTypeName(t)
 	}
 	return t.Name()
 }
