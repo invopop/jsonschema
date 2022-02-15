@@ -445,8 +445,8 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type) *Sche
 	}
 
 	ignored := false
-	for _, ignored := range r.IgnoredTypes {
-		if reflect.TypeOf(ignored) == t {
+	for _, it := range r.IgnoredTypes {
+		if reflect.TypeOf(it) == t {
 			ignored = true
 			break
 		}

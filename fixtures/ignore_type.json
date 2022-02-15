@@ -4,16 +4,9 @@
   "$ref": "#/$defs/TestUser",
   "$defs": {
     "GrandfatherType": {
-      "properties": {
-        "family_name": {
-          "type": "string"
-        }
-      },
+      "properties": {},
       "additionalProperties": false,
-      "type": "object",
-      "required": [
-        "family_name"
-      ]
+      "type": "object"
     },
     "TestUser": {
       "properties": {
