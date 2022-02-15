@@ -10,6 +10,9 @@ import (
 // See draft-bhutton-json-schema-00 section 8.2.1
 type ID string
 
+// EmptyID is used to explicitly define an ID with no value.
+const EmptyID ID = ""
+
 // Validate is used to check if the ID looks like a proper schema.
 // This is done by parsing the ID as a URL and checking it has all the
 // relevant parts.
