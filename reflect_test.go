@@ -325,7 +325,7 @@ func TestSchemaGeneration(t *testing.T) {
 				return EmptyID
 			},
 		}, "fixtures/lookup.json"},
-		{LookupUser{}, &Reflector{
+		{&LookupUser{}, &Reflector{
 			BaseSchemaID:   "https://example.com/schemas",
 			ExpandedStruct: true,
 			AssignAnchor:   true,

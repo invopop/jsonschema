@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/invopop/jsonschema/test-user",
-  "$ref": "#TestUser",
+  "$ref": "#/$defs/TestUser",
   "$defs": {
     "GrandfatherType": {
       "$anchor": "GrandfatherType",
@@ -26,7 +26,7 @@
           "type": "integer"
         },
         "grand": {
-          "$ref": "#GrandfatherType"
+          "$ref": "#/$defs/GrandfatherType"
         },
         "SomeUntaggedBaseProperty": {
           "type": "boolean"

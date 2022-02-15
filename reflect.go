@@ -194,6 +194,7 @@ type Reflector struct {
 	// Lookup allows a function to be defined that will provide a custom mapping of
 	// types to Schema IDs. This allows existing schema documents to be referenced
 	// by their ID instead of being embedded into the current schema definitions.
+	// Reflected types will never be pointers, only underlying elements.
 	Lookup func(reflect.Type) ID
 
 	// Mapper is a function that can be used to map custom Go types to jsonschema schemas.
@@ -303,12 +304,10 @@ func (r *Reflector) SetBaseSchemaID(id string) {
 }
 
 func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
-	if r.Lookup != nil {
-		id := r.Lookup(t)
-		if id != EmptyID {
-			return &Schema{
-				Ref: id.String(),
-			}
+	id := r.lookupID(t)
+	if id != EmptyID {
+		return &Schema{
+			Ref: id.String(),
 		}
 	}
 
@@ -584,18 +583,22 @@ func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Sc
 }
 
 // refDefinition will provide a schema with a reference to an existing definition.
-func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Schema {
+func (r *Reflector) refDefinition(_ Definitions, t reflect.Type) *Schema {
 	name := r.typeName(t)
-	if def, ok := definitions[name]; ok {
-		if def.Anchor != "" {
-			return &Schema{
-				Ref: "#" + def.Anchor,
-			}
-		}
-	}
 	return &Schema{
 		Ref: "#/$defs/" + name,
 	}
+}
+
+func (r *Reflector) lookupID(t reflect.Type) ID {
+	if r.Lookup != nil {
+		if t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+		return r.Lookup(t)
+
+	}
+	return EmptyID
 }
 
 func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, propertyName string) {
