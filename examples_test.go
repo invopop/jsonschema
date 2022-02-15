@@ -26,6 +26,7 @@ func ExampleReflect() {
 	// Output:
 	// {
 	//   "$schema": "http://json-schema.org/draft/2020-12/schema",
+	//   "$id": "https://github.com/invopop/jsonschema_test/sample-user",
 	//   "$ref": "#/$defs/SampleUser",
 	//   "$defs": {
 	//     "SampleUser": {
