@@ -336,6 +336,7 @@ func TestBaselineUnmarshal(t *testing.T) {
 }
 
 func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) {
+	t.Helper()
 	expectedJSON, err := ioutil.ReadFile(f)
 	require.NoError(t, err)
 
@@ -343,12 +344,12 @@ func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) 
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ")
 
 	if *updateFixtures {
-		_ = ioutil.WriteFile(f, actualJSON, 0644)
+		_ = ioutil.WriteFile(f, actualJSON, 0600)
 	}
 
 	if !assert.JSONEq(t, string(expectedJSON), string(actualJSON)) {
 		if *compareFixtures {
-			_ = ioutil.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0644)
+			_ = ioutil.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
 		}
 	}
 }
