@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$ref": "#/definitions/PatternTest",
+  "definitions": {
+    "PatternTest": {
+      "required": [
+        "with_pattern"
+      ],
+      "properties": {
+        "with_pattern": {
+          "maxLength": 50,
+          "minLength": 1,
+          "pattern": "[0-9]{1,4}",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}

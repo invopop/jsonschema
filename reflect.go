@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/url"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -497,7 +498,7 @@ func (r *Reflector) lookupComment(t reflect.Type, name string) string {
 
 func (t *Type) structKeywordsFromTags(f reflect.StructField, parentType *Type, propertyName string) {
 	t.Description = f.Tag.Get("jsonschema_description")
-	tags := strings.Split(f.Tag.Get("jsonschema"), ",")
+	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
 	t.genericKeywords(tags, parentType, propertyName)
 	switch t.Type {
 	case "string":
@@ -888,6 +889,36 @@ func (r *Reflector) typeName(t reflect.Type) string {
 		return fullyQualifiedTypeName(t)
 	}
 	return t.Name()
+}
+
+// Split on commas that are not preceded by `\`.
+// This way, we prevent splitting regexes
+func splitOnUnescapedCommas(tagString string) []string {
+	splitOn := regexp.MustCompile(`[^\\](,)`)
+	commaIndices := splitOn.FindAllStringIndex(tagString, -1)
+
+	if commaIndices == nil {
+		return []string{tagString}
+	}
+
+	ret := make([]string, 0)
+	ret = append(ret, tagString[0:commaIndices[0][1]-1])
+	for i := 0; i < len(commaIndices); i++ {
+		leftIndex := commaIndices[i][1]
+		var rightIndex int
+		if i == len(commaIndices)-1 {
+			rightIndex = len(tagString)
+		} else {
+			rightIndex = commaIndices[i+1][1] - 1
+		}
+
+		nextTag := tagString[leftIndex:rightIndex]
+		nextTag = strings.ReplaceAll(nextTag, "\\,", ",")
+
+		ret = append(ret, nextTag)
+	}
+
+	return ret
 }
 
 func fullyQualifiedTypeName(t reflect.Type) string {

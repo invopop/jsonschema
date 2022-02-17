@@ -239,6 +239,10 @@ type CustomMapOuter struct {
 	MyMap CustomMapType `json:"my_map"`
 }
 
+type PatternTest struct {
+	WithPattern string `json:"with_pattern" jsonschema:"minLength=1,pattern=[0-9]{1\\,4},maxLength=50"`
+}
+
 func TestSchemaGeneration(t *testing.T) {
 	tests := []struct {
 		typ       interface{}
@@ -290,6 +294,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&CustomSliceOuter{}, &Reflector{}, "fixtures/custom_slice_type.json"},
 		{&CustomMapOuter{}, &Reflector{}, "fixtures/custom_map_type.json"},
 		{&CustomTypeFieldWithInterface{}, &Reflector{}, "fixtures/custom_type_with_interface.json"},
+		{&PatternTest{}, &Reflector{}, "fixtures/commas_in_pattern.json"},
 		{&examples.User{}, prepareCommentReflector(t), "fixtures/go_comments.json"},
 	}
 
@@ -330,4 +335,12 @@ func TestBaselineUnmarshal(t *testing.T) {
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ")
 
 	require.Equal(t, strings.ReplaceAll(string(expectedJSON), `\/`, "/"), string(actualJSON))
+}
+
+func TestSplitOnUnescapedCommas(t *testing.T) {
+	strToSplit := "Hello,this,is\\,a\\,string,haha"
+	expected := []string{"Hello", "this", "is,a,string", "haha"}
+	actual := splitOnUnescapedCommas(strToSplit)
+
+	require.Equal(t, expected, actual)
 }
