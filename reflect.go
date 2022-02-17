@@ -912,6 +912,7 @@ func splitOnUnescapedCommas(tagString string) []string {
 			rightIndex = commaIndices[i+1][1] - 1
 		}
 
+		// After splitting, we can remove the `\` characters used for escaping
 		nextTag := tagString[leftIndex:rightIndex]
 		nextTag = strings.ReplaceAll(nextTag, "\\,", ",")
 

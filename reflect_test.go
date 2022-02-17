@@ -344,3 +344,11 @@ func TestSplitOnUnescapedCommas(t *testing.T) {
 
 	require.Equal(t, expected, actual)
 }
+
+func TestSplitOnUnescapedCommasDoubleEscaped(t *testing.T) {
+	strToSplit := "hello,no\\\\,split"
+	expected := []string{"hello", "no\\,split"}
+	actual := splitOnUnescapedCommas(strToSplit)
+
+	require.Equal(t, expected, actual)
+}
