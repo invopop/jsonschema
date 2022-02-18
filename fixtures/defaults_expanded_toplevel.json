@@ -1,22 +1,5 @@
 {
-  "$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
-  "required": [
-    "some_base_property",
-    "some_base_property_yaml",
-    "grand",
-    "SomeUntaggedBaseProperty",
-    "PublicNonExported",
-    "id",
-    "name",
-    "password",
-    "TestFlag",
-    "age",
-    "email",
-    "Baz",
-    "color",
-    "roles",
-    "raw"
-  ],
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
   "properties": {
     "some_base_property": {
       "type": "integer"
@@ -25,8 +8,8 @@
       "type": "integer"
     },
     "grand": {
-      "$schema": "http:\/\/json-schema.org\/draft-04\/schema#",
-      "$ref": "#\/definitions\/GrandfatherType"
+      "$schema": "http://json-schema.org/draft/2020-12/schema",
+      "$ref": "#/$defs/GrandfatherType"
     },
     "SomeUntaggedBaseProperty": {
       "type": "boolean"
@@ -38,18 +21,18 @@
       "type": "integer"
     },
     "name": {
+      "type": "string",
       "maxLength": 20,
       "minLength": 1,
       "pattern": ".*",
-      "type": "string",
       "title": "the name",
       "description": "this is a property",
       "default": "alex",
+      "readOnly": true,
       "examples": [
         "joe",
         "lucy"
-      ],
-      "readOnly": true
+      ]
     },
     "password": {
       "type": "string",
@@ -87,15 +70,11 @@
     },
     "photo": {
       "type": "string",
-      "media": {
-        "binaryEncoding": "base64"
-      }
+      "contentEncoding": "base64"
     },
     "photo2": {
       "type": "string",
-      "media": {
-        "binaryEncoding": "base64"
-      }
+      "contentEncoding": "base64"
     },
     "feeling": {
       "oneOf": [
@@ -108,11 +87,11 @@
       ]
     },
     "age": {
+      "type": "integer",
       "maximum": 120,
       "exclusiveMaximum": true,
       "minimum": 18,
-      "exclusiveMinimum": true,
-      "type": "integer"
+      "exclusiveMinimum": true
     },
     "email": {
       "type": "string",
@@ -127,59 +106,59 @@
       "hello": "world"
     },
     "color": {
+      "type": "string",
       "enum": [
         "red",
         "green",
         "blue"
-      ],
-      "type": "string"
+      ]
     },
     "rank": {
+      "type": "integer",
       "enum": [
         1,
         2,
         3
-      ],
-      "type": "integer"
+      ]
     },
     "mult": {
+      "type": "number",
       "enum": [
-        1.0,
+        1,
         1.5,
-        2.0
-      ],
-      "type": "number"
+        2
+      ]
     },
     "roles": {
       "items": {
+        "type": "string",
         "enum": [
           "admin",
           "moderator",
           "user"
-        ],
-        "type": "string"
+        ]
       },
       "type": "array"
     },
     "priorities": {
       "items": {
+        "type": "integer",
         "enum": [
           -1,
           0,
           1
-        ],
-        "type": "integer"
+        ]
       },
       "type": "array"
     },
     "offsets": {
       "items": {
+        "type": "number",
         "enum": [
           1.570796,
           3.141592,
           6.283185
-        ],
-        "type": "number"
+        ]
       },
       "type": "array"
     },
@@ -189,18 +168,35 @@
   },
   "additionalProperties": false,
   "type": "object",
-  "definitions": {
+  "required": [
+    "some_base_property",
+    "some_base_property_yaml",
+    "grand",
+    "SomeUntaggedBaseProperty",
+    "PublicNonExported",
+    "id",
+    "name",
+    "password",
+    "TestFlag",
+    "age",
+    "email",
+    "Baz",
+    "color",
+    "roles",
+    "raw"
+  ],
+  "$defs": {
     "GrandfatherType": {
-      "required": [
-        "family_name"
-      ],
       "properties": {
         "family_name": {
           "type": "string"
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "required": [
+        "family_name"
+      ]
     }
   }
 }

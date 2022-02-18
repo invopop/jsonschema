@@ -38,9 +38,9 @@ jsonschema.Reflect(&TestUser{})
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/TestUser",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/TestUser",
+  "$defs": {
     "TestUser": {
       "type": "object",
       "properties": {

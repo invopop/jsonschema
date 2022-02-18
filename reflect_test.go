@@ -300,14 +300,10 @@ func TestSchemaGeneration(t *testing.T) {
 			require.NoError(t, err)
 
 			actualSchema := tt.reflector.Reflect(tt.typ)
-			expectedSchema := &Schema{}
-
-			err = json.Unmarshal(f, expectedSchema)
-			require.NoError(t, err)
-
-			expectedJSON, _ := json.MarshalIndent(expectedSchema, "", "  ")
 			actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ")
-			require.Equal(t, string(expectedJSON), string(actualJSON))
+
+			// _ = ioutil.WriteFile(strings.TrimSuffix(tt.fixture, ".json")+".out.json", actualJSON, 0644)
+			require.JSONEq(t, string(f), string(actualJSON))
 		})
 	}
 }
@@ -328,6 +324,7 @@ func TestBaselineUnmarshal(t *testing.T) {
 	actualSchema := reflector.Reflect(&TestUser{})
 
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ")
+	// _ = ioutil.WriteFile("fixtures/defaults.out.json", actualJSON, 0644)
 
 	require.Equal(t, strings.ReplaceAll(string(expectedJSON), `\/`, "/"), string(actualJSON))
 }
