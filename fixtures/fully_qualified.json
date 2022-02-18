@@ -177,9 +177,7 @@
           },
           "type": "array"
         },
-        "raw": {
-          "additionalProperties": true
-        }
+        "raw": true
       },
       "additionalProperties": false,
       "type": "object",

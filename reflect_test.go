@@ -110,8 +110,8 @@ type CustomTypeFieldWithInterface struct {
 	CreatedAt CustomTimeWithInterface
 }
 
-func (CustomTimeWithInterface) JSONSchemaType() *Type {
-	return &Type{
+func (CustomTimeWithInterface) JSONSchema() *Schema {
+	return &Schema{
 		Type:   "string",
 		Format: "date-time",
 	}
@@ -165,8 +165,8 @@ type CompactDate struct {
 	Month int
 }
 
-func (CompactDate) JSONSchemaType() *Type {
-	return &Type{
+func (CompactDate) JSONSchema() *Schema {
+	return &Schema{
 		Type:        "string",
 		Title:       "Compact Date",
 		Description: "Short date that only includes year and month",
@@ -202,13 +202,13 @@ type CustomSliceOuter struct {
 
 type CustomSliceType []string
 
-func (CustomSliceType) JSONSchemaType() *Type {
-	return &Type{
-		OneOf: []*Type{{
+func (CustomSliceType) JSONSchema() *Schema {
+	return &Schema{
+		OneOf: []*Schema{{
 			Type: "string",
 		}, {
 			Type: "array",
-			Items: &Type{
+			Items: &Schema{
 				Type: "string",
 			},
 		}},
@@ -217,17 +217,17 @@ func (CustomSliceType) JSONSchemaType() *Type {
 
 type CustomMapType map[string]string
 
-func (CustomMapType) JSONSchemaType() *Type {
+func (CustomMapType) JSONSchema() *Schema {
 	properties := orderedmap.New()
-	properties.Set("key", &Type{
+	properties.Set("key", &Schema{
 		Type: "string",
 	})
-	properties.Set("value", &Type{
+	properties.Set("value", &Schema{
 		Type: "string",
 	})
-	return &Type{
+	return &Schema{
 		Type: "array",
-		Items: &Type{
+		Items: &Schema{
 			Type:       "object",
 			Properties: properties,
 			Required:   []string{"key", "value"},
@@ -255,9 +255,9 @@ func TestSchemaGeneration(t *testing.T) {
 		{&TestUser{}, &Reflector{FullyQualifyTypeNames: true}, "fixtures/fully_qualified.json"},
 		{&TestUser{}, &Reflector{DoNotReference: true, FullyQualifyTypeNames: true}, "fixtures/no_ref_qual_types.json"},
 		{&CustomTypeField{}, &Reflector{
-			TypeMapper: func(i reflect.Type) *Type {
+			Mapper: func(i reflect.Type) *Schema {
 				if i == reflect.TypeOf(CustomTime{}) {
-					return &Type{
+					return &Schema{
 						Type:   "string",
 						Format: "date-time",
 					}
@@ -326,5 +326,5 @@ func TestBaselineUnmarshal(t *testing.T) {
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ")
 	// _ = ioutil.WriteFile("fixtures/defaults.out.json", actualJSON, 0644)
 
-	require.Equal(t, strings.ReplaceAll(string(expectedJSON), `\/`, "/"), string(actualJSON))
+	require.JSONEq(t, string(expectedJSON), string(actualJSON))
 }
