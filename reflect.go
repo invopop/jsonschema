@@ -891,7 +891,7 @@ func (r *Reflector) typeName(t reflect.Type) string {
 	return t.Name()
 }
 
-var unescapedCommas = regexp.MustCompile(`[^\\](,)`)
+var unescapedCommas = regexp.MustCompile(`[^\\],`)
 
 // Split on commas that are not preceded by `\`.
 // This way, we prevent splitting regexes
