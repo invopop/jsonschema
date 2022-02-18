@@ -1,8 +1,8 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/github.com/alecthomas/jsonschema.TestUser",
+  "$ref": "#/definitions/github.com/invopop/jsonschema.TestUser",
   "definitions": {
-    "github.com/alecthomas/jsonschema.GrandfatherType": {
+    "github.com/invopop/jsonschema.GrandfatherType": {
       "required": [
         "family_name"
       ],
@@ -14,7 +14,7 @@
       "additionalProperties": false,
       "type": "object"
     },
-    "github.com/alecthomas/jsonschema.TestUser": {
+    "github.com/invopop/jsonschema.TestUser": {
       "required": [
         "some_base_property",
         "some_base_property_yaml",
@@ -41,7 +41,7 @@
         },
         "grand": {
           "$schema": "http://json-schema.org/draft-04/schema#",
-          "$ref": "#/definitions/github.com/alecthomas/jsonschema.GrandfatherType"
+          "$ref": "#/definitions/github.com/invopop/jsonschema.GrandfatherType"
         },
         "SomeUntaggedBaseProperty": {
           "type": "boolean"
