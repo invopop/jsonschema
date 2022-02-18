@@ -338,17 +338,17 @@ func TestBaselineUnmarshal(t *testing.T) {
 }
 
 func TestSplitOnUnescapedCommas(t *testing.T) {
-	strToSplit := "Hello,this,is\\,a\\,string,haha"
-	expected := []string{"Hello", "this", "is,a,string", "haha"}
-	actual := splitOnUnescapedCommas(strToSplit)
+	tests := []struct {
+		strToSplit string
+		expected   []string
+	}{
+		{"Hello,this,is\\,a\\,string,haha", []string{"Hello", "this", "is,a,string", "haha"}},
+		{"hello,no\\\\,split", []string{"hello", "no\\,split"}},
+		{"string without commas", []string{"string without commas"}},
+	}
 
-	require.Equal(t, expected, actual)
-}
-
-func TestSplitOnUnescapedCommasDoubleEscaped(t *testing.T) {
-	strToSplit := "hello,no\\\\,split"
-	expected := []string{"hello", "no\\,split"}
-	actual := splitOnUnescapedCommas(strToSplit)
-
-	require.Equal(t, expected, actual)
+	for _, test := range tests {
+		actual := splitOnUnescapedCommas(test.strToSplit)
+		require.Equal(t, test.expected, actual)
+	}
 }
