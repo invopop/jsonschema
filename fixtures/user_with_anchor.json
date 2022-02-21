@@ -1,23 +1,20 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/outer",
-  "properties": {
-    "inner": {
+  "$id": "https://github.com/invopop/jsonschema/user-with-anchor",
+  "$ref": "#/$defs/UserWithAnchor",
+  "$defs": {
+    "UserWithAnchor": {
       "properties": {
-        "foo": {
+        "name": {
+          "$anchor": "Name",
           "type": "string"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "foo"
+        "name"
       ]
     }
-  },
-  "additionalProperties": false,
-  "type": "object",
-  "required": [
-    "inner"
-  ]
+  }
 }

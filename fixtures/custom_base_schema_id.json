@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "http://example.com/schema/TestUser",
   "$ref": "#/$defs/TestUser",
   "$defs": {
     "GrandfatherType": {
@@ -23,7 +24,6 @@
           "type": "integer"
         },
         "grand": {
-          "$schema": "http://json-schema.org/draft/2020-12/schema",
           "$ref": "#/$defs/GrandfatherType"
         },
         "SomeUntaggedBaseProperty": {

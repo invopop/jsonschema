@@ -2,6 +2,7 @@ package jsonschema
 
 import (
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"net"
 	"net/url"
@@ -15,8 +16,12 @@ import (
 
 	"github.com/invopop/jsonschema/examples"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var updateFixtures = flag.Bool("update", false, "set to update fixtures")
+var compareFixtures = flag.Bool("compare", false, "output failed fixtures with .out.json")
 
 type GrandfatherType struct {
 	FamilyName string `json:"family_name" jsonschema:"required"`
@@ -167,6 +172,10 @@ type CompactDate struct {
 	Month int
 }
 
+type UserWithAnchor struct {
+	Name string `json:"name" jsonschema:"anchor=Name"`
+}
+
 func (CompactDate) JSONSchema() *Schema {
 	return &Schema{
 		Type:        "string",
@@ -241,21 +250,47 @@ type CustomMapOuter struct {
 	MyMap CustomMapType `json:"my_map"`
 }
 
+func TestReflector(t *testing.T) {
+	r := new(Reflector)
+	s := "http://example.com/schema"
+	r.SetBaseSchemaID(s)
+	assert.EqualValues(t, s, r.BaseSchemaID)
+}
+
+func TestReflectFromType(t *testing.T) {
+	r := new(Reflector)
+	tu := new(TestUser)
+	typ := reflect.TypeOf(tu)
+
+	s := r.ReflectFromType(typ)
+	assert.EqualValues(t, "https://github.com/invopop/jsonschema/test-user", s.ID)
+
+	x := struct {
+		Test string
+	}{
+		Test: "foo",
+	}
+	typ = reflect.TypeOf(x)
+	s = r.Reflect(typ)
+	assert.Empty(t, s.ID)
+}
+
 func TestSchemaGeneration(t *testing.T) {
 	tests := []struct {
 		typ       interface{}
 		reflector *Reflector
 		fixture   string
 	}{
-		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/oneof.json"},
-		{&TestUser{}, &Reflector{}, "fixtures/defaults.json"},
+		{&TestUser{}, &Reflector{}, "fixtures/test_user.json"},
+		{&UserWithAnchor{}, &Reflector{}, "fixtures/user_with_anchor.json"},
+		{&TestUser{}, &Reflector{AssignAnchor: true}, "fixtures/test_user_assign_anchor.json"},
 		{&TestUser{}, &Reflector{AllowAdditionalProperties: true}, "fixtures/allow_additional_props.json"},
 		{&TestUser{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/required_from_jsontags.json"},
 		{&TestUser{}, &Reflector{ExpandedStruct: true}, "fixtures/defaults_expanded_toplevel.json"},
 		{&TestUser{}, &Reflector{IgnoredTypes: []interface{}{GrandfatherType{}}}, "fixtures/ignore_type.json"},
 		{&TestUser{}, &Reflector{DoNotReference: true}, "fixtures/no_reference.json"},
-		{&TestUser{}, &Reflector{FullyQualifyTypeNames: true}, "fixtures/fully_qualified.json"},
-		{&TestUser{}, &Reflector{DoNotReference: true, FullyQualifyTypeNames: true}, "fixtures/no_ref_qual_types.json"},
+		{&TestUser{}, &Reflector{DoNotReference: true, AssignAnchor: true}, "fixtures/no_reference_anchor.json"},
+		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/oneof.json"},
 		{&CustomTypeField{}, &Reflector{
 			Mapper: func(i reflect.Type) *Schema {
 				if i == reflect.TypeOf(CustomTime{}) {
@@ -267,8 +302,8 @@ func TestSchemaGeneration(t *testing.T) {
 				return nil
 			},
 		}, "fixtures/custom_type.json"},
-		{&TestUser{}, &Reflector{DoNotReference: true, FullyQualifyTypeNames: true}, "fixtures/no_ref_qual_types.json"},
 		{&Outer{}, &Reflector{ExpandedStruct: true, DoNotReference: true, YAMLEmbeddedStructs: true}, "fixtures/disable_inlining_embedded.json"},
+		{&Outer{}, &Reflector{ExpandedStruct: true, DoNotReference: true, YAMLEmbeddedStructs: true, AssignAnchor: true}, "fixtures/disable_inlining_embedded_anchored.json"},
 		{&MinValue{}, &Reflector{}, "fixtures/schema_with_minimum.json"},
 		{&TestNullable{}, &Reflector{}, "fixtures/nullable.json"},
 		{&TestYamlInline{}, &Reflector{YAMLEmbeddedStructs: true}, "fixtures/yaml_inline_embed.json"},
@@ -298,14 +333,9 @@ func TestSchemaGeneration(t *testing.T) {
 	for _, tt := range tests {
 		name := strings.TrimSuffix(filepath.Base(tt.fixture), ".json")
 		t.Run(name, func(t *testing.T) {
-			f, err := ioutil.ReadFile(tt.fixture)
-			require.NoError(t, err)
-
-			actualSchema := tt.reflector.Reflect(tt.typ)
-			actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ")
-
-			// _ = ioutil.WriteFile(strings.TrimSuffix(tt.fixture, ".json")+".out.json", actualJSON, 0644)
-			require.JSONEq(t, string(f), string(actualJSON))
+			compareSchemaOutput(t,
+				tt.fixture, tt.reflector, tt.typ,
+			)
 		})
 	}
 }
@@ -319,14 +349,25 @@ func prepareCommentReflector(t *testing.T) *Reflector {
 }
 
 func TestBaselineUnmarshal(t *testing.T) {
-	expectedJSON, err := ioutil.ReadFile("fixtures/defaults.json")
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/test_user.json", r, &TestUser{})
+}
+
+func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) {
+	t.Helper()
+	expectedJSON, err := ioutil.ReadFile(f)
 	require.NoError(t, err)
 
-	reflector := &Reflector{}
-	actualSchema := reflector.Reflect(&TestUser{})
-
+	actualSchema := r.Reflect(obj)
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ")
-	// _ = ioutil.WriteFile("fixtures/defaults.out.json", actualJSON, 0644)
 
-	require.JSONEq(t, string(expectedJSON), string(actualJSON))
+	if *updateFixtures {
+		_ = ioutil.WriteFile(f, actualJSON, 0600)
+	}
+
+	if !assert.JSONEq(t, string(expectedJSON), string(actualJSON)) {
+		if *compareFixtures {
+			_ = ioutil.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
+		}
+	}
 }

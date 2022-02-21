@@ -1,5 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/root-one-of",
   "$ref": "#/$defs/RootOneOf",
   "$defs": {
     "ChildOneOf": {
@@ -80,7 +81,6 @@
           "type": "string"
         },
         "child": {
-          "$schema": "http://json-schema.org/draft/2020-12/schema",
           "$ref": "#/$defs/ChildOneOf"
         }
       },

@@ -1,10 +1,11 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/test-user",
   "$ref": "#/$defs/TestUser",
   "$defs": {
     "GrandfatherType": {
       "properties": {},
-      "additionalProperties": true,
+      "additionalProperties": false,
       "type": "object"
     },
     "TestUser": {
@@ -16,7 +17,6 @@
           "type": "integer"
         },
         "grand": {
-          "$schema": "http://json-schema.org/draft/2020-12/schema",
           "$ref": "#/$defs/GrandfatherType"
         },
         "SomeUntaggedBaseProperty": {

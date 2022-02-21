@@ -1,8 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
-  "$ref": "#/$defs/github.com/invopop/jsonschema.TestUser",
+  "$id": "https://github.com/invopop/jsonschema/test-user",
+  "$ref": "#TestUser",
   "$defs": {
-    "github.com/invopop/jsonschema.GrandfatherType": {
+    "GrandfatherType": {
+      "$anchor": "GrandfatherType",
       "properties": {
         "family_name": {
           "type": "string"
@@ -14,7 +16,8 @@
         "family_name"
       ]
     },
-    "github.com/invopop/jsonschema.TestUser": {
+    "TestUser": {
+      "$anchor": "TestUser",
       "properties": {
         "some_base_property": {
           "type": "integer"
@@ -23,8 +26,7 @@
           "type": "integer"
         },
         "grand": {
-          "$schema": "http://json-schema.org/draft/2020-12/schema",
-          "$ref": "#/$defs/github.com/invopop/jsonschema.GrandfatherType"
+          "$ref": "#GrandfatherType"
         },
         "SomeUntaggedBaseProperty": {
           "type": "boolean"
