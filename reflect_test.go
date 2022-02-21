@@ -207,6 +207,16 @@ func (TestYamlAndJson2) GetFieldDocString(fieldName string) string {
 	}
 }
 
+type LookupName struct {
+	Given   string `json:"first"`
+	Surname string `json:"surname"`
+}
+
+type LookupUser struct {
+	Name  *LookupName `json:"name"`
+	Alias string      `json:"alias,omitempty"`
+}
+
 type CustomSliceOuter struct {
 	Slice CustomSliceType `json:"slice"`
 }
@@ -302,6 +312,33 @@ func TestSchemaGeneration(t *testing.T) {
 				return nil
 			},
 		}, "fixtures/custom_type.json"},
+		{LookupUser{}, &Reflector{BaseSchemaID: "https://example.com/schemas"}, "fixtures/base_schema_id.json"},
+		{LookupUser{}, &Reflector{
+			BaseSchemaID: "https://example.com/schemas",
+			Lookup: func(i reflect.Type) ID {
+				switch i {
+				case reflect.TypeOf(LookupUser{}):
+					return ID("https://example.com/schemas/lookup-user")
+				case reflect.TypeOf(LookupName{}):
+					return ID("https://example.com/schemas/lookup-name")
+				}
+				return EmptyID
+			},
+		}, "fixtures/lookup.json"},
+		{&LookupUser{}, &Reflector{
+			BaseSchemaID:   "https://example.com/schemas",
+			ExpandedStruct: true,
+			AssignAnchor:   true,
+			Lookup: func(i reflect.Type) ID {
+				switch i {
+				case reflect.TypeOf(LookupUser{}):
+					return ID("https://example.com/schemas/lookup-user")
+				case reflect.TypeOf(LookupName{}):
+					return ID("https://example.com/schemas/lookup-name")
+				}
+				return EmptyID
+			},
+		}, "fixtures/lookup_expanded.json"},
 		{&Outer{}, &Reflector{ExpandedStruct: true, DoNotReference: true, YAMLEmbeddedStructs: true}, "fixtures/disable_inlining_embedded.json"},
 		{&Outer{}, &Reflector{ExpandedStruct: true, DoNotReference: true, YAMLEmbeddedStructs: true, AssignAnchor: true}, "fixtures/disable_inlining_embedded_anchored.json"},
 		{&MinValue{}, &Reflector{}, "fixtures/schema_with_minimum.json"},

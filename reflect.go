@@ -191,6 +191,12 @@ type Reflector struct {
 	// switching to just allowing additional properties instead.
 	IgnoredTypes []interface{}
 
+	// Lookup allows a function to be defined that will provide a custom mapping of
+	// types to Schema IDs. This allows existing schema documents to be referenced
+	// by their ID instead of being embedded into the current schema definitions.
+	// Reflected types will never be pointers, only underlying elements.
+	Lookup func(reflect.Type) ID
+
 	// Mapper is a function that can be used to map custom Go types to jsonschema schemas.
 	Mapper func(reflect.Type) *Schema
 
@@ -230,10 +236,11 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	}
 
 	name := r.typeName(t)
-	definitions := Definitions{}
 
 	s := new(Schema)
-	bs := r.reflectTypeToSchema(definitions, t)
+	definitions := Definitions{}
+	s.Definitions = definitions
+	bs := r.reflectTypeToSchemaWithID(definitions, t)
 	if r.ExpandedStruct {
 		*s = *definitions[name]
 		delete(definitions, name)
@@ -244,14 +251,14 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	// Attempt to set the schema ID
 	if !r.Anonymous {
 		baseSchemaID := r.BaseSchemaID
-		if baseSchemaID == "" {
+		if baseSchemaID == EmptyID {
 			id := ID("https://" + t.PkgPath())
 			if err := id.Validate(); err == nil {
 				// it's okay to silently ignore URL errors
 				baseSchemaID = id
 			}
 		}
-		if baseSchemaID != "" {
+		if baseSchemaID != EmptyID {
 			s.ID = baseSchemaID.Add(ToSnakeCase(name))
 		}
 	}
@@ -296,12 +303,36 @@ func (r *Reflector) SetBaseSchemaID(id string) {
 	r.BaseSchemaID = ID(id)
 }
 
-func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
+func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
+	id := r.lookupID(t)
+	if id != EmptyID {
+		return &Schema{
+			Ref: id.String(),
+		}
+	}
+
 	// Already added to definitions?
 	if _, ok := definitions[r.typeName(t)]; ok && !r.DoNotReference {
 		return r.refDefinition(definitions, t)
 	}
 
+	return r.reflectTypeToSchemaWithID(definitions, t)
+}
+
+func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) *Schema {
+	s := r.reflectTypeToSchema(defs, t)
+	if s != nil {
+		if r.Lookup != nil {
+			id := r.Lookup(t)
+			if id != EmptyID {
+				s.ID = id
+			}
+		}
+	}
+	return s
+}
+
+func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
 	if r.Mapper != nil {
 		if t := r.Mapper(t); t != nil {
 			return t
@@ -346,7 +377,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 			rt := &Schema{
 				Type: "object",
 				PatternProperties: map[string]*Schema{
-					"^[0-9]+$": r.reflectTypeToSchema(definitions, t.Elem()),
+					"^[0-9]+$": r.refOrReflectTypeToSchema(definitions, t.Elem()),
 				},
 				AdditionalProperties: FalseSchema,
 			}
@@ -362,7 +393,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 			rt = &Schema{
 				Type: "object",
 				PatternProperties: map[string]*Schema{
-					".*": r.reflectTypeToSchema(definitions, t.Elem()),
+					".*": r.refOrReflectTypeToSchema(definitions, t.Elem()),
 				},
 			}
 		}
@@ -384,7 +415,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 			return returnType
 		}
 		returnType.Type = "array"
-		returnType.Items = r.reflectTypeToSchema(definitions, t.Elem())
+		returnType.Items = r.refOrReflectTypeToSchema(definitions, t.Elem())
 		return returnType
 
 	case reflect.Interface:
@@ -404,7 +435,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		return &Schema{Type: "string"}
 
 	case reflect.Ptr:
-		return r.reflectTypeToSchema(definitions, t.Elem())
+		return r.refOrReflectTypeToSchema(definitions, t.Elem())
 	}
 	panic("unsupported type " + t.String())
 }
@@ -493,7 +524,7 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 			return
 		}
 
-		property := r.reflectTypeToSchema(definitions, f.Type)
+		property := r.refOrReflectTypeToSchema(definitions, f.Type)
 		property.structKeywordsFromTags(f, st, name)
 		if property.Description == "" {
 			property.Description = r.lookupComment(t, f.Name)
@@ -552,18 +583,22 @@ func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Sc
 }
 
 // refDefinition will provide a schema with a reference to an existing definition.
-func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Schema {
+func (r *Reflector) refDefinition(_ Definitions, t reflect.Type) *Schema {
 	name := r.typeName(t)
-	if def, ok := definitions[name]; ok {
-		if def.Anchor != "" {
-			return &Schema{
-				Ref: "#" + def.Anchor,
-			}
-		}
-	}
 	return &Schema{
 		Ref: "#/$defs/" + name,
 	}
+}
+
+func (r *Reflector) lookupID(t reflect.Type) ID {
+	if r.Lookup != nil {
+		if t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+		return r.Lookup(t)
+
+	}
+	return EmptyID
 }
 
 func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, propertyName string) {
