@@ -270,7 +270,6 @@ func TestReflectFromType(t *testing.T) {
 	}{
 		Test: "foo",
 	}
-	//x := time.Now()
 	typ = reflect.TypeOf(x)
 	s = r.Reflect(typ)
 	assert.Empty(t, s.ID)
