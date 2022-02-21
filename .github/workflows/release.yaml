@@ -1,0 +1,36 @@
+#
+# Automatically tag a merge with master, or build a new image from the tag.
+#
+# Secrets required:
+#  * `DO_TOKEN` - DigitalOcean private token
+#  * `DO_REGISTRY_NAME` - DigitalOcean name of the registry
+#  * `GO_MOD_USER` - Machine username to read private repos
+#  * `GO_MOD_PASS` - Machine password to read private repos
+#
+
+name: Release
+
+on:
+  push:
+    branches:
+      - release
+    #paths-ignore:
+    #  - "docs/**"
+
+jobs:
+  tag-build-publish:
+    name: Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: "0" # make sure we get all commits!
+
+      - name: Bump version and push tag
+        id: bump
+        uses: anothrNick/github-tag-action@1.36.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_BRANCHES: release
+          WITH_V: true

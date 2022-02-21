@@ -1,8 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/invopop/jsonschema/outer",
+  "$anchor": "Outer",
   "properties": {
     "inner": {
+      "$anchor": "Inner",
       "properties": {
         "foo": {
           "type": "string"

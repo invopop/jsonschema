@@ -1,18 +1,21 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/test-yaml-inline",
-  "$ref": "#/$defs/TestYamlInline",
+  "$id": "https://example.com/schemas/lookup-user",
+  "$ref": "#/$defs/LookupUser",
   "$defs": {
-    "TestYamlInline": {
+    "LookupUser": {
       "properties": {
-        "foo": {
+        "name": {
+          "$ref": "https://example.com/schemas/lookup-name"
+        },
+        "alias": {
           "type": "string"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "foo"
+        "name"
       ]
     }
   }

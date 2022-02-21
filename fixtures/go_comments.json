@@ -1,11 +1,9 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/User",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/examples/user",
+  "$ref": "#/$defs/User",
+  "$defs": {
     "Pet": {
-      "required": [
-        "name"
-      ],
       "properties": {
         "name": {
           "type": "string",
@@ -15,12 +13,12 @@
       },
       "additionalProperties": false,
       "type": "object",
+      "required": [
+        "name"
+      ],
       "description": "Pet defines the user's fury friend."
     },
     "Plant": {
-      "required": [
-        "variant"
-      ],
       "properties": {
         "variant": {
           "type": "string",
@@ -29,25 +27,22 @@
       },
       "additionalProperties": false,
       "type": "object",
+      "required": [
+        "variant"
+      ],
       "description": "Plant represents the plants the user might have and serves as a test of structs inside a `type` set."
     },
     "User": {
-      "required": [
-        "id",
-        "name",
-        "pets",
-        "plants"
-      ],
       "properties": {
         "id": {
           "type": "integer",
           "description": "Unique sequential identifier."
         },
         "name": {
+          "type": "string",
           "maxLength": 20,
           "minLength": 1,
           "pattern": ".*",
-          "type": "string",
           "title": "the name",
           "description": "this is a property",
           "default": "alex",
@@ -64,25 +59,18 @@
           "description": "list of IDs, omitted when empty"
         },
         "tags": {
-          "patternProperties": {
-            ".*": {
-              "additionalProperties": true
-            }
-          },
           "type": "object"
         },
         "pets": {
           "items": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$ref": "#/definitions/Pet"
+            "$ref": "#/$defs/Pet"
           },
           "type": "array",
           "description": "An array of pets the user cares for."
         },
         "plants": {
           "items": {
-            "$schema": "http://json-schema.org/draft-04/schema#",
-            "$ref": "#/definitions/Plant"
+            "$ref": "#/$defs/Plant"
           },
           "type": "array",
           "title": "Pants",
@@ -91,6 +79,12 @@
       },
       "additionalProperties": false,
       "type": "object",
+      "required": [
+        "id",
+        "name",
+        "pets",
+        "plants"
+      ],
       "description": "User is used as a base to provide tests for comments."
     }
   }

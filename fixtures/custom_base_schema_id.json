@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/test-user",
+  "$id": "http://example.com/schema/TestUser",
   "$ref": "#/$defs/TestUser",
   "$defs": {
     "GrandfatherType": {
@@ -9,6 +9,7 @@
           "type": "string"
         }
       },
+      "additionalProperties": false,
       "type": "object",
       "required": [
         "family_name"
@@ -182,6 +183,7 @@
         "anything": true,
         "raw": true
       },
+      "additionalProperties": false,
       "type": "object",
       "required": [
         "some_base_property",

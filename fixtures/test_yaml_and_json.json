@@ -1,9 +1,9 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/TestYamlAndJson",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/test-yaml-and-json",
+  "$ref": "#/$defs/TestYamlAndJson",
+  "$defs": {
     "TestYamlAndJson": {
-      "required": ["FirstName", "LastName", "age"],
       "properties": {
         "FirstName": {
           "type": "string"
@@ -19,7 +19,12 @@
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "required": [
+        "FirstName",
+        "LastName",
+        "age"
+      ]
     }
   }
 }

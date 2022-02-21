@@ -1,11 +1,9 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/CustomTypeField",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/custom-type-field",
+  "$ref": "#/$defs/CustomTypeField",
+  "$defs": {
     "CustomTypeField": {
-      "required": [
-        "CreatedAt"
-      ],
       "properties": {
         "CreatedAt": {
           "type": "string",
@@ -13,7 +11,10 @@
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "required": [
+        "CreatedAt"
+      ]
     }
   }
 }

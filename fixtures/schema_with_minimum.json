@@ -1,19 +1,20 @@
 {
-    "$schema": "http://json-schema.org/draft-04/schema#",
-    "$ref": "#/definitions/MinValue",
-    "definitions": {
-      "MinValue": {
-        "required": [
-          "value4"
-        ],
-        "properties": {
-          "value4": {
-            "type": "integer",
-            "minimum": 0
-          }
-        },
-        "additionalProperties": false,
-        "type": "object"
-      }
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/min-value",
+  "$ref": "#/$defs/MinValue",
+  "$defs": {
+    "MinValue": {
+      "properties": {
+        "value4": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "value4"
+      ]
     }
   }
+}

@@ -1,37 +1,37 @@
 {
-	"$schema": "http://json-schema.org/draft-04/schema#",
-	"$ref": "#/definitions/CustomMapOuter",
-	"definitions": {
-		"CustomMapOuter": {
-			"type": "object",
-			"required": [
-				"my_map"
-			],
-			"additionalProperties": false,
-			"properties": {
-				"my_map": {
-					"$schema": "http://json-schema.org/draft-04/schema#",
-					"$ref": "#/definitions/CustomMapType"
-				}
-			}
-		},
-		"CustomMapType": {
-			"items": {
-				"required": [
-					"key",
-					"value"
-				],
-				"properties": {
-					"key": {
-						"type": "string"
-					},
-					"value": {
-						"type": "string"
-					}
-				},
-				"type": "object"
-			},
-			"type": "array"
-		}
-	}
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/custom-map-outer",
+  "$ref": "#/$defs/CustomMapOuter",
+  "$defs": {
+    "CustomMapOuter": {
+      "properties": {
+        "my_map": {
+          "$ref": "#/$defs/CustomMapType"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "my_map"
+      ]
+    },
+    "CustomMapType": {
+      "items": {
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "required": [
+          "key",
+          "value"
+        ]
+      },
+      "type": "array"
+    }
+  }
 }

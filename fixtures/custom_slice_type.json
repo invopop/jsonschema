@@ -1,32 +1,32 @@
 {
-	"$schema": "http://json-schema.org/draft-04/schema#",
-	"$ref": "#/definitions/CustomSliceOuter",
-	"definitions": {
-		"CustomSliceOuter": {
-			"type": "object",
-			"required": [
-				"slice"
-			],
-			"additionalProperties": false,
-			"properties": {
-				"slice": {
-					"$schema": "http://json-schema.org/draft-04/schema#",
-					"$ref": "#/definitions/CustomSliceType"
-				}
-			}
-		},
-		"CustomSliceType": {
-			"oneOf": [
-				{
-					"type": "string"
-				},
-				{
-					"items": {
-						"type": "string"
-					},
-					"type": "array"
-				}
-			]
-		}
-	}
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/custom-slice-outer",
+  "$ref": "#/$defs/CustomSliceOuter",
+  "$defs": {
+    "CustomSliceOuter": {
+      "properties": {
+        "slice": {
+          "$ref": "#/$defs/CustomSliceType"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "slice"
+      ]
+    },
+    "CustomSliceType": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      ]
+    }
+  }
 }

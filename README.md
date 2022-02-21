@@ -1,8 +1,10 @@
 # Go JSON Schema Reflection
 
-[![CI](https://github.com/alecthomas/jsonschema/actions/workflows/ci.yml/badge.svg)](https://github.com/alecthomas/jsonschema/actions/workflows/ci.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/alecthomas/jsonschema)](https://goreportcard.com/report/github.com/alecthomas/jsonschema)
-[![GoDoc](https://godoc.org/github.com/alecthomas/jsonschema?status.svg)](https://godoc.org/github.com/alecthomas/jsonschema)
+[![Lint](https://github.com/invopop/jsonschema/actions/workflows/lint.yaml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/lint.yaml)
+[![Test Go](https://github.com/invopop/jsonschema/actions/workflows/test.yaml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/test.yaml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/invopop/jsonschema)](https://goreportcard.com/report/github.com/invopop/jsonschema)
+[![GoDoc](https://godoc.org/github.com/invopop/jsonschema?status.svg)](https://godoc.org/github.com/invopop/jsonschema)
+![Latest Tag](https://img.shields.io/github/v/tag/invopop/jsonschema)
 
 This package can be used to generate [JSON Schemas](http://json-schema.org/latest/json-schema-validation.html) from Go types through reflection.
 
@@ -10,6 +12,12 @@ This package can be used to generate [JSON Schemas](http://json-schema.org/lates
 - Supports json-schema features such as minLength, maxLength, pattern, format, etc.
 - Supports simple string and numeric enums.
 - Supports custom property fields via the `jsonschema_extras` struct tag.
+
+This repository is a fork of the original [jsonschema](https://github.com/alecthomas/jsonschema) by [@alecthomas](https://github.com/alecthomas). At [Invopop](https://invopop.com) we use jsonschema as a cornerstone in our [GOBL library](https://github.com/invopop/gobl), and wanted to be able to continue building and adding features without taking up Alec's time. There have been a few significant changes that probably mean this version is a not compatible with with Alec's:
+
+- The original was stuck on the draft-04 version of JSON Schema, we've now moved to the latest JSON Schema Draft 2020-12.
+- Schema IDs are added automatically from the current Go package's URL in order to be unique, and can be disabled with the `Anonymous` option.
+- Support for the `FullyQualifyTypeName` option has been removed. If you have conflicts, you should use multiple schema files with different IDs, set the `DoNotReference` option to true to hide definitions completely, or add your own naming strategy using the `Namer` property.
 
 ## Example
 
@@ -36,12 +44,50 @@ jsonschema.Reflect(&TestUser{})
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/TestUser",
-  "definitions": {
-    "TestUser": {
-      "type": "object",
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/SampleUser",
+  "$defs": {
+    "SampleUser": {
+      "oneOf": [
+        {
+          "required": ["birth_date"],
+          "title": "date"
+        },
+        {
+          "required": ["year_of_birth"],
+          "title": "year"
+        }
+      ],
       "properties": {
+        "id": {
+          "type": "integer"
+        },
+        "name": {
+          "type": "string",
+          "title": "the name",
+          "description": "The name of a friend",
+          "default": "alex",
+          "examples": ["joe", "lucy"]
+        },
+        "friends": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array",
+          "description": "The list of IDs, omitted when empty"
+        },
+        "tags": {
+          "type": "object",
+          "a": "b",
+          "foo": ["bar", "bar1"]
+        },
+        "birth_date": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "year_of_birth": {
+          "type": "string"
+        },
         "metadata": {
           "oneOf": [
             {
@@ -52,72 +98,19 @@ jsonschema.Reflect(&TestUser{})
             }
           ]
         },
-        "birth_date": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "friends": {
-          "type": "array",
-          "items": {
-            "type": "integer"
-          },
-          "description": "The list of IDs, omitted when empty"
-        },
-        "id": {
-          "type": "integer"
-        },
-        "name": {
-          "type": "string",
-          "title": "the name",
-          "description": "The name of a friend",
-          "default": "alex",
-          "examples": [
-            "joe",
-            "lucy"
-          ]
-        },
-        "tags": {
-          "type": "object",
-          "patternProperties": {
-            ".*": {
-              "additionalProperties": true
-            }
-          },
-          "a": "b",
-          "foo": [
-            "bar",
-            "bar1"
-          ]
-        },
         "fav_color": {
           "type": "string",
-          "enum": [
-            "red",
-            "green",
-            "blue"
-          ]
+          "enum": ["red", "green", "blue"]
         }
       },
       "additionalProperties": false,
-      "required": ["id", "name"],
-      "oneOf": [
-        {
-          "required": [
-            "birth_date"
-          ],
-          "title": "date"
-        },
-        {
-          "required": [
-            "year_of_birth"
-          ],
-          "title": "year"
-        }
-      ]
+      "type": "object",
+      "required": ["id", "name"]
     }
   }
 }
 ```
+
 ## Configurable behaviour
 
 The behaviour of the schema generator can be altered with parameters when a `jsonschema.Reflector`
@@ -125,7 +118,7 @@ instance is created.
 
 ### ExpandedStruct
 
-If set to ```true```, makes the top level struct not to reference itself in the definitions. But type passed should be a struct type.
+If set to `true`, makes the top level struct not to reference itself in the definitions. But type passed should be a struct type.
 
 eg.
 
@@ -152,18 +145,14 @@ will output:
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "required": [
-    "some_base_property",
-    "grand",
-    "SomeUntaggedBaseProperty"
-  ],
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "required": ["some_base_property", "grand", "SomeUntaggedBaseProperty"],
   "properties": {
     "SomeUntaggedBaseProperty": {
       "type": "boolean"
     },
     "grand": {
-      "$schema": "http://json-schema.org/draft-04/schema#",
+      "$schema": "http://json-schema.org/draft/2020-12/schema",
       "$ref": "#/definitions/GrandfatherType"
     },
     "some_base_property": {
@@ -171,11 +160,9 @@ will output:
     }
   },
   "type": "object",
-  "definitions": {
+  "$defs": {
     "GrandfatherType": {
-      "required": [
-        "family_name"
-      ],
+      "required": ["family_name"],
       "properties": {
         "family_name": {
           "type": "string"
@@ -198,6 +185,7 @@ flag, that will switch this behavior: `yaml:` tags will be preferred over
 `json:` tags.
 
 With `PreferYAMLSchema: true`, the following struct:
+
 ```go
 type Person struct {
 	FirstName string `json:"FirstName" yaml:"first_name"`
@@ -205,11 +193,12 @@ type Person struct {
 ```
 
 would result in this schema:
+
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/TestYamlAndJson",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/TestYamlAndJson",
+  "$defs": {
     "Person": {
       "required": ["first_name"],
       "properties": {
@@ -225,11 +214,12 @@ would result in this schema:
 ```
 
 whereas without the flag one obtains:
+
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/TestYamlAndJson",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/TestYamlAndJson",
+  "$defs": {
     "Person": {
       "required": ["FirstName"],
       "properties": {
@@ -266,7 +256,7 @@ To get the comments provided into your JSON schema, use a regular `Reflector` an
 
 ```go
 r := new(Reflector)
-if err := r.AddGoComments("github.com/alecthomas/jsonschema", "./"); err != nil {
+if err := r.AddGoComments("github.com/invopop/jsonschema", "./"); err != nil {
   // deal with error
 }
 s := r.Reflect(&User{})
@@ -277,13 +267,11 @@ Expect the results to be similar to:
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/User",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/User",
+  "$defs": {
     "User": {
-      "required": [
-        "id",
-      ],
+      "required": ["id"],
       "properties": {
         "id": {
           "type": "integer",
@@ -291,7 +279,7 @@ Expect the results to be similar to:
         },
         "name": {
           "type": "string",
-          "description": "Name of the user",
+          "description": "Name of the user"
         }
       },
       "additionalProperties": false,
@@ -306,7 +294,7 @@ Expect the results to be similar to:
 
 Sometimes it can be useful to have custom JSON Marshal and Unmarshal methods in your structs that automatically convert for example a string into an object.
 
-To override auto-generating an object type for your type, implement the `JSONSchemaType() *Type` method and whatever is defined will be provided in the schema definitions.
+To override auto-generating an object type for your type, implement the `JSONSchema() *Type` method and whatever is defined will be provided in the schema definitions.
 
 Take the following simplified example of a `CompactDate` that only includes the Year and Month:
 
@@ -340,7 +328,7 @@ func (d *CompactDate) MarshalJSON() ([]byte, error) {
   return buf.Bytes(), nil
 }
 
-func (CompactDate) JSONSchemaType() *Type {
+func (CompactDate) JSONSchema() *Type {
 	return &Type{
 		Type:        "string",
 		Title:       "Compact Date",
@@ -354,9 +342,9 @@ The resulting schema generated for this struct would look like:
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/CompactDate",
-  "definitions": {
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/CompactDate",
+  "$defs": {
     "CompactDate": {
       "pattern": "^[0-9]{4}-[0-1][0-9]$",
       "type": "string",
@@ -366,4 +354,3 @@ The resulting schema generated for this struct would look like:
   }
 }
 ```
-

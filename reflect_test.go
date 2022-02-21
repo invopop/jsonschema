@@ -2,6 +2,7 @@ package jsonschema
 
 import (
 	"encoding/json"
+	"flag"
 	"io/ioutil"
 	"net"
 	"net/url"
@@ -13,10 +14,14 @@ import (
 
 	"github.com/iancoleman/orderedmap"
 
-	"github.com/alecthomas/jsonschema/examples"
+	"github.com/invopop/jsonschema/examples"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var updateFixtures = flag.Bool("update", false, "set to update fixtures")
+var compareFixtures = flag.Bool("compare", false, "output failed fixtures with .out.json")
 
 type GrandfatherType struct {
 	FamilyName string `json:"family_name" jsonschema:"required"`
@@ -62,7 +67,8 @@ type TestUser struct {
 	Name     string                 `json:"name" jsonschema:"required,minLength=1,maxLength=20,pattern=.*,description=this is a property,title=the name,example=joe,example=lucy,default=alex,readOnly=true"`
 	Password string                 `json:"password" jsonschema:"writeOnly=true"`
 	Friends  []int                  `json:"friends,omitempty" jsonschema_description:"list of IDs, omitted when empty"`
-	Tags     map[string]interface{} `json:"tags,omitempty"`
+	Tags     map[string]string      `json:"tags,omitempty"`
+	Options  map[string]interface{} `json:"options,omitempty"`
 
 	TestFlag       bool
 	IgnoredCounter int `json:"-"`
@@ -95,7 +101,8 @@ type TestUser struct {
 	Offsets    []float64 `json:"offsets,omitempty" jsonschema:"enum=1.570796,enum=3.141592,enum=6.283185"`
 
 	// Test for raw JSON
-	Raw json.RawMessage `json:"raw"`
+	Anything interface{}     `json:"anything,omitempty"`
+	Raw      json.RawMessage `json:"raw"`
 }
 
 type CustomTime time.Time
@@ -110,8 +117,8 @@ type CustomTypeFieldWithInterface struct {
 	CreatedAt CustomTimeWithInterface
 }
 
-func (CustomTimeWithInterface) JSONSchemaType() *Type {
-	return &Type{
+func (CustomTimeWithInterface) JSONSchema() *Schema {
+	return &Schema{
 		Type:   "string",
 		Format: "date-time",
 	}
@@ -165,8 +172,12 @@ type CompactDate struct {
 	Month int
 }
 
-func (CompactDate) JSONSchemaType() *Type {
-	return &Type{
+type UserWithAnchor struct {
+	Name string `json:"name" jsonschema:"anchor=Name"`
+}
+
+func (CompactDate) JSONSchema() *Schema {
+	return &Schema{
 		Type:        "string",
 		Title:       "Compact Date",
 		Description: "Short date that only includes year and month",
@@ -196,19 +207,29 @@ func (TestYamlAndJson2) GetFieldDocString(fieldName string) string {
 	}
 }
 
+type LookupName struct {
+	Given   string `json:"first"`
+	Surname string `json:"surname"`
+}
+
+type LookupUser struct {
+	Name  *LookupName `json:"name"`
+	Alias string      `json:"alias,omitempty"`
+}
+
 type CustomSliceOuter struct {
 	Slice CustomSliceType `json:"slice"`
 }
 
 type CustomSliceType []string
 
-func (CustomSliceType) JSONSchemaType() *Type {
-	return &Type{
-		OneOf: []*Type{{
+func (CustomSliceType) JSONSchema() *Schema {
+	return &Schema{
+		OneOf: []*Schema{{
 			Type: "string",
 		}, {
 			Type: "array",
-			Items: &Type{
+			Items: &Schema{
 				Type: "string",
 			},
 		}},
@@ -217,17 +238,17 @@ func (CustomSliceType) JSONSchemaType() *Type {
 
 type CustomMapType map[string]string
 
-func (CustomMapType) JSONSchemaType() *Type {
+func (CustomMapType) JSONSchema() *Schema {
 	properties := orderedmap.New()
-	properties.Set("key", &Type{
+	properties.Set("key", &Schema{
 		Type: "string",
 	})
-	properties.Set("value", &Type{
+	properties.Set("value", &Schema{
 		Type: "string",
 	})
-	return &Type{
+	return &Schema{
 		Type: "array",
-		Items: &Type{
+		Items: &Schema{
 			Type:       "object",
 			Properties: properties,
 			Required:   []string{"key", "value"},
@@ -243,25 +264,51 @@ type PatternTest struct {
 	WithPattern string `json:"with_pattern" jsonschema:"minLength=1,pattern=[0-9]{1\\,4},maxLength=50"`
 }
 
+func TestReflector(t *testing.T) {
+	r := new(Reflector)
+	s := "http://example.com/schema"
+	r.SetBaseSchemaID(s)
+	assert.EqualValues(t, s, r.BaseSchemaID)
+}
+
+func TestReflectFromType(t *testing.T) {
+	r := new(Reflector)
+	tu := new(TestUser)
+	typ := reflect.TypeOf(tu)
+
+	s := r.ReflectFromType(typ)
+	assert.EqualValues(t, "https://github.com/invopop/jsonschema/test-user", s.ID)
+
+	x := struct {
+		Test string
+	}{
+		Test: "foo",
+	}
+	typ = reflect.TypeOf(x)
+	s = r.Reflect(typ)
+	assert.Empty(t, s.ID)
+}
+
 func TestSchemaGeneration(t *testing.T) {
 	tests := []struct {
 		typ       interface{}
 		reflector *Reflector
 		fixture   string
 	}{
-		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/oneof.json"},
-		{&TestUser{}, &Reflector{}, "fixtures/defaults.json"},
+		{&TestUser{}, &Reflector{}, "fixtures/test_user.json"},
+		{&UserWithAnchor{}, &Reflector{}, "fixtures/user_with_anchor.json"},
+		{&TestUser{}, &Reflector{AssignAnchor: true}, "fixtures/test_user_assign_anchor.json"},
 		{&TestUser{}, &Reflector{AllowAdditionalProperties: true}, "fixtures/allow_additional_props.json"},
 		{&TestUser{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/required_from_jsontags.json"},
 		{&TestUser{}, &Reflector{ExpandedStruct: true}, "fixtures/defaults_expanded_toplevel.json"},
 		{&TestUser{}, &Reflector{IgnoredTypes: []interface{}{GrandfatherType{}}}, "fixtures/ignore_type.json"},
 		{&TestUser{}, &Reflector{DoNotReference: true}, "fixtures/no_reference.json"},
-		{&TestUser{}, &Reflector{FullyQualifyTypeNames: true}, "fixtures/fully_qualified.json"},
-		{&TestUser{}, &Reflector{DoNotReference: true, FullyQualifyTypeNames: true}, "fixtures/no_ref_qual_types.json"},
+		{&TestUser{}, &Reflector{DoNotReference: true, AssignAnchor: true}, "fixtures/no_reference_anchor.json"},
+		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/oneof.json"},
 		{&CustomTypeField{}, &Reflector{
-			TypeMapper: func(i reflect.Type) *Type {
+			Mapper: func(i reflect.Type) *Schema {
 				if i == reflect.TypeOf(CustomTime{}) {
-					return &Type{
+					return &Schema{
 						Type:   "string",
 						Format: "date-time",
 					}
@@ -269,8 +316,35 @@ func TestSchemaGeneration(t *testing.T) {
 				return nil
 			},
 		}, "fixtures/custom_type.json"},
-		{&TestUser{}, &Reflector{DoNotReference: true, FullyQualifyTypeNames: true}, "fixtures/no_ref_qual_types.json"},
+		{LookupUser{}, &Reflector{BaseSchemaID: "https://example.com/schemas"}, "fixtures/base_schema_id.json"},
+		{LookupUser{}, &Reflector{
+			BaseSchemaID: "https://example.com/schemas",
+			Lookup: func(i reflect.Type) ID {
+				switch i {
+				case reflect.TypeOf(LookupUser{}):
+					return ID("https://example.com/schemas/lookup-user")
+				case reflect.TypeOf(LookupName{}):
+					return ID("https://example.com/schemas/lookup-name")
+				}
+				return EmptyID
+			},
+		}, "fixtures/lookup.json"},
+		{&LookupUser{}, &Reflector{
+			BaseSchemaID:   "https://example.com/schemas",
+			ExpandedStruct: true,
+			AssignAnchor:   true,
+			Lookup: func(i reflect.Type) ID {
+				switch i {
+				case reflect.TypeOf(LookupUser{}):
+					return ID("https://example.com/schemas/lookup-user")
+				case reflect.TypeOf(LookupName{}):
+					return ID("https://example.com/schemas/lookup-name")
+				}
+				return EmptyID
+			},
+		}, "fixtures/lookup_expanded.json"},
 		{&Outer{}, &Reflector{ExpandedStruct: true, DoNotReference: true, YAMLEmbeddedStructs: true}, "fixtures/disable_inlining_embedded.json"},
+		{&Outer{}, &Reflector{ExpandedStruct: true, DoNotReference: true, YAMLEmbeddedStructs: true, AssignAnchor: true}, "fixtures/disable_inlining_embedded_anchored.json"},
 		{&MinValue{}, &Reflector{}, "fixtures/schema_with_minimum.json"},
 		{&TestNullable{}, &Reflector{}, "fixtures/nullable.json"},
 		{&TestYamlInline{}, &Reflector{YAMLEmbeddedStructs: true}, "fixtures/yaml_inline_embed.json"},
@@ -301,18 +375,9 @@ func TestSchemaGeneration(t *testing.T) {
 	for _, tt := range tests {
 		name := strings.TrimSuffix(filepath.Base(tt.fixture), ".json")
 		t.Run(name, func(t *testing.T) {
-			f, err := ioutil.ReadFile(tt.fixture)
-			require.NoError(t, err)
-
-			actualSchema := tt.reflector.Reflect(tt.typ)
-			expectedSchema := &Schema{}
-
-			err = json.Unmarshal(f, expectedSchema)
-			require.NoError(t, err)
-
-			expectedJSON, _ := json.MarshalIndent(expectedSchema, "", "  ")
-			actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ")
-			require.Equal(t, string(expectedJSON), string(actualJSON))
+			compareSchemaOutput(t,
+				tt.fixture, tt.reflector, tt.typ,
+			)
 		})
 	}
 }
@@ -320,21 +385,33 @@ func TestSchemaGeneration(t *testing.T) {
 func prepareCommentReflector(t *testing.T) *Reflector {
 	t.Helper()
 	r := new(Reflector)
-	err := r.AddGoComments("github.com/alecthomas/jsonschema", "./examples")
+	err := r.AddGoComments("github.com/invopop/jsonschema", "./examples")
 	require.NoError(t, err, "did not expect error while adding comments")
 	return r
 }
 
 func TestBaselineUnmarshal(t *testing.T) {
-	expectedJSON, err := ioutil.ReadFile("fixtures/defaults.json")
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/test_user.json", r, &TestUser{})
+}
+
+func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) {
+	t.Helper()
+	expectedJSON, err := ioutil.ReadFile(f)
 	require.NoError(t, err)
 
-	reflector := &Reflector{}
-	actualSchema := reflector.Reflect(&TestUser{})
-
+	actualSchema := r.Reflect(obj)
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ")
 
-	require.Equal(t, strings.ReplaceAll(string(expectedJSON), `\/`, "/"), string(actualJSON))
+	if *updateFixtures {
+		_ = ioutil.WriteFile(f, actualJSON, 0600)
+	}
+
+	if !assert.JSONEq(t, string(expectedJSON), string(actualJSON)) {
+		if *compareFixtures {
+			_ = ioutil.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
+		}
+	}
 }
 
 func TestSplitOnUnescapedCommas(t *testing.T) {

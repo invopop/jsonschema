@@ -1,6 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/invopop/jsonschema/test-user",
+  "$anchor": "TestUser",
   "properties": {
     "some_base_property": {
       "type": "integer"
@@ -9,6 +10,7 @@
       "type": "integer"
     },
     "grand": {
+      "$anchor": "GrandfatherType",
       "properties": {
         "family_name": {
           "type": "string"
