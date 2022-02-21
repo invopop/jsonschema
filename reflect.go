@@ -11,7 +11,6 @@ import (
 	"net"
 	"net/url"
 	"reflect"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -891,33 +890,26 @@ func (r *Reflector) typeName(t reflect.Type) string {
 	return t.Name()
 }
 
-var unescapedCommas = regexp.MustCompile(`[^\\],`)
-
 // Split on commas that are not preceded by `\`.
 // This way, we prevent splitting regexes
 func splitOnUnescapedCommas(tagString string) []string {
-	commaIndices := unescapedCommas.FindAllStringIndex(tagString, -1)
-
-	if commaIndices == nil {
-		return []string{tagString}
-	}
-
 	ret := make([]string, 0)
-	ret = append(ret, tagString[0:commaIndices[0][1]-1])
-	for i := 0; i < len(commaIndices); i++ {
-		leftIndex := commaIndices[i][1]
-		var rightIndex int
-		if i == len(commaIndices)-1 {
-			rightIndex = len(tagString)
-		} else {
-			rightIndex = commaIndices[i+1][1] - 1
+	separated := strings.Split(tagString, ",")
+	ret = append(ret, separated[0])
+	i := 0
+	for _, nextTag := range separated[1:] {
+		if len(ret[i]) == 0 {
+			ret = append(ret, nextTag)
+			i++
+			continue
 		}
 
-		// After splitting, we can remove the `\` characters used for escaping
-		nextTag := tagString[leftIndex:rightIndex]
-		nextTag = strings.ReplaceAll(nextTag, "\\,", ",")
-
-		ret = append(ret, nextTag)
+		if ret[i][len(ret[i])-1] == '\\' {
+			ret[i] = ret[i][:len(ret[i])-1] + "," + nextTag
+		} else {
+			ret = append(ret, nextTag)
+			i++
+		}
 	}
 
 	return ret

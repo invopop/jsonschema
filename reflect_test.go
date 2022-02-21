@@ -345,6 +345,8 @@ func TestSplitOnUnescapedCommas(t *testing.T) {
 		{`Hello,this,is\,a\,string,haha`, []string{`Hello`, `this`, `is,a,string`, `haha`}},
 		{`hello,no\\,split`, []string{`hello`, `no\,split`}},
 		{`string without commas`, []string{`string without commas`}},
+		{`ünicode,𐂄,Ж\,П,ᠳ`, []string{`ünicode`, `𐂄`, `Ж,П`, `ᠳ`}},
+		{`empty,,tag`, []string{`empty`, ``, `tag`}},
 	}
 
 	for _, test := range tests {
