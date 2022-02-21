@@ -56,9 +56,12 @@
         "tags": {
           "patternProperties": {
             ".*": {
-              "additionalProperties": true
+              "type": "string"
             }
           },
+          "type": "object"
+        },
+        "options": {
           "type": "object"
         },
         "TestFlag": {
@@ -170,6 +173,7 @@
           },
           "type": "array"
         },
+        "anything": true,
         "raw": true
       },
       "additionalProperties": false,

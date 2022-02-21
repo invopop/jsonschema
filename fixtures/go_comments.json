@@ -58,11 +58,6 @@
           "description": "list of IDs, omitted when empty"
         },
         "tags": {
-          "patternProperties": {
-            ".*": {
-              "additionalProperties": true
-            }
-          },
           "type": "object"
         },
         "pets": {

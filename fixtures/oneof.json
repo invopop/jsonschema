@@ -34,8 +34,7 @@
             {
               "type": "array"
             }
-          ],
-          "additionalProperties": true
+          ]
         },
         "child4": {
           "type": "string"
@@ -75,8 +74,7 @@
             {
               "type": "array"
             }
-          ],
-          "additionalProperties": true
+          ]
         },
         "field4": {
           "type": "string"

@@ -133,7 +133,7 @@ func ReflectFromType(t reflect.Type) *Schema {
 // A Reflector reflects values into a Schema.
 type Reflector struct {
 	// AllowAdditionalProperties will cause the Reflector to generate a schema
-	// with additionalProperties to 'true' for all struct types. This means
+	// without additionalProperties set to 'false' for all struct types. This means
 	// the presence of additional keys in JSON objects will not cause validation
 	// to fail. Note said additional keys will simply be dropped when the
 	// validated JSON is unmarshaled.
@@ -211,13 +211,12 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	definitions := Definitions{}
 	if r.ExpandedStruct {
 		st := &Schema{
-			Version:              Version,
-			Type:                 "object",
-			Properties:           orderedmap.New(),
-			AdditionalProperties: FalseSchema,
+			Version:    Version,
+			Type:       "object",
+			Properties: orderedmap.New(),
 		}
-		if r.AllowAdditionalProperties {
-			st.AdditionalProperties = TrueSchema
+		if !r.AllowAdditionalProperties {
+			st.AdditionalProperties = FalseSchema
 		}
 		r.reflectStructFields(st, definitions, t)
 		r.reflectStruct(definitions, t)
@@ -318,19 +317,25 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 			return rt
 		}
 
-		rt := &Schema{
-			Type: "object",
-			PatternProperties: map[string]*Schema{
-				".*": r.reflectTypeToSchema(definitions, t.Elem()),
-			},
+		var rt *Schema
+		if t.Elem().Kind() == reflect.Interface {
+			rt = &Schema{
+				Type: "object",
+			}
+		} else {
+			rt = &Schema{
+				Type: "object",
+				PatternProperties: map[string]*Schema{
+					".*": r.reflectTypeToSchema(definitions, t.Elem()),
+				},
+			}
 		}
-		delete(rt.PatternProperties, "additionalProperties")
 		return rt
 
 	case reflect.Slice, reflect.Array:
 		returnType := &Schema{}
 		if t == rawMessageType {
-			return TrueSchema
+			return &Schema{}
 		}
 		if t.Kind() == reflect.Array {
 			returnType.MinItems = t.Len()
@@ -347,9 +352,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		return returnType
 
 	case reflect.Interface:
-		return &Schema{
-			AdditionalProperties: TrueSchema,
-		}
+		return &Schema{} // empty
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
@@ -420,13 +423,12 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type) *Sche
 	}
 
 	st := &Schema{
-		Type:                 "object",
-		Properties:           orderedmap.New(),
-		AdditionalProperties: FalseSchema,
-		Description:          r.lookupComment(t, ""),
+		Type:        "object",
+		Properties:  orderedmap.New(),
+		Description: r.lookupComment(t, ""),
 	}
-	if r.AllowAdditionalProperties {
-		st.AdditionalProperties = TrueSchema
+	if !r.AllowAdditionalProperties {
+		st.AdditionalProperties = FalseSchema
 	}
 	definitions[r.typeName(t)] = st
 	r.reflectStructFields(st, definitions, t)
@@ -884,6 +886,10 @@ func (t *Schema) MarshalJSON() ([]byte, error) {
 		} else {
 			return []byte("false"), nil
 		}
+	}
+	if reflect.DeepEqual(&Schema{}, t) {
+		// Don't bother returning empty schemas
+		return []byte("true"), nil
 	}
 	type Schema_ Schema
 	b, err := json.Marshal((*Schema_)(t))
