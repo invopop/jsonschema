@@ -2,6 +2,7 @@ package jsonschema
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"strings"
 )
@@ -16,7 +17,7 @@ type ID string
 func (id ID) Validate() error {
 	u, err := url.Parse(id.String())
 	if err != nil {
-		return errors.New("invalid URL")
+		return fmt.Errorf("invalid URL: %w", err)
 	}
 	if u.Hostname() == "" {
 		return errors.New("missing hostname")
@@ -33,7 +34,7 @@ func (id ID) Validate() error {
 	return nil
 }
 
-// Anchor either adds or replaces the anchor part of the schema URI.
+// Anchor sets the anchor part of the schema URI.
 func (id ID) Anchor(name string) ID {
 	b := id.Base()
 	return ID(b.String() + "#" + name)
