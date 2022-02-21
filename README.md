@@ -1,7 +1,7 @@
 # Go JSON Schema Reflection
 
-[![Lint](https://github.com/invopop/jsonschema/actions/workflows/lint.yml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/lint.yml)
-[![Test](https://github.com/invopop/jsonschema/actions/workflows/test.yml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/test.yml)
+[![Lint](https://github.com/invopop/jsonschema/actions/workflows/lint.yaml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/lint.yaml)
+[![Test Go](https://github.com/invopop/jsonschema/actions/workflows/test.yaml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/test.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/invopop/jsonschema)](https://goreportcard.com/report/github.com/invopop/jsonschema)
 [![GoDoc](https://godoc.org/github.com/invopop/jsonschema?status.svg)](https://godoc.org/github.com/invopop/jsonschema)
 ![Latest Tag](https://badgen.net/github/tag/invopop/jsonschema)
