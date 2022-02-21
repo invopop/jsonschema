@@ -4,7 +4,7 @@
 [![Test Go](https://github.com/invopop/jsonschema/actions/workflows/test.yaml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/test.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/invopop/jsonschema)](https://goreportcard.com/report/github.com/invopop/jsonschema)
 [![GoDoc](https://godoc.org/github.com/invopop/jsonschema?status.svg)](https://godoc.org/github.com/invopop/jsonschema)
-![Latest Tag](https://badgen.net/github/tag/invopop/jsonschema)
+![Latest Tag](https://img.shields.io/github/v/tag/invopop/jsonschema)
 
 This package can be used to generate [JSON Schemas](http://json-schema.org/latest/json-schema-validation.html) from Go types through reflection.
 
