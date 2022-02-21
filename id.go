@@ -1,10 +1,37 @@
 package jsonschema
 
-import "strings"
+import (
+	"errors"
+	"net/url"
+	"strings"
+)
 
 // ID represents a Schema ID type which should always be a URI.
 // See draft-bhutton-json-schema-00 section 8.2.1
 type ID string
+
+// Validate is used to check if the ID looks like a proper schema.
+// This is done by parsing the ID as a URL and checking it has all the
+// relevant parts.
+func (id ID) Validate() error {
+	u, err := url.Parse(id.String())
+	if err != nil {
+		return errors.New("invalid URL")
+	}
+	if u.Hostname() == "" {
+		return errors.New("missing hostname")
+	}
+	if !strings.Contains(u.Hostname(), ".") {
+		return errors.New("hostname does not look valid")
+	}
+	if u.Path == "" {
+		return errors.New("path is expected")
+	}
+	if u.Scheme != "https" && u.Scheme != "http" {
+		return errors.New("unexpected schema")
+	}
+	return nil
+}
 
 // Anchor either adds or replaces the anchor part of the schema URI.
 func (id ID) Anchor(name string) ID {

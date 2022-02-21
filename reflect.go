@@ -229,10 +229,6 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 		t = t.Elem() // re-assign from pointer
 	}
 
-	// Set default base schema ID
-	if r.BaseSchemaID == "" {
-		r.BaseSchemaID = ID("https://" + t.PkgPath())
-	}
 	name := r.typeName(t)
 	definitions := Definitions{}
 
@@ -244,9 +240,22 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	} else {
 		*s = *bs
 	}
+
+	// Attempt to set the schema ID
 	if !r.Anonymous {
-		s.ID = r.BaseSchemaID.Add(ToSnakeCase(name))
+		baseSchemaID := r.BaseSchemaID
+		if baseSchemaID == "" {
+			id := ID("https://" + t.PkgPath())
+			if err := id.Validate(); err == nil {
+				// it's okay to silently ignore URL errors
+				baseSchemaID = id
+			}
+		}
+		if baseSchemaID != "" {
+			s.ID = baseSchemaID.Add(ToSnakeCase(name))
+		}
 	}
+
 	s.Version = Version
 	if !r.DoNotReference {
 		s.Definitions = definitions

@@ -257,6 +257,25 @@ func TestReflector(t *testing.T) {
 	assert.EqualValues(t, s, r.BaseSchemaID)
 }
 
+func TestReflectFromType(t *testing.T) {
+	r := new(Reflector)
+	tu := new(TestUser)
+	typ := reflect.TypeOf(tu)
+
+	s := r.ReflectFromType(typ)
+	assert.EqualValues(t, "https://github.com/invopop/jsonschema/test-user", s.ID)
+
+	x := struct {
+		Test string
+	}{
+		Test: "foo",
+	}
+	//x := time.Now()
+	typ = reflect.TypeOf(x)
+	s = r.Reflect(typ)
+	assert.Empty(t, s.ID)
+}
+
 func TestSchemaGeneration(t *testing.T) {
 	tests := []struct {
 		typ       interface{}
