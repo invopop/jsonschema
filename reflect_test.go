@@ -314,7 +314,6 @@ func TestSchemaGeneration(t *testing.T) {
 		}, "fixtures/custom_type.json"},
 		{LookupUser{}, &Reflector{BaseSchemaID: "https://example.com/schemas"}, "fixtures/base_schema_id.json"},
 		{LookupUser{}, &Reflector{
-			BaseSchemaID: "https://example.com/schemas",
 			Lookup: func(i reflect.Type) ID {
 				switch i {
 				case reflect.TypeOf(LookupUser{}):

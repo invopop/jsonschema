@@ -249,7 +249,7 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	}
 
 	// Attempt to set the schema ID
-	if !r.Anonymous {
+	if !r.Anonymous && s.ID == EmptyID {
 		baseSchemaID := r.BaseSchemaID
 		if baseSchemaID == EmptyID {
 			id := ID("https://" + t.PkgPath())
