@@ -1,7 +1,8 @@
-{
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/PatternTest",
-  "definitions": {
+{ 
+  "$id": "https://github.com/invopop/jsonschema/pattern-test",
+  "$ref": "#/$defs/PatternTest",
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$defs": {
     "PatternTest": {
       "required": [
         "with_pattern"

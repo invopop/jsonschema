@@ -605,7 +605,7 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	t.Description = f.Tag.Get("jsonschema_description")
 
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
-	t.genericKeywords(tags, parentType, propertyName)
+	t.genericKeywords(tags, parent, propertyName)
 
 	switch t.Type {
 	case "string":
