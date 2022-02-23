@@ -10,7 +10,7 @@
         },
         "children": {
           "items": {
-            "$ref": "https://example.com/schemas/recursive"
+            "$ref": "#/$defs/RecursiveExample"
           },
           "type": "array"
         }

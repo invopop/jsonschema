@@ -374,15 +374,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&CustomTypeFieldWithInterface{}, &Reflector{}, "fixtures/custom_type_with_interface.json"},
 		{&PatternTest{}, &Reflector{}, "fixtures/commas_in_pattern.json"},
 		{&examples.User{}, prepareCommentReflector(t), "fixtures/go_comments.json"},
-		{&RecursiveExample{}, &Reflector{
-			Lookup: func(i reflect.Type) ID {
-				switch i {
-				case reflect.TypeOf(RecursiveExample{}):
-					return ID("https://example.com/schemas/recursive")
-				}
-				return EmptyID
-			},
-		}, "fixtures/recursive.json"},
+		{&RecursiveExample{}, &Reflector{}, "fixtures/recursive.json"},
 	}
 
 	for _, tt := range tests {
