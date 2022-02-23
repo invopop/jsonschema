@@ -603,8 +603,10 @@ func (r *Reflector) lookupID(t reflect.Type) ID {
 
 func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, propertyName string) {
 	t.Description = f.Tag.Get("jsonschema_description")
-	tags := strings.Split(f.Tag.Get("jsonschema"), ",")
+
+	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
 	t.genericKeywords(tags, parent, propertyName)
+
 	switch t.Type {
 	case "string":
 		t.stringKeywords(tags)
@@ -999,6 +1001,31 @@ func (r *Reflector) typeName(t reflect.Type) string {
 		}
 	}
 	return t.Name()
+}
+
+// Split on commas that are not preceded by `\`.
+// This way, we prevent splitting regexes
+func splitOnUnescapedCommas(tagString string) []string {
+	ret := make([]string, 0)
+	separated := strings.Split(tagString, ",")
+	ret = append(ret, separated[0])
+	i := 0
+	for _, nextTag := range separated[1:] {
+		if len(ret[i]) == 0 {
+			ret = append(ret, nextTag)
+			i++
+			continue
+		}
+
+		if ret[i][len(ret[i])-1] == '\\' {
+			ret[i] = ret[i][:len(ret[i])-1] + "," + nextTag
+		} else {
+			ret = append(ret, nextTag)
+			i++
+		}
+	}
+
+	return ret
 }
 
 func fullyQualifiedTypeName(t reflect.Type) string {

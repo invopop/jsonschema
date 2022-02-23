@@ -260,6 +260,10 @@ type CustomMapOuter struct {
 	MyMap CustomMapType `json:"my_map"`
 }
 
+type PatternTest struct {
+	WithPattern string `json:"with_pattern" jsonschema:"minLength=1,pattern=[0-9]{1\\,4},maxLength=50"`
+}
+
 func TestReflector(t *testing.T) {
 	r := new(Reflector)
 	s := "http://example.com/schema"
@@ -364,6 +368,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&CustomSliceOuter{}, &Reflector{}, "fixtures/custom_slice_type.json"},
 		{&CustomMapOuter{}, &Reflector{}, "fixtures/custom_map_type.json"},
 		{&CustomTypeFieldWithInterface{}, &Reflector{}, "fixtures/custom_type_with_interface.json"},
+		{&PatternTest{}, &Reflector{}, "fixtures/commas_in_pattern.json"},
 		{&examples.User{}, prepareCommentReflector(t), "fixtures/go_comments.json"},
 	}
 
@@ -406,5 +411,23 @@ func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) 
 		if *compareFixtures {
 			_ = ioutil.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
 		}
+	}
+}
+
+func TestSplitOnUnescapedCommas(t *testing.T) {
+	tests := []struct {
+		strToSplit string
+		expected   []string
+	}{
+		{`Hello,this,is\,a\,string,haha`, []string{`Hello`, `this`, `is,a,string`, `haha`}},
+		{`hello,no\\,split`, []string{`hello`, `no\,split`}},
+		{`string without commas`, []string{`string without commas`}},
+		{`ünicode,𐂄,Ж\,П,ᠳ`, []string{`ünicode`, `𐂄`, `Ж,П`, `ᠳ`}},
+		{`empty,,tag`, []string{`empty`, ``, `tag`}},
+	}
+
+	for _, test := range tests {
+		actual := splitOnUnescapedCommas(test.strToSplit)
+		require.Equal(t, test.expected, actual)
 	}
 }

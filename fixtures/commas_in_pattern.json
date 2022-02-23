@@ -1,0 +1,22 @@
+{ 
+  "$id": "https://github.com/invopop/jsonschema/pattern-test",
+  "$ref": "#/$defs/PatternTest",
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "PatternTest": {
+      "required": [
+        "with_pattern"
+      ],
+      "properties": {
+        "with_pattern": {
+          "maxLength": 50,
+          "minLength": 1,
+          "pattern": "[0-9]{1,4}",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}
