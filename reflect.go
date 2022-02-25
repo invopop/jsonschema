@@ -461,8 +461,9 @@ func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type)
 }
 
 func (r *Reflector) reflectOrRefStruct(definitions Definitions, t reflect.Type) *Schema {
-	st := r.reflectStruct(definitions, t)
-	r.addDefinition(definitions, t, st)
+	st := new(Schema)
+	r.addDefinition(definitions, t, st) // makes sure we have a re-usable reference already
+	r.reflectStruct(definitions, t, st)
 	if r.DoNotReference {
 		return st
 	} else {
@@ -471,12 +472,10 @@ func (r *Reflector) reflectOrRefStruct(definitions Definitions, t reflect.Type) 
 }
 
 // Reflects a struct to a JSON Schema type.
-func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type) *Schema {
-	s := &Schema{
-		Type:        "object",
-		Properties:  orderedmap.New(),
-		Description: r.lookupComment(t, ""),
-	}
+func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Schema) {
+	s.Type = "object"
+	s.Properties = orderedmap.New()
+	s.Description = r.lookupComment(t, "")
 	if r.AssignAnchor {
 		s.Anchor = t.Name()
 	}
@@ -494,8 +493,6 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type) *Sche
 	if !ignored {
 		r.reflectStructFields(s, definitions, t)
 	}
-
-	return s
 }
 
 func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t reflect.Type) {

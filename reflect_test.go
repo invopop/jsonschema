@@ -264,6 +264,11 @@ type PatternTest struct {
 	WithPattern string `json:"with_pattern" jsonschema:"minLength=1,pattern=[0-9]{1\\,4},maxLength=50"`
 }
 
+type RecursiveExample struct {
+	Text  string              `json:"text"`
+	Child []*RecursiveExample `json:"children,omitempty"`
+}
+
 func TestReflector(t *testing.T) {
 	r := new(Reflector)
 	s := "http://example.com/schema"
@@ -369,6 +374,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&CustomTypeFieldWithInterface{}, &Reflector{}, "fixtures/custom_type_with_interface.json"},
 		{&PatternTest{}, &Reflector{}, "fixtures/commas_in_pattern.json"},
 		{&examples.User{}, prepareCommentReflector(t), "fixtures/go_comments.json"},
+		{&RecursiveExample{}, &Reflector{}, "fixtures/recursive.json"},
 	}
 
 	for _, tt := range tests {
