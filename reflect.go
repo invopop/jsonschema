@@ -204,6 +204,11 @@ type Reflector struct {
 	// provided by the reflect package.
 	Namer func(reflect.Type) string
 
+	// KeyNamer allows customizing of key names.
+	// The default is to use the key's name as is, or the json (or yaml) tag if present.
+	// If a json or yaml tag is present, KeyNamer will receive the tag's name as an argument, not the original key name.
+	KeyNamer func(string) string
+
 	// AdditionalFields allows adding structfields for a given type
 	AdditionalFields func(reflect.Type) []reflect.StructField
 
@@ -937,6 +942,10 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 	if yamlExist && inlineYAMLTags(yamlTagsList) {
 		name = ""
 		embed = true
+	}
+
+	if r.KeyNamer != nil {
+		name = r.KeyNamer(name)
 	}
 
 	return name, embed, required, nullable
