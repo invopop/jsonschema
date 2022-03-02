@@ -290,6 +290,62 @@ Expect the results to be similar to:
 }
 ```
 
+### Custom Key Naming
+
+In some situations, the keys actually used to write files are different from Go structs'.
+
+This is often the case when writing a configuration file to YAML or JSON from a Go struct, or when returning a JSON response for a Web API: APIs typically use snake_case, while Go uses PascalCase.
+
+You can pass a `func(string) string` function to `Reflector`'s `KeyNamer` option to map Go field names to JSON key names and reflect the aforementionned transformations, without having to specify `json:"..."` on every struct field.
+
+For example, consider the following struct
+
+```go
+type User struct {
+  GivenName       string
+  PasswordSalted  []byte `json:"salted_password"`
+}
+```
+
+We can transform field names to snake_case in the generated JSON schema:
+
+```go
+r := new(jsonschema.Reflector)
+r.KeyNamer = strcase.SnakeCase // from package github.com/stoewer/go-strcase
+
+r.Reflect(&User{})
+```
+
+Will yield
+
+```diff
+  {
+    "$schema": "http://json-schema.org/draft/2020-12/schema",
+    "$ref": "#/$defs/User",
+    "$defs": {
+      "User": {
+        "properties": {
+-         "GivenName": {
++         "given_name": {
+            "type": "string"
+          },
+          "salted_password": {
+            "type": "string",
+            "contentEncoding": "base64"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+-       "required": ["GivenName", "salted_password"]
++       "required": ["given_name", "salted_password"]
+      }
+    }
+  }
+```
+
+As you can see, if a field name has a `json:""` or `yaml:""` tag set, the `key` argument to `KeyNamer` will have the value of that tag (if a field name has both, the value of `key` will respect [`PreferYAMLSchema`](#preferyamlschema)).
+
+
 ### Custom Type Definitions
 
 Sometimes it can be useful to have custom JSON Marshal and Unmarshal methods in your structs that automatically convert for example a string into an object.
