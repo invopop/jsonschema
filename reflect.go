@@ -204,7 +204,7 @@ type Reflector struct {
 	// provided by the reflect package.
 	Namer func(reflect.Type) string
 
-	// KeyNamer allows customizing of key names. 
+	// KeyNamer allows customizing of key names.
 	// The default is to use the key's name as is, or the json (or yaml) tag if present.
 	// If a json or yaml tag is present, KeyNamer will receive the tag's name as an argument, not the original key name.
 	KeyNamer func(string) string
