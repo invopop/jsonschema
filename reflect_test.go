@@ -3,6 +3,7 @@ package jsonschema
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"net"
 	"net/url"
@@ -269,6 +270,19 @@ type RecursiveExample struct {
 	Child []*RecursiveExample `json:"children,omitempty"`
 }
 
+type KeyNamedNested struct {
+	NestedNotRenamedProperty string
+	NotRenamed               string
+}
+
+type KeyNamed struct {
+	ThisWasLeftAsIs      string
+	NotComingFromJSON    bool           `json:"coming_from_json_tag_not_renamed"`
+	NestedNotRenamed     KeyNamedNested `json:"nested_not_renamed"`
+	UnicodeShenanigans   string
+	RenamedByComputation int `jsonschema_description:"Description was preserved"`
+}
+
 func TestReflector(t *testing.T) {
 	r := new(Reflector)
 	s := "http://example.com/schema"
@@ -375,6 +389,29 @@ func TestSchemaGeneration(t *testing.T) {
 		{&PatternTest{}, &Reflector{}, "fixtures/commas_in_pattern.json"},
 		{&examples.User{}, prepareCommentReflector(t), "fixtures/go_comments.json"},
 		{&RecursiveExample{}, &Reflector{}, "fixtures/recursive.json"},
+		{&KeyNamed{}, &Reflector{
+			KeyNamer: func(s string) string {
+				switch s {
+				case "ThisWasLeftAsIs":
+					fallthrough
+				case "NotRenamed":
+					fallthrough
+				case "nested_not_renamed":
+					return s
+				case "coming_from_json_tag_not_renamed":
+					return "coming_from_json_tag"
+				case "NestedNotRenamed":
+					return "nested-renamed"
+				case "NestedNotRenamedProperty":
+					return "nested-renamed-property"
+				case "UnicodeShenanigans":
+					return "✨unicode✨  s̸̥͝h̷̳͒e̴̜̽n̸̡̿a̷̘̔n̷̘͐i̶̫̐ǵ̶̯a̵̘͒n̷̮̾s̸̟̓"
+				case "RenamedByComputation":
+					return fmt.Sprintf("%.2f", float64(len(s))+1/137.0)
+				}
+				return "unknown case"
+			},
+		}, "fixtures/keynamed.json"},
 	}
 
 	for _, tt := range tests {
