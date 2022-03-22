@@ -67,6 +67,14 @@
         "TestFlag": {
           "type": "boolean"
         },
+        "TestFlagFalse": {
+          "type": "boolean",
+          "default": false
+        },
+        "TestFlagTrue": {
+          "type": "boolean",
+          "default": true
+        },
         "birth_date": {
           "type": "string",
           "format": "date-time"

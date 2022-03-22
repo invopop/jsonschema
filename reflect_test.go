@@ -72,7 +72,9 @@ type TestUser struct {
 	Options  map[string]interface{} `json:"options,omitempty"`
 
 	TestFlag       bool
-	IgnoredCounter int `json:"-"`
+	TestFlagFalse  bool `json:",omitempty" jsonschema:"default=false"`
+	TestFlagTrue   bool `json:",omitempty" jsonschema:"default=true"`
+	IgnoredCounter int  `json:"-"`
 
 	// Tests for RFC draft-wright-json-schema-validation-00, section 7.3
 	BirthDate time.Time `json:"birth_date,omitempty"`

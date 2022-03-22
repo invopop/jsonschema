@@ -618,6 +618,8 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 		t.numbericKeywords(tags)
 	case "array":
 		t.arrayKeywords(tags)
+	case "boolean":
+		t.booleanTags(tags)
 	}
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
 	t.extraKeywords(extras)
@@ -674,6 +676,25 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 				case "number":
 					f, _ := strconv.ParseFloat(val, 64)
 					t.Enum = append(t.Enum, f)
+				}
+			}
+		}
+	}
+}
+
+// read struct tags for boolean type keyworks
+func (t *Schema) booleanTags(tags []string) {
+	for _, tag := range tags {
+		nameValue := strings.Split(tag, "=")
+		if len(nameValue) == 2 {
+			name, val := nameValue[0], nameValue[1]
+			switch name {
+			case "default":
+				switch val {
+				case "true":
+					t.Default = true
+				case "false":
+					t.Default = false
 				}
 			}
 		}
