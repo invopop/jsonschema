@@ -115,6 +115,10 @@
           "type": "string",
           "format": "email"
         },
+        "uuid": {
+          "type": "string",
+          "format": "uuid"
+        },
         "Baz": {
           "type": "string",
           "foo": [
@@ -197,6 +201,7 @@
         "TestFlag",
         "age",
         "email",
+        "uuid",
         "Baz",
         "color",
         "roles",

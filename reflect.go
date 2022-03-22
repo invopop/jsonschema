@@ -697,7 +697,7 @@ func (t *Schema) stringKeywords(tags []string) {
 				t.Pattern = val
 			case "format":
 				switch val {
-				case "date-time", "email", "hostname", "ipv4", "ipv6", "uri":
+				case "date-time", "email", "hostname", "ipv4", "ipv6", "uri", "uuid":
 					t.Format = val
 					break
 				}

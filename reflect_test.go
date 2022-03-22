@@ -85,8 +85,10 @@ type TestUser struct {
 
 	// Tests for jsonpb enum support
 	Feeling ProtoEnum `json:"feeling,omitempty"`
-	Age     int       `json:"age" jsonschema:"minimum=18,maximum=120,exclusiveMaximum=true,exclusiveMinimum=true"`
-	Email   string    `json:"email" jsonschema:"format=email"`
+
+	Age   int    `json:"age" jsonschema:"minimum=18,maximum=120,exclusiveMaximum=true,exclusiveMinimum=true"`
+	Email string `json:"email" jsonschema:"format=email"`
+	UUID  string `json:"uuid" jsonschema:"format=uuid"`
 
 	// Test for "extras" support
 	Baz string `jsonschema_extras:"foo=bar,hello=world,foo=bar1"`
