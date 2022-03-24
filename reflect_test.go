@@ -72,7 +72,9 @@ type TestUser struct {
 	Options  map[string]interface{} `json:"options,omitempty"`
 
 	TestFlag       bool
-	IgnoredCounter int `json:"-"`
+	TestFlagFalse  bool `json:",omitempty" jsonschema:"default=false"`
+	TestFlagTrue   bool `json:",omitempty" jsonschema:"default=true"`
+	IgnoredCounter int  `json:"-"`
 
 	// Tests for RFC draft-wright-json-schema-validation-00, section 7.3
 	BirthDate time.Time `json:"birth_date,omitempty"`
@@ -85,8 +87,10 @@ type TestUser struct {
 
 	// Tests for jsonpb enum support
 	Feeling ProtoEnum `json:"feeling,omitempty"`
-	Age     int       `json:"age" jsonschema:"minimum=18,maximum=120,exclusiveMaximum=true,exclusiveMinimum=true"`
-	Email   string    `json:"email" jsonschema:"format=email"`
+
+	Age   int    `json:"age" jsonschema:"minimum=18,maximum=120,exclusiveMaximum=true,exclusiveMinimum=true"`
+	Email string `json:"email" jsonschema:"format=email"`
+	UUID  string `json:"uuid" jsonschema:"format=uuid"`
 
 	// Test for "extras" support
 	Baz string `jsonschema_extras:"foo=bar,hello=world,foo=bar1"`

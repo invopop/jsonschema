@@ -68,6 +68,14 @@
     "TestFlag": {
       "type": "boolean"
     },
+    "TestFlagFalse": {
+      "type": "boolean",
+      "default": false
+    },
+    "TestFlagTrue": {
+      "type": "boolean",
+      "default": true
+    },
     "birth_date": {
       "type": "string",
       "format": "date-time"
@@ -108,6 +116,10 @@
     "email": {
       "type": "string",
       "format": "email"
+    },
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
     },
     "Baz": {
       "type": "string",
@@ -191,6 +203,7 @@
     "TestFlag",
     "age",
     "email",
+    "uuid",
     "Baz",
     "color",
     "roles",
