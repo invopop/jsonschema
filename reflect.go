@@ -686,16 +686,15 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 func (t *Schema) booleanKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
-		if len(nameValue) == 2 {
-			name, val := nameValue[0], nameValue[1]
-			switch name {
-			case "default":
-				switch val {
-				case "true":
-					t.Default = true
-				case "false":
-					t.Default = false
-				}
+		if len(nameValue) != 2 {
+			continue
+		}
+		name, val := nameValue[0], nameValue[1]
+		if name == "default" {
+			if val == "true" {
+				t.Default = true
+			} else if val == "false" {
+				t.Default = false
 			}
 		}
 	}
