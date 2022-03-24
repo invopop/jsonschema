@@ -619,7 +619,7 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	case "array":
 		t.arrayKeywords(tags)
 	case "boolean":
-		t.booleanTags(tags)
+		t.booleanKeywords(tags)
 	}
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
 	t.extraKeywords(extras)
@@ -683,7 +683,7 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 }
 
 // read struct tags for boolean type keyworks
-func (t *Schema) booleanTags(tags []string) {
+func (t *Schema) booleanKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
