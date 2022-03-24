@@ -1,23 +1,19 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/outer",
-  "properties": {
-    "Inner": {
+  "$id": "https://github.com/invopop/jsonschema/embed-value-type-test",
+  "$ref": "#/$defs/EmbedValueTypeTest",
+  "$defs": {
+    "EmbedValueTypeTest": {
       "properties": {
-        "foo": {
+        "CustomStringType": {
           "type": "string"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "foo"
+        "CustomStringType"
       ]
     }
-  },
-  "additionalProperties": false,
-  "type": "object",
-  "required": [
-    "Inner"
-  ]
+  }
 }

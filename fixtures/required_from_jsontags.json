@@ -32,6 +32,9 @@
         "PublicNonExported": {
           "type": "integer"
         },
+        "MapType": {
+          "type": "object"
+        },
         "id": {
           "type": "integer"
         },

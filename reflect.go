@@ -951,11 +951,9 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 
 	// field anonymous but without json tag should be inherited by current type
 	if f.Anonymous && !exist {
-		if !r.YAMLEmbeddedStructs {
+		if !r.YAMLEmbeddedStructs && f.Type.Kind() == reflect.Struct {
 			name = ""
 			embed = true
-		} else {
-			name = strings.ToLower(name)
 		}
 	}
 

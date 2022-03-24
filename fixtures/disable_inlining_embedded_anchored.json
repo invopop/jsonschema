@@ -3,7 +3,7 @@
   "$id": "https://github.com/invopop/jsonschema/outer",
   "$anchor": "Outer",
   "properties": {
-    "inner": {
+    "Inner": {
       "$anchor": "Inner",
       "properties": {
         "foo": {
@@ -20,6 +20,6 @@
   "additionalProperties": false,
   "type": "object",
   "required": [
-    "inner"
+    "Inner"
   ]
 }

@@ -25,6 +25,9 @@
         "PublicNonExported": {
           "type": "integer"
         },
+        "MapType": {
+          "type": "object"
+        },
         "id": {
           "type": "integer"
         },
@@ -196,6 +199,7 @@
         "grand",
         "SomeUntaggedBaseProperty",
         "PublicNonExported",
+        "MapType",
         "id",
         "name",
         "password",

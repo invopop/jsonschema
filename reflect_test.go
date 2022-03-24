@@ -287,6 +287,12 @@ type KeyNamed struct {
 	RenamedByComputation int `jsonschema_description:"Description was preserved"`
 }
 
+type CustomStringType string
+
+type EmbedValueTypeTest struct {
+	CustomStringType
+}
+
 func TestReflector(t *testing.T) {
 	r := new(Reflector)
 	s := "http://example.com/schema"
@@ -416,6 +422,7 @@ func TestSchemaGeneration(t *testing.T) {
 				return "unknown case"
 			},
 		}, "fixtures/keynamed.json"},
+		{&EmbedValueTypeTest{}, &Reflector{}, "fixtures/embed_value_type.json"},
 	}
 
 	for _, tt := range tests {
