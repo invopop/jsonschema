@@ -1,5 +1,5 @@
 name: Test Go
-on: [push]
+on: [push, pull_request]
 jobs:
   lint-test-build:
     name: Lint, Test
