@@ -7,12 +7,16 @@
       "properties": {
         "CustomStringType": {
           "type": "string"
+        },
+        "map_field": {
+          "type": "object"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "CustomStringType"
+        "CustomStringType",
+        "map_field"
       ]
     }
   }

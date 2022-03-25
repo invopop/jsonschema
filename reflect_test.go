@@ -291,6 +291,7 @@ type CustomStringType string
 
 type EmbedValueTypeTest struct {
 	CustomStringType
+	MapType `json:"map_field"`
 }
 
 func TestReflector(t *testing.T) {
