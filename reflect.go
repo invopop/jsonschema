@@ -105,7 +105,7 @@ var (
 // custom Schema Type definition to use instead. Very useful for situations
 // where there are custom JSON Marshal and Unmarshal methods.
 type customSchemaImpl interface {
-	JSONSchema() *Schema
+	JSONSchema() (*Schema, Definitions)
 }
 
 var customType = reflect.TypeOf((*customSchemaImpl)(nil)).Elem()
@@ -453,7 +453,10 @@ func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type)
 	if t.Implements(customType) {
 		v := reflect.New(t)
 		o := v.Interface().(customSchemaImpl)
-		st := o.JSONSchema()
+		st, newDefs := o.JSONSchema()
+		for name, def := range newDefs {
+			definitions[name] = def
+		}
 		r.addDefinition(definitions, t, st)
 		if r.DoNotReference {
 			return st
