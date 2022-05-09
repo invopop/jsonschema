@@ -44,6 +44,8 @@ type SomeBaseType struct {
 
 type MapType map[string]interface{}
 
+type ArrayType []string
+
 type nonExported struct {
 	PublicNonExported  int
 	privateNonExported int
@@ -412,6 +414,8 @@ func TestSchemaGeneration(t *testing.T) {
 				return "unknown case"
 			},
 		}, "fixtures/keynamed.json"},
+		{MapType{}, &Reflector{}, "fixtures/map_type.json"},
+		{ArrayType{}, &Reflector{}, "fixtures/array_type.json"},
 	}
 
 	for _, tt := range tests {
