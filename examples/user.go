@@ -15,8 +15,11 @@ type User struct {
 	Tags    map[string]interface{} `json:"tags,omitempty"`
 
 	// An array of pets the user cares for.
-	Pets []*nested.Pet `json:"pets"`
+	Pets nested.Pets `json:"pets"`
+
+	// Set of animal names to pets
+	NamedPets nested.NamedPets `json:"named_pets"`
 
 	// Set of plants that the user likes
-	Plants []*nested.Plant `json:"plants" jsonschema:"title=Pants"`
+	Plants []*nested.Plant `json:"plants" jsonschema:"title=Plants"`
 }

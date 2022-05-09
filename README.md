@@ -18,6 +18,11 @@ This repository is a fork of the original [jsonschema](https://github.com/alecth
 - The original was stuck on the draft-04 version of JSON Schema, we've now moved to the latest JSON Schema Draft 2020-12.
 - Schema IDs are added automatically from the current Go package's URL in order to be unique, and can be disabled with the `Anonymous` option.
 - Support for the `FullyQualifyTypeName` option has been removed. If you have conflicts, you should use multiple schema files with different IDs, set the `DoNotReference` option to true to hide definitions completely, or add your own naming strategy using the `Namer` property.
+- Support for `yaml` tags and related options has been dropped for the sake of simplification. There were a [few inconsistencies](https://github.com/invopop/jsonschema/pull/21) around this that have now been fixed.
+
+## Versions
+
+This project is still under v0 scheme, as per Go convention, breaking changes are likely. Please pin go modules to branches, and reach out if you think something can be improved.
 
 ## Example
 
@@ -175,65 +180,6 @@ will output:
 }
 ```
 
-### PreferYAMLSchema
-
-JSON schemas can also be used to validate YAML, however YAML frequently uses
-different identifiers to JSON indicated by the `yaml:` tag. The `Reflector` will
-by default prefer `json:` tags over `yaml:` tags (and only use the latter if the
-former are not present). This behavior can be changed via the `PreferYAMLSchema`
-flag, that will switch this behavior: `yaml:` tags will be preferred over
-`json:` tags.
-
-With `PreferYAMLSchema: true`, the following struct:
-
-```go
-type Person struct {
-	FirstName string `json:"FirstName" yaml:"first_name"`
-}
-```
-
-would result in this schema:
-
-```json
-{
-  "$schema": "http://json-schema.org/draft/2020-12/schema",
-  "$ref": "#/$defs/TestYamlAndJson",
-  "$defs": {
-    "Person": {
-      "required": ["first_name"],
-      "properties": {
-        "first_name": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
-    }
-  }
-}
-```
-
-whereas without the flag one obtains:
-
-```json
-{
-  "$schema": "http://json-schema.org/draft/2020-12/schema",
-  "$ref": "#/$defs/TestYamlAndJson",
-  "$defs": {
-    "Person": {
-      "required": ["FirstName"],
-      "properties": {
-        "first_name": {
-          "type": "string"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
-    }
-  }
-}
-```
-
 ### Using Go Comments
 
 Writing a good schema with descriptions inside tags can become cumbersome and tedious, especially if you already have some Go comments around your types and field definitions. If you'd like to take advantage of these existing comments, you can use the `AddGoComments(base, path string)` method that forms part of the reflector to parse your go files and automatically generate a dictionary of Go import paths, types, and fields, to individual comments. These will then be used automatically as description fields, and can be overridden with a manual definition if needed.
@@ -296,7 +242,7 @@ In some situations, the keys actually used to write files are different from Go 
 
 This is often the case when writing a configuration file to YAML or JSON from a Go struct, or when returning a JSON response for a Web API: APIs typically use snake_case, while Go uses PascalCase.
 
-You can pass a `func(string) string` function to `Reflector`'s `KeyNamer` option to map Go field names to JSON key names and reflect the aforementionned transformations, without having to specify `json:"..."` on every struct field.
+You can pass a `func(string) string` function to `Reflector`'s `KeyNamer` option to map Go field names to JSON key names and reflect the aforementioned transformations, without having to specify `json:"..."` on every struct field.
 
 For example, consider the following struct
 
@@ -343,8 +289,7 @@ Will yield
   }
 ```
 
-As you can see, if a field name has a `json:""` or `yaml:""` tag set, the `key` argument to `KeyNamer` will have the value of that tag (if a field name has both, the value of `key` will respect [`PreferYAMLSchema`](#preferyamlschema)).
-
+As you can see, if a field name has a `json:""` tag set, the `key` argument to `KeyNamer` will have the value of that tag.
 
 ### Custom Type Definitions
 

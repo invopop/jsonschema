@@ -21,7 +21,10 @@ type SampleUser struct {
 
 func ExampleReflect() {
 	s := jsonschema.Reflect(&SampleUser{})
-	data, _ := json.MarshalIndent(s, "", "  ")
+	data, err := json.MarshalIndent(s, "", "  ")
+	if err != nil {
+		panic(err.Error())
+	}
 	fmt.Println(string(data))
 	// Output:
 	// {

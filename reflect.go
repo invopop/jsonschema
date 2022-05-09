@@ -167,24 +167,13 @@ type Reflector struct {
 	// default of requiring any key *not* tagged with `json:,omitempty`.
 	RequiredFromJSONSchemaTags bool
 
-	// YAMLEmbeddedStructs will cause the Reflector to generate a schema that does
-	// not inline embedded structs. This should be enabled if the JSON schemas are
-	// used with yaml.Marshal/Unmarshal.
-	YAMLEmbeddedStructs bool
-
-	// Prefer yaml: tags over json: tags to generate the schema even if json: tags
-	// are present
-	PreferYAMLSchema bool
-
 	// Do not reference definitions. This will remove the top-level $defs map and
 	// instead cause the entire structure of types to be output in one tree. The
 	// list of type definitions (`$defs`) will not be included.
 	DoNotReference bool
 
 	// ExpandedStruct when true will include the reflected type's definition in the
-	// root as opposed to a definition with a reference. Using a reference in the root
-	// is useful as it allows us to maintain the struct's original name, but it is
-	// not common practice.
+	// root as opposed to a definition with a reference.
 	ExpandedStruct bool
 
 	// IgnoredTypes defines a slice of types that should be ignored in the schema,
@@ -205,8 +194,8 @@ type Reflector struct {
 	Namer func(reflect.Type) string
 
 	// KeyNamer allows customizing of key names.
-	// The default is to use the key's name as is, or the json (or yaml) tag if present.
-	// If a json or yaml tag is present, KeyNamer will receive the tag's name as an argument, not the original key name.
+	// The default is to use the key's name as is, or the json tag if present.
+	// If a json tag is present, KeyNamer will receive the tag's name as an argument, not the original key name.
 	KeyNamer func(string) string
 
 	// AdditionalFields allows adding structfields for a given type
@@ -317,8 +306,8 @@ func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.
 	}
 
 	// Already added to definitions?
-	if _, ok := definitions[r.typeName(t)]; ok && !r.DoNotReference {
-		return r.refDefinition(definitions, t)
+	if def := r.refDefinition(definitions, t); def != nil {
+		return def
 	}
 
 	return r.reflectTypeToSchemaWithID(definitions, t)
@@ -338,23 +327,32 @@ func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) 
 }
 
 func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
+	// only try to reflect non-pointers
+	if t.Kind() == reflect.Ptr {
+		return r.refOrReflectTypeToSchema(definitions, t.Elem())
+	}
+
+	// Do any pre-definitions exist?
 	if r.Mapper != nil {
 		if t := r.Mapper(t); t != nil {
 			return t
 		}
 	}
-
 	if rt := r.reflectCustomSchema(definitions, t); rt != nil {
 		return rt
 	}
 
+	// Prepare a base to which details can be added
+	st := new(Schema)
+
 	// jsonpb will marshal protobuf enum options as either strings or integers.
 	// It will unmarshal either.
 	if t.Implements(protoEnumType) {
-		return &Schema{OneOf: []*Schema{
+		st.OneOf = []*Schema{
 			{Type: "string"},
 			{Type: "integer"},
-		}}
+		}
+		return st
 	}
 
 	// Defined format types for JSON Schema Validation
@@ -362,87 +360,47 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	// TODO email RFC section 7.3.2, hostname RFC section 7.3.3, uriref RFC section 7.3.7
 	if t == ipType {
 		// TODO differentiate ipv4 and ipv6 RFC section 7.3.4, 7.3.5
-		return &Schema{Type: "string", Format: "ipv4"} // ipv4 RFC section 7.3.4
+		st.Type = "string"
+		st.Format = "ipv4"
+		return st
 	}
 
 	switch t.Kind() {
 	case reflect.Struct:
-		switch t {
-		case timeType: // date-time RFC section 7.3.1
-			return &Schema{Type: "string", Format: "date-time"}
-		case uriType: // uri RFC section 7.3.6
-			return &Schema{Type: "string", Format: "uri"}
-		default:
-			return r.reflectOrRefStruct(definitions, t)
-		}
-
-	case reflect.Map:
-		switch t.Key().Kind() {
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			rt := &Schema{
-				Type: "object",
-				PatternProperties: map[string]*Schema{
-					"^[0-9]+$": r.refOrReflectTypeToSchema(definitions, t.Elem()),
-				},
-				AdditionalProperties: FalseSchema,
-			}
-			return rt
-		}
-
-		var rt *Schema
-		if t.Elem().Kind() == reflect.Interface {
-			rt = &Schema{
-				Type: "object",
-			}
-		} else {
-			rt = &Schema{
-				Type: "object",
-				PatternProperties: map[string]*Schema{
-					".*": r.refOrReflectTypeToSchema(definitions, t.Elem()),
-				},
-			}
-		}
-		return rt
+		r.reflectStruct(definitions, t, st)
 
 	case reflect.Slice, reflect.Array:
-		returnType := &Schema{}
-		if t == rawMessageType {
-			return &Schema{}
-		}
-		if t.Kind() == reflect.Array {
-			returnType.MinItems = t.Len()
-			returnType.MaxItems = returnType.MinItems
-		}
-		if t.Kind() == reflect.Slice && t.Elem() == byteSliceType.Elem() {
-			returnType.Type = "string"
-			// NOTE: ContentMediaType is not set here
-			returnType.ContentEncoding = "base64"
-			return returnType
-		}
-		returnType.Type = "array"
-		returnType.Items = r.refOrReflectTypeToSchema(definitions, t.Elem())
-		return returnType
+		r.reflectSliceOrArray(definitions, t, st)
+
+	case reflect.Map:
+		r.reflectMap(definitions, t, st)
 
 	case reflect.Interface:
-		return &Schema{} // empty
+		// empty
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return &Schema{Type: "integer"}
+		st.Type = "integer"
 
 	case reflect.Float32, reflect.Float64:
-		return &Schema{Type: "number"}
+		st.Type = "number"
 
 	case reflect.Bool:
-		return &Schema{Type: "boolean"}
+		st.Type = "boolean"
 
 	case reflect.String:
-		return &Schema{Type: "string"}
+		st.Type = "string"
 
-	case reflect.Ptr:
-		return r.refOrReflectTypeToSchema(definitions, t.Elem())
+	default:
+		panic("unsupported type " + t.String())
 	}
-	panic("unsupported type " + t.String())
+
+	// Always try to reference the definition which may have just been created
+	if def := r.refDefinition(definitions, t); def != nil {
+		return def
+	}
+
+	return st
 }
 
 func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type) *Schema {
@@ -455,29 +413,78 @@ func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type)
 		o := v.Interface().(customSchemaImpl)
 		st := o.JSONSchema()
 		r.addDefinition(definitions, t, st)
-		if r.DoNotReference {
-			return st
-		} else {
-			return r.refDefinition(definitions, t)
+		if ref := r.refDefinition(definitions, t); ref != nil {
+			return ref
 		}
+		return st
 	}
 
 	return nil
 }
 
-func (r *Reflector) reflectOrRefStruct(definitions Definitions, t reflect.Type) *Schema {
-	st := new(Schema)
-	r.addDefinition(definitions, t, st) // makes sure we have a re-usable reference already
-	r.reflectStruct(definitions, t, st)
-	if r.DoNotReference {
-		return st
+func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type, st *Schema) {
+	if t == rawMessageType {
+		return
+	}
+
+	r.addDefinition(definitions, t, st)
+
+	if st.Description == "" {
+		st.Description = r.lookupComment(t, "")
+	}
+
+	if t.Kind() == reflect.Array {
+		st.MinItems = t.Len()
+		st.MaxItems = st.MinItems
+	}
+	if t.Kind() == reflect.Slice && t.Elem() == byteSliceType.Elem() {
+		st.Type = "string"
+		// NOTE: ContentMediaType is not set here
+		st.ContentEncoding = "base64"
 	} else {
-		return r.refDefinition(definitions, t)
+		st.Type = "array"
+		st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem())
+	}
+}
+
+func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Schema) {
+	r.addDefinition(definitions, t, st)
+
+	st.Type = "object"
+	if st.Description == "" {
+		st.Description = r.lookupComment(t, "")
+	}
+
+	switch t.Key().Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		st.PatternProperties = map[string]*Schema{
+			"^[0-9]+$": r.refOrReflectTypeToSchema(definitions, t.Elem()),
+		}
+		st.AdditionalProperties = FalseSchema
+		return
+	}
+	if t.Elem().Kind() != reflect.Interface {
+		st.PatternProperties = map[string]*Schema{
+			".*": r.refOrReflectTypeToSchema(definitions, t.Elem()),
+		}
 	}
 }
 
 // Reflects a struct to a JSON Schema type.
 func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Schema) {
+	// Handle special types
+	switch t {
+	case timeType: // date-time RFC section 7.3.1
+		s.Type = "string"
+		s.Format = "date-time"
+		return
+	case uriType: // uri RFC section 7.3.6
+		s.Type = "string"
+		s.Format = "uri"
+		return
+	}
+
+	r.addDefinition(definitions, t, s)
 	s.Type = "object"
 	s.Properties = orderedmap.New()
 	s.Description = r.lookupComment(t, "")
@@ -581,12 +588,24 @@ func (r *Reflector) lookupComment(t reflect.Type, name string) string {
 // addDefinition will append the provided schema. If needed, an ID and anchor will also be added.
 func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Schema) {
 	name := r.typeName(t)
+	if name == "" {
+		return
+	}
 	definitions[name] = s
 }
 
 // refDefinition will provide a schema with a reference to an existing definition.
-func (r *Reflector) refDefinition(_ Definitions, t reflect.Type) *Schema {
+func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Schema {
+	if r.DoNotReference {
+		return nil
+	}
 	name := r.typeName(t)
+	if name == "" {
+		return nil
+	}
+	if _, ok := definitions[name]; !ok {
+		return nil
+	}
 	return &Schema{
 		Ref: "#/$defs/" + name,
 	}
@@ -892,15 +911,6 @@ func nullableFromJSONSchemaTags(tags []string) bool {
 	return false
 }
 
-func inlineYAMLTags(tags []string) bool {
-	for _, tag := range tags {
-		if tag == "inline" {
-			return true
-		}
-	}
-	return false
-}
-
 func ignoredByJSONTags(tags []string) bool {
 	return tags[0] == "-"
 }
@@ -910,65 +920,45 @@ func ignoredByJSONSchemaTags(tags []string) bool {
 }
 
 func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool, bool) {
-	jsonTags, exist := f.Tag.Lookup("json")
-	yamlTags, yamlExist := f.Tag.Lookup("yaml")
-	if !exist || r.PreferYAMLSchema {
-		jsonTags = yamlTags
-		exist = yamlExist
-	}
+	jsonTagString, _ := f.Tag.Lookup("json")
+	jsonTags := strings.Split(jsonTagString, ",")
 
-	jsonTagsList := strings.Split(jsonTags, ",")
-	yamlTagsList := strings.Split(yamlTags, ",")
-
-	if ignoredByJSONTags(jsonTagsList) {
+	if ignoredByJSONTags(jsonTags) {
 		return "", false, false, false
 	}
 
-	jsonSchemaTags := strings.Split(f.Tag.Get("jsonschema"), ",")
-	if ignoredByJSONSchemaTags(jsonSchemaTags) {
+	schemaTags := strings.Split(f.Tag.Get("jsonschema"), ",")
+	if ignoredByJSONSchemaTags(schemaTags) {
 		return "", false, false, false
 	}
 
-	name := f.Name
-	required := requiredFromJSONTags(jsonTagsList)
-
+	required := requiredFromJSONTags(jsonTags)
 	if r.RequiredFromJSONSchemaTags {
-		required = requiredFromJSONSchemaTags(jsonSchemaTags)
+		required = requiredFromJSONSchemaTags(schemaTags)
 	}
 
-	nullable := nullableFromJSONSchemaTags(jsonSchemaTags)
+	nullable := nullableFromJSONSchemaTags(schemaTags)
 
-	if jsonTagsList[0] != "" {
-		name = jsonTagsList[0]
-	}
-
-	// field not anonymous and not export has no export name
-	if !f.Anonymous && f.PkgPath != "" {
-		name = ""
-	}
-
-	embed := false
-
-	// field anonymous but without json tag should be inherited by current type
-	if f.Anonymous && !exist {
-		if !r.YAMLEmbeddedStructs {
-			name = ""
-			embed = true
-		} else {
-			name = strings.ToLower(name)
+	if f.Anonymous && jsonTags[0] == "" {
+		// As per JSON Marshal rules, anonymous structs are inherited
+		if f.Type.Kind() == reflect.Struct {
+			return "", true, false, false
 		}
 	}
 
-	if yamlExist && inlineYAMLTags(yamlTagsList) {
-		name = ""
-		embed = true
+	// Try to determine the name from the different combos
+	name := f.Name
+	if jsonTags[0] != "" {
+		name = jsonTags[0]
 	}
-
-	if r.KeyNamer != nil {
+	if !f.Anonymous && f.PkgPath != "" {
+		// field not anonymous and not export has no export name
+		name = ""
+	} else if r.KeyNamer != nil {
 		name = r.KeyNamer(name)
 	}
 
-	return name, embed, required, nullable
+	return name, false, required, nullable
 }
 
 // UnmarshalJSON is used to parse a schema object or boolean.

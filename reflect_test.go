@@ -29,8 +29,7 @@ type GrandfatherType struct {
 }
 
 type SomeBaseType struct {
-	SomeBaseProperty     int `json:"some_base_property"`
-	SomeBasePropertyYaml int `yaml:"some_base_property_yaml"`
+	SomeBaseProperty int `json:"some_base_property"`
 	// The jsonschema required tag is nonsensical for private and ignored properties.
 	// Their presence here tests that the fields *will not* be required in the output
 	// schema, even if they are tagged required.
@@ -144,8 +143,19 @@ type ChildOneOf struct {
 	Child4 string      `json:"child4" jsonschema:"oneof_required=group1"`
 }
 
+type Text string
+
+type TextNamed string
+
 type Outer struct {
+	TextNamed
+	Text `json:",omitempty"`
 	Inner
+}
+
+type OuterNamed struct {
+	Text  `json:"text,omitempty"`
+	Inner `json:"inner"`
 }
 
 type Inner struct {
@@ -159,17 +169,6 @@ type Bytes []byte
 
 type TestNullable struct {
 	Child1 string `json:"child1" jsonschema:"nullable"`
-}
-
-type TestYamlInline struct {
-	Inlined Inner `yaml:",inline"`
-}
-
-type TestYamlAndJson struct {
-	FirstName  string `json:"FirstName" yaml:"first_name"`
-	LastName   string `json:"LastName"`
-	Age        uint   `yaml:"age"`
-	MiddleName string `yaml:"middle_name,omitempty" json:"MiddleName,omitempty"`
 }
 
 type CompactDate struct {
@@ -190,14 +189,14 @@ func (CompactDate) JSONSchema() *Schema {
 	}
 }
 
-type TestYamlAndJson2 struct {
-	FirstName  string `json:"FirstName" yaml:"first_name"`
+type TestDescriptionOverride struct {
+	FirstName  string `json:"FirstName"`
 	LastName   string `json:"LastName"`
-	Age        uint   `yaml:"age"`
-	MiddleName string `yaml:"middle_name,omitempty" json:"MiddleName,omitempty"`
+	Age        uint   `json:"age"`
+	MiddleName string `json:"middle_name,omitempty"`
 }
 
-func (TestYamlAndJson2) GetFieldDocString(fieldName string) string {
+func (TestDescriptionOverride) GetFieldDocString(fieldName string) string {
 	switch fieldName {
 	case "FirstName":
 		return "test2"
@@ -365,12 +364,11 @@ func TestSchemaGeneration(t *testing.T) {
 				return EmptyID
 			},
 		}, "fixtures/lookup_expanded.json"},
-		{&Outer{}, &Reflector{ExpandedStruct: true, DoNotReference: true, YAMLEmbeddedStructs: true}, "fixtures/disable_inlining_embedded.json"},
-		{&Outer{}, &Reflector{ExpandedStruct: true, DoNotReference: true, YAMLEmbeddedStructs: true, AssignAnchor: true}, "fixtures/disable_inlining_embedded_anchored.json"},
+		{&Outer{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_inheritance.json"},
+		{&OuterNamed{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_embedded.json"},
+		{&OuterNamed{}, &Reflector{ExpandedStruct: true, AssignAnchor: true}, "fixtures/inlining_embedded_anchored.json"},
 		{&MinValue{}, &Reflector{}, "fixtures/schema_with_minimum.json"},
 		{&TestNullable{}, &Reflector{}, "fixtures/nullable.json"},
-		{&TestYamlInline{}, &Reflector{YAMLEmbeddedStructs: true}, "fixtures/yaml_inline_embed.json"},
-		{&TestYamlInline{}, &Reflector{}, "fixtures/yaml_inline_embed.json"},
 		{&GrandfatherType{}, &Reflector{
 			AdditionalFields: func(r reflect.Type) []reflect.StructField {
 				return []reflect.StructField{
@@ -383,9 +381,7 @@ func TestSchemaGeneration(t *testing.T) {
 				}
 			},
 		}, "fixtures/custom_additional.json"},
-		{&TestYamlAndJson{}, &Reflector{PreferYAMLSchema: true}, "fixtures/test_yaml_and_json_prefer_yaml.json"},
-		{&TestYamlAndJson{}, &Reflector{}, "fixtures/test_yaml_and_json.json"},
-		// {&TestYamlAndJson2{}, &Reflector{}, "fixtures/test_yaml_and_json2.json"},
+		{&TestDescriptionOverride{}, &Reflector{}, "fixtures/test_description_override.json"},
 		{&CompactDate{}, &Reflector{}, "fixtures/compact_date.json"},
 		{&CustomSliceOuter{}, &Reflector{}, "fixtures/custom_slice_type.json"},
 		{&CustomMapOuter{}, &Reflector{}, "fixtures/custom_map_type.json"},
@@ -447,7 +443,7 @@ func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) 
 	require.NoError(t, err)
 
 	actualSchema := r.Reflect(obj)
-	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ")
+	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ") //nolint:errchkjson
 
 	if *updateFixtures {
 		_ = ioutil.WriteFile(f, actualJSON, 0600)

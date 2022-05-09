@@ -1,9 +1,9 @@
 {
-  "$schema": "http://json-schema.org/draft-04/schema#",
-  "$ref": "#/definitions/TestYamlAndJson2",
-  "definitions": {
-    "TestYamlAndJson2": {
-      "required": ["FirstName", "LastName", "age"],
+  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/test-description-override",
+  "$ref": "#/$defs/TestDescriptionOverride",
+  "$defs": {
+    "TestDescriptionOverride": {
       "properties": {
         "FirstName": {
           "type": "string",
@@ -17,13 +17,18 @@
           "type": "integer",
           "description": "test4"
         },
-        "MiddleName": {
+        "middle_name": {
           "type": "string",
           "description": "test5"
         }
       },
       "additionalProperties": false,
-      "type": "object"
+      "type": "object",
+      "required": [
+        "FirstName",
+        "LastName",
+        "age"
+      ]
     }
   }
 }
