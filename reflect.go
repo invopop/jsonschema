@@ -815,6 +815,8 @@ func (t *Schema) arrayKeywords(tags []string) {
 					f, _ := strconv.ParseFloat(val, 64)
 					t.Items.Enum = append(t.Items.Enum, f)
 				}
+			case "format":
+				t.Items.Format = val
 			}
 		}
 	}
