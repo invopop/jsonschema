@@ -209,6 +209,10 @@ type Reflector struct {
 	// If a json or yaml tag is present, KeyNamer will receive the tag's name as an argument, not the original key name.
 	KeyNamer func(string) string
 
+	// RefMapper allows customizing the path of JSON references, given the name of the type.
+	// By default, "#/$defs/TypeName" will be used.
+	RefMapper func(typeName string) string
+
 	// AdditionalFields allows adding structfields for a given type
 	AdditionalFields func(reflect.Type) []reflect.StructField
 
@@ -587,8 +591,12 @@ func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Sc
 // refDefinition will provide a schema with a reference to an existing definition.
 func (r *Reflector) refDefinition(_ Definitions, t reflect.Type) *Schema {
 	name := r.typeName(t)
+	ref := "#/$defs/" + name
+	if r.RefMapper != nil {
+		ref = r.RefMapper(name)
+	}
 	return &Schema{
-		Ref: "#/$defs/" + name,
+		Ref: ref,
 	}
 }
 
