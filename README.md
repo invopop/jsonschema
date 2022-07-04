@@ -116,6 +116,12 @@ jsonschema.Reflect(&TestUser{})
 }
 ```
 
+## YAML
+
+Support for `yaml` tags has now been removed. If you feel very strongly about this, we've opened a discussion to hear your comments: https://github.com/invopop/jsonschema/discussions/28
+
+The recommended approach if you need to deal with YAML data is to first convert to JSON. The [invopop/yaml](https://github.com/invopop/yaml) library will make this trivial.
+
 ## Configurable behaviour
 
 The behaviour of the schema generator can be altered with parameters when a `jsonschema.Reflector`
