@@ -527,12 +527,18 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 		}
 
 		property := r.refOrReflectTypeToSchema(definitions, f.Type)
-		property.structKeywordsFromTags(f, st, name)
+		changed := property.structKeywordsFromTags(f, st, name)
 		if property.Description == "" {
-			property.Description = r.lookupComment(t, f.Name)
+			if comment := r.lookupComment(t, f.Name); comment != "" {
+				property.Description = comment
+				changed = true
+			}
 		}
 		if getFieldDocString != nil {
-			property.Description = getFieldDocString(f.Name)
+			if docString := getFieldDocString(f.Name); docString != "" {
+				property.Description = getFieldDocString(f.Name)
+				changed = true
+			}
 		}
 
 		if nullable {
@@ -542,6 +548,19 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 					{
 						Type: "null",
 					},
+				},
+			}
+		}
+
+		if changed && property.Ref != "" {
+			ref := property.Ref
+			property.Ref = ""
+			property = &Schema{
+				AllOf: []*Schema{
+					{
+						Ref: ref,
+					},
+					property,
 				},
 			}
 		}
@@ -603,30 +622,32 @@ func (r *Reflector) lookupID(t reflect.Type) ID {
 	return EmptyID
 }
 
-func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, propertyName string) {
+func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, propertyName string) bool {
 	t.Description = f.Tag.Get("jsonschema_description")
 
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
-	t.genericKeywords(tags, parent, propertyName)
+	changed := t.genericKeywords(tags, parent, propertyName)
 
 	switch t.Type {
 	case "string":
-		t.stringKeywords(tags)
+		changed = changed || t.stringKeywords(tags)
 	case "number":
-		t.numbericKeywords(tags)
+		changed = changed || t.numbericKeywords(tags)
 	case "integer":
-		t.numbericKeywords(tags)
+		changed = changed || t.numbericKeywords(tags)
 	case "array":
-		t.arrayKeywords(tags)
+		changed = changed || t.arrayKeywords(tags)
 	case "boolean":
-		t.booleanKeywords(tags)
+		changed = changed || t.booleanKeywords(tags)
 	}
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
-	t.extraKeywords(extras)
+	changed = changed || t.extraKeywords(extras)
+	return changed
 }
 
 // read struct tags for generic keyworks
-func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) {
+func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) bool {
+	changed := false
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -634,12 +655,16 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 			switch name {
 			case "title":
 				t.Title = val
+				changed = true
 			case "description":
 				t.Description = val
+				changed = true
 			case "type":
 				t.Type = val
+				changed = true
 			case "anchor":
 				t.Anchor = val
+				changed = true
 			case "oneof_required":
 				var typeFound *Schema
 				for i := range parent.OneOf {
@@ -666,24 +691,30 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 						Type: ty,
 					})
 				}
+				changed = true
 			case "enum":
 				switch t.Type {
 				case "string":
 					t.Enum = append(t.Enum, val)
+					changed = true
 				case "integer":
 					i, _ := strconv.Atoi(val)
 					t.Enum = append(t.Enum, i)
+					changed = true
 				case "number":
 					f, _ := strconv.ParseFloat(val, 64)
 					t.Enum = append(t.Enum, f)
+					changed = true
 				}
 			}
 		}
 	}
+	return changed
 }
 
 // read struct tags for boolean type keyworks
-func (t *Schema) booleanKeywords(tags []string) {
+func (t *Schema) booleanKeywords(tags []string) bool {
+	changed := false
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) != 2 {
@@ -696,12 +727,15 @@ func (t *Schema) booleanKeywords(tags []string) {
 			} else if val == "false" {
 				t.Default = false
 			}
+			changed = true
 		}
 	}
+	return changed
 }
 
 // read struct tags for string type keyworks
-func (t *Schema) stringKeywords(tags []string) {
+func (t *Schema) stringKeywords(tags []string) bool {
+	changed := false
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -710,34 +744,44 @@ func (t *Schema) stringKeywords(tags []string) {
 			case "minLength":
 				i, _ := strconv.Atoi(val)
 				t.MinLength = i
+				changed = true
 			case "maxLength":
 				i, _ := strconv.Atoi(val)
 				t.MaxLength = i
+				changed = true
 			case "pattern":
 				t.Pattern = val
+				changed = true
 			case "format":
 				switch val {
 				case "date-time", "email", "hostname", "ipv4", "ipv6", "uri", "uuid":
 					t.Format = val
+					changed = true
 					break
 				}
 			case "readOnly":
 				i, _ := strconv.ParseBool(val)
 				t.ReadOnly = i
+				changed = true
 			case "writeOnly":
 				i, _ := strconv.ParseBool(val)
 				t.WriteOnly = i
+				changed = true
 			case "default":
 				t.Default = val
+				changed = true
 			case "example":
 				t.Examples = append(t.Examples, val)
+				changed = true
 			}
 		}
 	}
+	return changed
 }
 
 // read struct tags for numberic type keyworks
-func (t *Schema) numbericKeywords(tags []string) {
+func (t *Schema) numbericKeywords(tags []string) bool {
+	changed := false
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -746,28 +790,36 @@ func (t *Schema) numbericKeywords(tags []string) {
 			case "multipleOf":
 				i, _ := strconv.Atoi(val)
 				t.MultipleOf = i
+				changed = true
 			case "minimum":
 				i, _ := strconv.Atoi(val)
 				t.Minimum = i
+				changed = true
 			case "maximum":
 				i, _ := strconv.Atoi(val)
 				t.Maximum = i
+				changed = true
 			case "exclusiveMaximum":
 				b, _ := strconv.ParseBool(val)
 				t.ExclusiveMaximum = b
+				changed = true
 			case "exclusiveMinimum":
 				b, _ := strconv.ParseBool(val)
 				t.ExclusiveMinimum = b
+				changed = true
 			case "default":
 				i, _ := strconv.Atoi(val)
 				t.Default = i
+				changed = true
 			case "example":
 				if i, err := strconv.Atoi(val); err == nil {
 					t.Examples = append(t.Examples, i)
+					changed = true
 				}
 			}
 		}
 	}
+	return changed
 }
 
 // read struct tags for object type keyworks
@@ -787,7 +839,8 @@ func (t *Schema) numbericKeywords(tags []string) {
 // }
 
 // read struct tags for array type keyworks
-func (t *Schema) arrayKeywords(tags []string) {
+func (t *Schema) arrayKeywords(tags []string) bool {
+	changed := false
 	var defaultValues []interface{}
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -797,42 +850,53 @@ func (t *Schema) arrayKeywords(tags []string) {
 			case "minItems":
 				i, _ := strconv.Atoi(val)
 				t.MinItems = i
+				changed = true
 			case "maxItems":
 				i, _ := strconv.Atoi(val)
 				t.MaxItems = i
+				changed = true
 			case "uniqueItems":
 				t.UniqueItems = true
+				changed = true
 			case "default":
 				defaultValues = append(defaultValues, val)
 			case "enum":
 				switch t.Items.Type {
 				case "string":
 					t.Items.Enum = append(t.Items.Enum, val)
+					changed = true
 				case "integer":
 					i, _ := strconv.Atoi(val)
 					t.Items.Enum = append(t.Items.Enum, i)
+					changed = true
 				case "number":
 					f, _ := strconv.ParseFloat(val, 64)
 					t.Items.Enum = append(t.Items.Enum, f)
+					changed = true
 				}
 			}
 		}
 	}
 	if len(defaultValues) > 0 {
 		t.Default = defaultValues
+		changed = true
 	}
+	return changed
 }
 
-func (t *Schema) extraKeywords(tags []string) {
+func (t *Schema) extraKeywords(tags []string) bool {
+	changed := false
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
-			t.setExtra(nameValue[0], nameValue[1])
+			changed = changed || t.setExtra(nameValue[0], nameValue[1])
 		}
 	}
+	return changed
 }
 
-func (t *Schema) setExtra(key, val string) {
+func (t *Schema) setExtra(key, val string) bool {
+	changed := false
 	if t.Extras == nil {
 		t.Extras = map[string]interface{}{}
 	}
@@ -840,19 +904,25 @@ func (t *Schema) setExtra(key, val string) {
 		switch existingVal := existingVal.(type) {
 		case string:
 			t.Extras[key] = []string{existingVal, val}
+			changed = true
 		case []string:
 			t.Extras[key] = append(existingVal, val)
+			changed = true
 		case int:
 			t.Extras[key], _ = strconv.Atoi(val)
+			changed = true
 		}
 	} else {
 		switch key {
 		case "minimum":
 			t.Extras[key], _ = strconv.Atoi(val)
+			changed = true
 		default:
 			t.Extras[key] = val
+			changed = true
 		}
 	}
+	return changed
 }
 
 func requiredFromJSONTags(tags []string) bool {
