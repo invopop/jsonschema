@@ -6,9 +6,6 @@
     "some_base_property": {
       "type": "integer"
     },
-    "some_base_property_yaml": {
-      "type": "integer"
-    },
     "grand": {
       "$anchor": "GrandfatherType",
       "properties": {
@@ -27,6 +24,9 @@
     },
     "PublicNonExported": {
       "type": "integer"
+    },
+    "MapType": {
+      "type": "object"
     },
     "id": {
       "type": "integer"
@@ -195,10 +195,10 @@
   "type": "object",
   "required": [
     "some_base_property",
-    "some_base_property_yaml",
     "grand",
     "SomeUntaggedBaseProperty",
     "PublicNonExported",
+    "MapType",
     "id",
     "name",
     "password",

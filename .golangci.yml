@@ -51,6 +51,7 @@ linters:
     - structcheck
     - stylecheck
     - exhaustive
+    - varnamelen
 
 linters-settings:
   govet:

@@ -1,20 +1,26 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/outer",
-  "$anchor": "Outer",
-  "properties": {
-    "inner": {
-      "$anchor": "Inner",
+  "$id": "https://github.com/invopop/jsonschema/outer-named",
+  "$defs": {
+    "Inner": {
       "properties": {
-        "foo": {
+        "Foo": {
           "type": "string"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "foo"
+        "Foo"
       ]
+    }
+  },
+  "properties": {
+    "text": {
+      "type": "string"
+    },
+    "inner": {
+      "$ref": "#/$defs/Inner"
     }
   },
   "additionalProperties": false,

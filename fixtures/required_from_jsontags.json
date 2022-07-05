@@ -3,6 +3,10 @@
   "$id": "https://github.com/invopop/jsonschema/test-user",
   "$ref": "#/$defs/TestUser",
   "$defs": {
+    "Bytes": {
+      "type": "string",
+      "contentEncoding": "base64"
+    },
     "GrandfatherType": {
       "properties": {
         "family_name": {
@@ -15,12 +19,12 @@
         "family_name"
       ]
     },
+    "MapType": {
+      "type": "object"
+    },
     "TestUser": {
       "properties": {
         "some_base_property": {
-          "type": "integer"
-        },
-        "some_base_property_yaml": {
           "type": "integer"
         },
         "grand": {
@@ -31,6 +35,9 @@
         },
         "PublicNonExported": {
           "type": "integer"
+        },
+        "MapType": {
+          "$ref": "#/$defs/MapType"
         },
         "id": {
           "type": "integer"
@@ -99,8 +106,7 @@
           "contentEncoding": "base64"
         },
         "photo2": {
-          "type": "string",
-          "contentEncoding": "base64"
+          "$ref": "#/$defs/Bytes"
         },
         "feeling": {
           "oneOf": [
