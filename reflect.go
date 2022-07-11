@@ -635,7 +635,7 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	t.Description = f.Tag.Get("jsonschema_description")
 
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
-	t.genericKeywords(tags, parent, propertyName, f)
+	t.genericKeywords(tags, parent, propertyName)
 
 	switch t.Type {
 	case "string":
@@ -651,8 +651,52 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	t.extraKeywords(extras)
 }
 
+func (t *Schema) parseValue(val string) (parsed interface{}, ok bool) {
+	switch t.Type {
+	case "number":
+		if i, err := strconv.Atoi(val); err == nil {
+			return i, true
+		} else if f, err := strconv.ParseFloat(val, 64); err == nil {
+			return f, true
+		} else {
+			return nil, false
+		}
+
+	case "integer":
+		i, err := strconv.Atoi(val)
+		return i, err == nil
+
+	case "boolean":
+		if val == "true" {
+			return true, true
+		} else if val == "false" {
+			return false, true
+		} else {
+			return false, false
+		}
+
+	case "string":
+		return val, true
+
+	case "array":
+		vals := strings.Split(val, ";")
+		parsed := make([]interface{}, len(vals))
+		for i, v := range vals {
+			p, ok := t.Items.parseValue(v)
+			if !ok {
+				return nil, false
+			}
+			parsed[i] = p
+		}
+		return parsed, true
+
+	default:
+		return nil, false
+	}
+}
+
 // read struct tags for generic keyworks
-func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string, f reflect.StructField) {
+func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) {
 	for _, tag := range tags {
 		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
@@ -704,11 +748,11 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 					t.Enum = append(t.Enum, f)
 				}
 			case "default":
-				if v, ok := parseValue(val, f.Type); ok {
+				if v, ok := t.parseValue(val); ok {
 					t.Default = v
 				}
 			case "example":
-				if v, ok := parseValue(val, f.Type); ok {
+				if v, ok := t.parseValue(val); ok {
 					t.Examples = append(t.Examples, v)
 				}
 			}
@@ -1028,49 +1072,6 @@ func splitOnUnescapedCommas(tagString string) []string {
 
 func fullyQualifiedTypeName(t reflect.Type) string {
 	return t.PkgPath() + "." + t.Name()
-}
-
-func parseValue(val string, t reflect.Type) (parsed interface{}, ok bool) {
-	switch t.Kind() {
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		i, err := strconv.Atoi(val)
-		return i, err == nil
-
-	case reflect.Float32, reflect.Float64:
-		f, err := strconv.ParseFloat(val, 64)
-		return f, err == nil
-
-	case reflect.Bool:
-		if val == "true" {
-			return true, true
-		} else if val == "false" {
-			return false, true
-		} else {
-			return false, false
-		}
-
-	case reflect.String:
-		return val, true
-
-	case reflect.Ptr:
-		return parseValue(val, t.Elem())
-
-	case reflect.Slice, reflect.Array:
-		vals := strings.Split(val, ";")
-		parsed := make([]interface{}, len(vals))
-		for i, v := range vals {
-			p, ok := parseValue(v, t.Elem())
-			if !ok {
-				return nil, false
-			}
-			parsed[i] = p
-		}
-		return parsed, true
-
-	default:
-		return nil, false
-	}
 }
 
 // AddGoComments will update the reflectors comment map with all the comments
