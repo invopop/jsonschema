@@ -1053,7 +1053,7 @@ func parseValue(val string, t reflect.Type) (parsed interface{}, ok bool) {
 	case reflect.String:
 		return val, true
 
-	case reflect.Pointer:
+	case reflect.Ptr:
 		return parseValue(val, t.Elem())
 
 	case reflect.Slice, reflect.Array:
