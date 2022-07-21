@@ -477,3 +477,20 @@ func TestSplitOnUnescapedCommas(t *testing.T) {
 		require.Equal(t, test.expected, actual)
 	}
 }
+
+func TestArrayFormat(t *testing.T) {
+	type URIArray struct {
+		TestURIs []string `jsonschema:"type=array,format=uri"`
+	}
+
+	var jsonReflector Reflector
+	schema := jsonReflector.Reflect(&URIArray{})
+
+	URIInterface, found := schema.Definitions["URIArray"].Properties.Get("TestURIs")
+	require.Equal(t, found, true)
+
+	var URIArrayProperties *Schema = URIInterface.(*Schema)
+
+	URIArrayType := URIArrayProperties.Items.Format
+	require.Equal(t, URIArrayType, "uri")
+}
