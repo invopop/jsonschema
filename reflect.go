@@ -20,7 +20,7 @@ import (
 )
 
 // Version is the JSON Schema version.
-var Version = "http://json-schema.org/draft/2020-12/schema"
+var Version = "https://json-schema.org/draft/2020-12/schema"
 
 // Schema represents a JSON Schema object type.
 // RFC draft-bhutton-json-schema-00 section 4.3
