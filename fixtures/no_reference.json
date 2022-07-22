@@ -2,6 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/invopop/jsonschema/test-user",
   "properties": {
+    "id": {
+      "type": "integer"
+    },
     "some_base_property": {
       "type": "integer"
     },
@@ -25,9 +28,6 @@
     },
     "MapType": {
       "type": "object"
-    },
-    "id": {
-      "type": "integer"
     },
     "name": {
       "type": "string",
@@ -192,12 +192,12 @@
   "additionalProperties": false,
   "type": "object",
   "required": [
+    "id",
     "some_base_property",
     "grand",
     "SomeUntaggedBaseProperty",
     "PublicNonExported",
     "MapType",
-    "id",
     "name",
     "password",
     "TestFlag",

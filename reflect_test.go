@@ -29,7 +29,8 @@ type GrandfatherType struct {
 }
 
 type SomeBaseType struct {
-	SomeBaseProperty int `json:"some_base_property"`
+	ID               string `json:"id"` // to test composition override
+	SomeBaseProperty int    `json:"some_base_property"`
 	// The jsonschema required tag is nonsensical for private and ignored properties.
 	// Their presence here tests that the fields *will not* be required in the output
 	// schema, even if they are tagged required.
@@ -483,14 +484,16 @@ func TestArrayFormat(t *testing.T) {
 		TestURIs []string `jsonschema:"type=array,format=uri"`
 	}
 
-	var jsonReflector Reflector
-	schema := jsonReflector.Reflect(&URIArray{})
+	r := new(Reflector)
+	schema := r.Reflect(&URIArray{})
+	d := schema.Definitions["URIArray"]
+	require.NotNil(t, d)
+	props := d.Properties
+	require.NotNil(t, props)
+	i, found := props.Get("TestURIs")
+	require.True(t, found)
 
-	URIInterface, found := schema.Definitions["URIArray"].Properties.Get("TestURIs")
-	require.Equal(t, found, true)
-
-	var URIArrayProperties *Schema = URIInterface.(*Schema)
-
-	URIArrayType := URIArrayProperties.Items.Format
-	require.Equal(t, URIArrayType, "uri")
+	p := i.(*Schema)
+	pt := p.Items.Format
+	require.Equal(t, pt, "uri")
 }

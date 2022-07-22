@@ -17,6 +17,9 @@
     },
     "TestUser": {
       "properties": {
+        "id": {
+          "type": "integer"
+        },
         "some_base_property": {
           "type": "integer"
         },
@@ -31,9 +34,6 @@
         },
         "MapType": {
           "$ref": "#/$defs/MapType"
-        },
-        "id": {
-          "type": "integer"
         },
         "name": {
           "type": "string",
@@ -197,12 +197,12 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
+        "id",
         "some_base_property",
         "grand",
         "SomeUntaggedBaseProperty",
         "PublicNonExported",
         "MapType",
-        "id",
         "name",
         "password",
         "TestFlag",

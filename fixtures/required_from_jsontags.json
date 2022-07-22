@@ -24,6 +24,9 @@
     },
     "TestUser": {
       "properties": {
+        "id": {
+          "type": "integer"
+        },
         "some_base_property": {
           "type": "integer"
         },
@@ -38,9 +41,6 @@
         },
         "MapType": {
           "$ref": "#/$defs/MapType"
-        },
-        "id": {
-          "type": "integer"
         },
         "name": {
           "type": "string",

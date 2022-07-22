@@ -555,7 +555,7 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 
 		st.Properties.Set(name, property)
 		if required {
-			st.Required = append(st.Required, name)
+			st.Required = appendUniqueString(st.Required, name)
 		}
 	}
 
@@ -570,6 +570,15 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 			}
 		}
 	}
+}
+
+func appendUniqueString(base []string, value string) []string {
+	for _, v := range base {
+		if v == value {
+			return base
+		}
+	}
+	return append(base, value)
 }
 
 func (r *Reflector) lookupComment(t reflect.Type, name string) string {
