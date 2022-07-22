@@ -637,17 +637,66 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 		t.numbericKeywords(tags)
 	case "array":
 		t.arrayKeywords(tags)
-	case "boolean":
-		t.booleanKeywords(tags)
 	}
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
 	t.extraKeywords(extras)
 }
 
+func (t *Schema) parseValue(val string) (parsed interface{}, ok bool) {
+	switch t.Type {
+	case "number":
+		if i, err := strconv.Atoi(val); err == nil {
+			return i, true
+		} else if f, err := strconv.ParseFloat(val, 64); err == nil {
+			return f, true
+		} else {
+			return nil, false
+		}
+
+	case "integer":
+		i, err := strconv.Atoi(val)
+		return i, err == nil
+
+	case "boolean":
+		if val == "true" {
+			return true, true
+		} else if val == "false" {
+			return false, true
+		} else {
+			return false, false
+		}
+
+	case "string":
+		return val, true
+
+	case "array":
+		vals := strings.Split(val, ";")
+		parsed := make([]interface{}, len(vals))
+		for i, v := range vals {
+			p, ok := t.Items.parseValue(v)
+			if !ok {
+				return nil, false
+			}
+			parsed[i] = p
+		}
+		return parsed, true
+
+	case "", "object":
+		obj := make(map[string]interface{})
+		if err := json.Unmarshal([]byte(val), &obj); err != nil {
+			return nil, false
+		}
+		return obj, true
+
+	default:
+		return nil, false
+	}
+}
+
 // read struct tags for generic keyworks
 func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) {
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
@@ -696,24 +745,14 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 					f, _ := strconv.ParseFloat(val, 64)
 					t.Enum = append(t.Enum, f)
 				}
-			}
-		}
-	}
-}
-
-// read struct tags for boolean type keyworks
-func (t *Schema) booleanKeywords(tags []string) {
-	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
-		if len(nameValue) != 2 {
-			continue
-		}
-		name, val := nameValue[0], nameValue[1]
-		if name == "default" {
-			if val == "true" {
-				t.Default = true
-			} else if val == "false" {
-				t.Default = false
+			case "default":
+				if v, ok := t.parseValue(val); ok {
+					t.Default = v
+				}
+			case "example":
+				if v, ok := t.parseValue(val); ok {
+					t.Examples = append(t.Examples, v)
+				}
 			}
 		}
 	}
@@ -722,7 +761,7 @@ func (t *Schema) booleanKeywords(tags []string) {
 // read struct tags for string type keyworks
 func (t *Schema) stringKeywords(tags []string) {
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
@@ -746,10 +785,6 @@ func (t *Schema) stringKeywords(tags []string) {
 			case "writeOnly":
 				i, _ := strconv.ParseBool(val)
 				t.WriteOnly = i
-			case "default":
-				t.Default = val
-			case "example":
-				t.Examples = append(t.Examples, val)
 			}
 		}
 	}
@@ -758,7 +793,7 @@ func (t *Schema) stringKeywords(tags []string) {
 // read struct tags for numberic type keyworks
 func (t *Schema) numbericKeywords(tags []string) {
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
@@ -777,13 +812,6 @@ func (t *Schema) numbericKeywords(tags []string) {
 			case "exclusiveMinimum":
 				b, _ := strconv.ParseBool(val)
 				t.ExclusiveMinimum = b
-			case "default":
-				i, _ := strconv.Atoi(val)
-				t.Default = i
-			case "example":
-				if i, err := strconv.Atoi(val); err == nil {
-					t.Examples = append(t.Examples, i)
-				}
 			}
 		}
 	}
@@ -792,7 +820,7 @@ func (t *Schema) numbericKeywords(tags []string) {
 // read struct tags for object type keyworks
 // func (t *Type) objectKeywords(tags []string) {
 //     for _, tag := range tags{
-//         nameValue := strings.Split(tag, "=")
+//         nameValue := strings.SplitN(tag, "=", 2)
 //         name, val := nameValue[0], nameValue[1]
 //         switch name{
 //             case "dependencies":
@@ -807,9 +835,8 @@ func (t *Schema) numbericKeywords(tags []string) {
 
 // read struct tags for array type keyworks
 func (t *Schema) arrayKeywords(tags []string) {
-	var defaultValues []interface{}
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
@@ -821,8 +848,6 @@ func (t *Schema) arrayKeywords(tags []string) {
 				t.MaxItems = i
 			case "uniqueItems":
 				t.UniqueItems = true
-			case "default":
-				defaultValues = append(defaultValues, val)
 			case "enum":
 				switch t.Items.Type {
 				case "string":
@@ -839,14 +864,11 @@ func (t *Schema) arrayKeywords(tags []string) {
 			}
 		}
 	}
-	if len(defaultValues) > 0 {
-		t.Default = defaultValues
-	}
 }
 
 func (t *Schema) extraKeywords(tags []string) {
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			t.setExtra(nameValue[0], nameValue[1])
 		}
