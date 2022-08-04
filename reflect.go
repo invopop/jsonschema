@@ -464,9 +464,7 @@ func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Sche
 		return
 	}
 	if t.Elem().Kind() != reflect.Interface {
-		st.PatternProperties = map[string]*Schema{
-			".*": r.refOrReflectTypeToSchema(definitions, t.Elem()),
-		}
+		st.AdditionalProperties = r.refOrReflectTypeToSchema(definitions, t.Elem())
 	}
 }
 
@@ -491,7 +489,7 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 	if r.AssignAnchor {
 		s.Anchor = t.Name()
 	}
-	if !r.AllowAdditionalProperties {
+	if !r.AllowAdditionalProperties && s.AdditionalProperties == nil {
 		s.AdditionalProperties = FalseSchema
 	}
 
