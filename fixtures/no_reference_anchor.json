@@ -57,10 +57,8 @@
       "description": "list of IDs, omitted when empty"
     },
     "tags": {
-      "patternProperties": {
-        ".*": {
-          "type": "string"
-        }
+      "additionalProperties": {
+        "type": "string"
       },
       "type": "object"
     },
