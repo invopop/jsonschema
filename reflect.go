@@ -874,13 +874,23 @@ func (t *Schema) setExtra(key, val string) {
 			t.Extras[key] = append(existingVal, val)
 		case int:
 			t.Extras[key], _ = strconv.Atoi(val)
+		case bool:
+			t.Extras[key] = (val == "true" || val == "t")
 		}
 	} else {
 		switch key {
 		case "minimum":
 			t.Extras[key], _ = strconv.Atoi(val)
 		default:
-			t.Extras[key] = val
+			var x interface{}
+			if val == "true" {
+				x = true
+			} else if val == "false" {
+				x = false
+			} else {
+				x = val
+			}
+			t.Extras[key] = x
 		}
 	}
 }
