@@ -129,6 +129,11 @@
       ],
       "hello": "world"
     },
+    "bool_extra": {
+      "type": "string",
+      "isFalse": false,
+      "isTrue": true
+    },
     "color": {
       "type": "string",
       "enum": [

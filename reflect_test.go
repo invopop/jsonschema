@@ -95,7 +95,8 @@ type TestUser struct {
 	UUID  string `json:"uuid" jsonschema:"format=uuid"`
 
 	// Test for "extras" support
-	Baz string `jsonschema_extras:"foo=bar,hello=world,foo=bar1"`
+	Baz       string `jsonschema_extras:"foo=bar,hello=world,foo=bar1"`
+	BoolExtra string `json:"bool_extra,omitempty" jsonschema_extras:"isTrue=true,isFalse=false"`
 
 	// Tests for simple enum tags
 	Color      string  `json:"color" jsonschema:"enum=red,enum=green,enum=blue"`
