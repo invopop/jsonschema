@@ -651,6 +651,9 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	}
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
 	t.extraKeywords(extras)
+
+	allOfIfs := splitOnUnescapedCommas(f.Tag.Get("jsonschema_allof_type"))
+	parent.addAllOfConditions(allOfIfs, propertyName)
 }
 
 // read struct tags for generic keyworks
@@ -850,6 +853,30 @@ func (t *Schema) arrayKeywords(tags []string) {
 	}
 	if len(defaultValues) > 0 {
 		t.Default = defaultValues
+	}
+}
+
+func (t *Schema) addAllOfConditions(conditions []string, propertyName string) {
+	if len(t.AllOf) == 0 {
+		t.AllOf = make([]*Schema, 0)
+	}
+	// tag Format: <field_name>:<test_value>=/path/my/type
+	for _, condition := range conditions {
+		parts := strings.Split(condition, ":")
+		if len(parts) != 2 {
+			continue
+		}
+		conditionPart := strings.Split(strings.TrimSpace(parts[0]), "=")
+		if len(conditionPart) != 2 {
+			continue
+		}
+		ruleSchema := Schema{
+			If:   &Schema{Properties: orderedmap.New()},
+			Then: &Schema{Properties: orderedmap.New()},
+		}
+		ruleSchema.If.Properties.Set(conditionPart[0], Schema{Const: conditionPart[1]})
+		ruleSchema.Then.Properties.Set(propertyName, Schema{Ref: parts[1]})
+		t.AllOf = append(t.AllOf, &ruleSchema)
 	}
 }
 

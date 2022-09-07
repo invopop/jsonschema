@@ -498,3 +498,33 @@ func TestArrayFormat(t *testing.T) {
 	pt := p.Items.Format
 	require.Equal(t, pt, "uri")
 }
+
+func TestAllOfType(t *testing.T) {
+	type Application struct {
+		Name          string          `json:"name"`
+		Kind          string          `json:"kind"`
+		Specification json.RawMessage `json:"spec" jsonschema_allof_type:"kind=docker:#/$defs/dockerApp, kind=vm:#/$defs/vmApp"`
+	}
+
+	r := new(Reflector)
+	appSchema := r.Reflect(&Application{})
+
+	if appSchema.Definitions == nil {
+		appSchema.Definitions = make(map[string]*Schema, 0)
+	}
+
+	require.Len(t, appSchema.Definitions, 1)
+	require.NotNil(t, appSchema.Definitions["Application"])
+	require.Len(t, appSchema.Definitions["Application"].AllOf, 2)
+
+	// Check IF part
+	allOfDocker := appSchema.Definitions["Application"].AllOf[0]
+	jsonDocker, _ := allOfDocker.MarshalJSON()
+	dockerIfMustBe := `{"if":{"properties":{"kind":{"const":"docker"}}},"then":{"properties":{"spec":{"$ref":"#/$defs/dockerApp"}}}}`
+	require.Equal(t, dockerIfMustBe, string(jsonDocker))
+
+	allOfVM := appSchema.Definitions["Application"].AllOf[1]
+	jsonVM, _ := allOfVM.MarshalJSON()
+	vmIfMustBe := `{"if":{"properties":{"kind":{"const":"vm"}}},"then":{"properties":{"spec":{"$ref":"#/$defs/vmApp"}}}}`
+	require.Equal(t, vmIfMustBe, string(jsonVM))
+}
