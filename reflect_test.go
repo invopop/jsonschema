@@ -331,6 +331,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&TestUser{}, &Reflector{DoNotReference: true}, "fixtures/no_reference.json"},
 		{&TestUser{}, &Reflector{DoNotReference: true, AssignAnchor: true}, "fixtures/no_reference_anchor.json"},
 		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/oneof.json"},
+		{&TestUser{}, &Reflector{ReferenceRoot: "#/components/schemas/"}, "fixtures/test_user_reference_root.json"},
 		{&CustomTypeField{}, &Reflector{
 			Mapper: func(i reflect.Type) *Schema {
 				if i == reflect.TypeOf(CustomTime{}) {

@@ -172,6 +172,12 @@ type Reflector struct {
 	// list of type definitions (`$defs`) will not be included.
 	DoNotReference bool
 
+	// By default definitions are referenced via `#/$defs/[name]`. If the schema
+	// is then embedded in a different context (for example in a OpenAPI spec)
+	// this path might not be correct. ReferenceRoot can be usend to overwrite
+	// the `#/$defs/` path according to the use case.
+	ReferenceRoot string
+
 	// ExpandedStruct when true will include the reflected type's definition in the
 	// root as opposed to a definition with a reference.
 	ExpandedStruct bool
@@ -615,8 +621,12 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 	if _, ok := definitions[name]; !ok {
 		return nil
 	}
+	root := "#/$defs/"
+	if r.ReferenceRoot != "" {
+		root = r.ReferenceRoot
+	}
 	return &Schema{
-		Ref: "#/$defs/" + name,
+		Ref: root + name,
 	}
 }
 
