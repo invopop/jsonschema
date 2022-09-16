@@ -147,6 +147,21 @@ type ChildOneOf struct {
 	Child4 string      `json:"child4" jsonschema:"oneof_required=group1"`
 }
 
+type RootAnyOf struct {
+	Field1 string      `json:"field1" jsonschema:"anyof_required=group1"`
+	Field2 string      `json:"field2" jsonschema:"anyof_required=group2"`
+	Field3 interface{} `json:"field3" jsonschema:"anyof_type=string;array"`
+	Field4 string      `json:"field4" jsonschema:"anyof_required=group1"`
+	Field5 ChildAnyOf  `json:"child"`
+}
+
+type ChildAnyOf struct {
+	Child1 string      `json:"child1" jsonschema:"anyof_required=group1"`
+	Child2 string      `json:"child2" jsonschema:"anyof_required=group2"`
+	Child3 interface{} `json:"child3" jsonschema:"anyof_required=group2,oneof_type=string;array"`
+	Child4 string      `json:"child4" jsonschema:"anyof_required=group1"`
+}
+
 type Text string
 
 type TextNamed string
@@ -331,6 +346,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&TestUser{}, &Reflector{DoNotReference: true}, "fixtures/no_reference.json"},
 		{&TestUser{}, &Reflector{DoNotReference: true, AssignAnchor: true}, "fixtures/no_reference_anchor.json"},
 		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/oneof.json"},
+		{&RootAnyOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/anyof.json"},
 		{&CustomTypeField{}, &Reflector{
 			Mapper: func(i reflect.Type) *Schema {
 				if i == reflect.TypeOf(CustomTime{}) {
