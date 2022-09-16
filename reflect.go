@@ -709,6 +709,17 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 						Type: ty,
 					})
 				}
+			case "anyof_type":
+				if t.AnyOf == nil {
+					t.AnyOf = make([]*Schema, 0, 1)
+				}
+				t.Type = ""
+				types := strings.Split(nameValue[1], ";")
+				for _, ty := range types {
+					t.AnyOf = append(t.AnyOf, &Schema{
+						Type: ty,
+					})
+				}
 			case "enum":
 				switch t.Type {
 				case "string":
