@@ -967,7 +967,7 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 		}
 
 		// As per JSON Marshal rules, anonymous pointer to structs are inherited
-		if f.Type.Kind() == reflect.Pointer && f.Type.Elem().Kind() == reflect.Struct {
+		if f.Type.Kind() == reflect.Ptr && f.Type.Elem().Kind() == reflect.Struct {
 			return "", true, false, false
 		}
 	}
