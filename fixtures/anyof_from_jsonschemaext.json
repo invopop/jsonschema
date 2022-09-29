@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/root-any-of-extended",
+  "$ref": "#/$defs/RootAnyOfExtended",
+  "$defs": {
+    "RootAnyOfExtended": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "root1": {
+          "enum": [
+            "boulou",
+            "billy"
+          ],
+          "type": "string"
+        },
+        "root2": {
+          "type": "string"
+        },
+        "root3": {
+          "type": "string"
+        }
+      },
+      "anyOf": [
+        {
+          "properties": {
+            "root1": {
+              "const": "boulou"
+            }
+          },
+          "required": [
+            "root2"
+          ]
+        },
+        {
+          "properties": {
+            "root1": {
+              "const": "billy"
+            }
+          },
+          "required": [
+            "root3"
+          ]
+        }
+      ]
+    }
+  }
+}

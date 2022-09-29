@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/struct-with-ext",
+  "$ref": "#/$defs/StructWithExt",
+  "$defs": {
+    "StructWithExt": {
+      "additionalProperties": false,
+      "type": "object",
+      "properties": {
+        "root1": {
+          "enum": [
+            "child",
+            "root"
+          ],
+          "type": "string"
+        },
+        "root2": {
+          "type": "string"
+        },
+        "inner": {
+          "type": "object",
+          "additionalProperties":false,
+          "properties": {
+            "child1": {
+              "type": "string"
+            }
+          },
+          "required": ["child1"]
+        }
+      },
+      "if": {
+        "properties": {
+          "root1": {
+            "const": "child"
+          }
+        }
+      },
+      "then": {
+        "required": ["inner"]
+      }
+    }
+  }
+}

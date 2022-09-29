@@ -147,6 +147,50 @@ type ChildOneOf struct {
 	Child4 string      `json:"child4" jsonschema:"oneof_required=group1"`
 }
 
+type RootAnyOfExtended struct {
+	Root1 string `json:"root1" jsonschema:"enum=boulou,enum=billy"`
+	Root2 string `json:"root2"`
+	Root3 string `json:"root3"`
+}
+
+func (RootAnyOfExtended) JSONSchemaExt(base *Schema) {
+	anyOfCond1 := orderedmap.New()
+	anyOfCond1.Set("root1", &Schema{Const: "boulou"})
+	anyOf1 := &Schema{
+		Properties: anyOfCond1,
+		Required:   []string{"root2"},
+	}
+	anyOfCond2 := orderedmap.New()
+	anyOfCond2.Set("root1", &Schema{Const: "billy"})
+	anyOf2 := &Schema{
+		Properties: anyOfCond2,
+		Required:   []string{"root3"},
+	}
+	cond := make([]*Schema, 2)
+	cond[0] = anyOf1
+	cond[1] = anyOf2
+	base.AnyOf = cond
+}
+
+type StructWithExt struct {
+	Root1 string `json:"root1" jsonschema:"enum=child,enum=root"`
+	Root2 string `json:"root2"`
+	Inner struct {
+		Child1 string `json:"child1" jsonschema:"required"`
+	} `json:"inner,omitempty"`
+}
+
+func (StructWithExt) JSONSchemaExt(base *Schema) {
+	ifProps := orderedmap.New()
+	ifProps.Set("root1", &Schema{Const: "child"})
+	base.If = &Schema{
+		Properties: ifProps,
+	}
+	base.Then = &Schema{
+		Required: []string{"inner"},
+	}
+}
+
 type Text string
 
 type TextNamed string
@@ -336,6 +380,8 @@ func TestSchemaGeneration(t *testing.T) {
 		{&TestUser{}, &Reflector{DoNotReference: true}, "fixtures/no_reference.json"},
 		{&TestUser{}, &Reflector{DoNotReference: true, AssignAnchor: true}, "fixtures/no_reference_anchor.json"},
 		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/oneof.json"},
+		{&RootAnyOfExtended{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/anyof_from_jsonschemaext.json"},
+		{&StructWithExt{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/ifthen_from_jsonschemaext.json"},
 		{&CustomTypeField{}, &Reflector{
 			Mapper: func(i reflect.Type) *Schema {
 				if i == reflect.TypeOf(CustomTime{}) {

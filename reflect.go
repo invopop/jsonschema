@@ -108,7 +108,12 @@ type customSchemaImpl interface {
 	JSONSchema() *Schema
 }
 
+type extendSchemaImpl interface {
+	JSONSchemaExt(base *Schema)
+}
+
 var customType = reflect.TypeOf((*customSchemaImpl)(nil)).Elem()
+var extendSchemaType = reflect.TypeOf((*extendSchemaImpl)(nil)).Elem()
 
 // customSchemaGetFieldDocString
 type customSchemaGetFieldDocString interface {
@@ -355,6 +360,8 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		return st
 	}
 
+	r.reflectSchemaExtended(definitions, t, st)
+
 	// Defined format types for JSON Schema Validation
 	// RFC draft-wright-json-schema-validation-00, section 7.3
 	// TODO email RFC section 7.3.2, hostname RFC section 7.3.3, uriref RFC section 7.3.7
@@ -420,6 +427,19 @@ func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type)
 	}
 
 	return nil
+}
+
+func (r *Reflector) reflectSchemaExtended(definitions Definitions, t reflect.Type, s *Schema) *Schema {
+	if t.Implements(extendSchemaType) {
+		v := reflect.New(t)
+		o := v.Interface().(extendSchemaImpl)
+		o.JSONSchemaExt(s)
+		if ref := r.refDefinition(definitions, t); ref != nil {
+			return ref
+		}
+	}
+
+	return s
 }
 
 func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type, st *Schema) {
