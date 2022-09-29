@@ -108,7 +108,12 @@ type customSchemaImpl interface {
 	JSONSchema() *Schema
 }
 
+type AnyOfImpl interface {
+	JSONSchemaAnyOf() []*Schema
+}
+
 var customType = reflect.TypeOf((*customSchemaImpl)(nil)).Elem()
+var customAnyOfType = reflect.TypeOf((*AnyOfImpl)(nil)).Elem()
 
 // customSchemaGetFieldDocString
 type customSchemaGetFieldDocString interface {
@@ -353,6 +358,16 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 			{Type: "integer"},
 		}
 		return st
+	}
+
+	if t.Implements(customAnyOfType) {
+		v := reflect.New(t)
+		o := v.Interface().(AnyOfImpl)
+		stAnyOf := o.JSONSchemaAnyOf()
+		for _, schema := range stAnyOf {
+			r.addDefinition(definitions, t, schema)
+		}
+		st.AnyOf = stAnyOf
 	}
 
 	// Defined format types for JSON Schema Validation
