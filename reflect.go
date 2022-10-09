@@ -108,7 +108,14 @@ type customSchemaImpl interface {
 	JSONSchema() *Schema
 }
 
+// Function to be run after the schema has been generated.
+// this will let you modify a schema afterwards
+type postSchemaImpl interface {
+	JSONSchemaPost(*Schema)
+}
+
 var customType = reflect.TypeOf((*customSchemaImpl)(nil)).Elem()
+var postType = reflect.TypeOf((*postSchemaImpl)(nil)).Elem()
 
 // customSchemaGetFieldDocString
 type customSchemaGetFieldDocString interface {
@@ -395,6 +402,8 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		panic("unsupported type " + t.String())
 	}
 
+	r.reflectSchemaPost(definitions, t, st)
+
 	// Always try to reference the definition which may have just been created
 	if def := r.refDefinition(definitions, t); def != nil {
 		return def
@@ -420,6 +429,19 @@ func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type)
 	}
 
 	return nil
+}
+
+func (r *Reflector) reflectSchemaPost(definitions Definitions, t reflect.Type, s *Schema) *Schema {
+	if t.Implements(postType) {
+		v := reflect.New(t)
+		o := v.Interface().(postSchemaImpl)
+		o.JSONSchemaPost(s)
+		if ref := r.refDefinition(definitions, t); ref != nil {
+			return ref
+		}
+	}
+
+	return s
 }
 
 func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type, st *Schema) {

@@ -295,6 +295,25 @@ type KeyNamed struct {
 	RenamedByComputation int `jsonschema_description:"Description was preserved"`
 }
 
+type SchemaPostTestBase struct {
+	FirstName  string `json:"FirstName"`
+	LastName   string `json:"LastName"`
+	Age        uint   `json:"age"`
+	MiddleName string `json:"middle_name,omitempty"`
+}
+
+type SchemaPostTest struct {
+	SchemaPostTestBase `json:",inline"`
+}
+
+func (SchemaPostTest) JSONSchemaPost(base *Schema) {
+	base.Properties.Delete("FirstName")
+	base.Properties.Delete("age")
+	val, _ := base.Properties.Get("LastName")
+	(val).(*Schema).Description = "some extra words"
+	base.Required = []string{"LastName"}
+}
+
 func TestReflector(t *testing.T) {
 	r := new(Reflector)
 	s := "http://example.com/schema"
@@ -424,6 +443,7 @@ func TestSchemaGeneration(t *testing.T) {
 		}, "fixtures/keynamed.json"},
 		{MapType{}, &Reflector{}, "fixtures/map_type.json"},
 		{ArrayType{}, &Reflector{}, "fixtures/array_type.json"},
+		{SchemaPostTest{}, &Reflector{}, "fixtures/custom_type_post.json"},
 	}
 
 	for _, tt := range tests {
