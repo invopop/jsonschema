@@ -683,6 +683,21 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 					parent.OneOf = append(parent.OneOf, typeFound)
 				}
 				typeFound.Required = append(typeFound.Required, propertyName)
+			case "anyof_required":
+				var typeFound *Schema
+				for i := range parent.AnyOf {
+					if parent.AnyOf[i].Title == nameValue[1] {
+						typeFound = parent.AnyOf[i]
+					}
+				}
+				if typeFound == nil {
+					typeFound = &Schema{
+						Title:    nameValue[1],
+						Required: []string{},
+					}
+					parent.AnyOf = append(parent.AnyOf, typeFound)
+				}
+				typeFound.Required = append(typeFound.Required, propertyName)
 			case "oneof_type":
 				if t.OneOf == nil {
 					t.OneOf = make([]*Schema, 0, 1)
@@ -691,6 +706,17 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 				types := strings.Split(nameValue[1], ";")
 				for _, ty := range types {
 					t.OneOf = append(t.OneOf, &Schema{
+						Type: ty,
+					})
+				}
+			case "anyof_type":
+				if t.AnyOf == nil {
+					t.AnyOf = make([]*Schema, 0, 1)
+				}
+				t.Type = ""
+				types := strings.Split(nameValue[1], ";")
+				for _, ty := range types {
+					t.AnyOf = append(t.AnyOf, &Schema{
 						Type: ty,
 					})
 				}
