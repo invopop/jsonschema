@@ -17,6 +17,7 @@ type SampleUser struct {
 	YearOfBirth string                 `json:"year_of_birth,omitempty" jsonschema:"oneof_required=year"`
 	Metadata    interface{}            `json:"metadata,omitempty" jsonschema:"oneof_type=string;array"`
 	FavColor    string                 `json:"fav_color,omitempty" jsonschema:"enum=red,enum=green,enum=blue"`
+	Cost        float64                `json:"cost,omitempty" jsonschema:"default=12.5"`
 }
 
 func ExampleReflect() {
@@ -100,8 +101,13 @@ func ExampleReflect() {
 	//             "green",
 	//             "blue"
 	//           ]
-	//         }
+	//         },
+	//         "cost": {
+	//           "type": "number",
+	//      	 "default": 12.5
+	//         },
 	//       },
+
 	//       "additionalProperties": false,
 	//       "type": "object",
 	//       "required": [

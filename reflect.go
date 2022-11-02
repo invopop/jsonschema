@@ -643,7 +643,7 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	case "number":
 		t.numbericKeywords(tags)
 	case "integer":
-		t.numbericKeywords(tags)
+		t.integericKeywords(tags)
 	case "array":
 		t.arrayKeywords(tags)
 	case "boolean":
@@ -792,6 +792,41 @@ func (t *Schema) stringKeywords(tags []string) {
 
 // read struct tags for numberic type keyworks
 func (t *Schema) numbericKeywords(tags []string) {
+	for _, tag := range tags {
+		nameValue := strings.Split(tag, "=")
+		if len(nameValue) == 2 {
+			name, val := nameValue[0], nameValue[1]
+			switch name {
+			case "multipleOf":
+				i, _ := strconv.Atoi(val)
+				t.MultipleOf = i
+			case "minimum":
+				i, _ := strconv.Atoi(val)
+				t.Minimum = i
+			case "maximum":
+				i, _ := strconv.Atoi(val)
+				t.Maximum = i
+			case "exclusiveMaximum":
+				b, _ := strconv.ParseBool(val)
+				t.ExclusiveMaximum = b
+			case "exclusiveMinimum":
+				b, _ := strconv.ParseBool(val)
+				t.ExclusiveMinimum = b
+			case "default":
+				// i, _ := strconv.Atoi(val)
+				i, _ := strconv.ParseFloat(val, 64)
+				t.Default = i
+			case "example":
+				if i, err := strconv.Atoi(val); err == nil {
+					t.Examples = append(t.Examples, i)
+				}
+			}
+		}
+	}
+}
+
+// read struct tags for integer type keyworks
+func (t *Schema) integericKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
