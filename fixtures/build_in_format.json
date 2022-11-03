@@ -1,0 +1,94 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://github.com/invopop/jsonschema/build-in-format",
+    "$ref": "#/$defs/BuildInFormat",
+    "$defs": {
+      "BuildInFormat": {
+        "properties": {
+          "Date": {
+            "type": "string",
+            "format": "date"
+          },
+          "Time": {
+            "type": "string",
+            "format": "time"
+          },
+          "DataTime": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "Duration": {
+            "type": "integer"
+          },
+          "Email": {
+            "type": "string",
+            "format": "email"
+          },
+          "IDNEmail": {
+            "type": "string",
+            "format": "idn-email"
+          },
+          "Hostname": {
+            "type": "string",
+            "format": "hostname"
+          },
+          "IDNHostname": {
+            "type": "string",
+            "format": "idn-hostname"
+          },
+          "IPv4": {
+            "type": "string",
+            "format": "ipv4"
+          },
+          "IPv6": {
+            "type": "string",
+            "format": "ipv6"
+          },
+          "UUID": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "URI": {
+            "type": "string",
+            "format": "uri"
+          },
+          "URIReference": {
+            "type": "string",
+            "format": "uri-reference"
+          },
+          "IRI": {
+            "type": "string",
+            "format": "iri"
+          },
+          "IRIReference": {
+            "type": "string",
+            "format": "iri-reference"
+          },
+          "RegEx": {
+            "type": "string",
+            "format": "regex"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "Date",
+          "Time",
+          "DataTime",
+          "Duration",
+          "Email",
+          "IDNEmail",
+          "Hostname",
+          "IDNHostname",
+          "IPv4",
+          "IPv6",
+          "UUID",
+          "URI",
+          "URIReference",
+          "IRI",
+          "IRIReference",
+          "RegEx"
+        ]
+      }
+    }
+  }
