@@ -310,6 +310,10 @@ type KeyNamed struct {
 	RenamedByComputation int `jsonschema_description:"Description was preserved"`
 }
 
+type Expression struct {
+	Value int `json:"value" jsonschema_extras:"foo=bar=='baz'"`
+}
+
 func TestReflector(t *testing.T) {
 	r := new(Reflector)
 	s := "http://example.com/schema"
@@ -440,6 +444,7 @@ func TestSchemaGeneration(t *testing.T) {
 		}, "fixtures/keynamed.json"},
 		{MapType{}, &Reflector{}, "fixtures/map_type.json"},
 		{ArrayType{}, &Reflector{}, "fixtures/array_type.json"},
+		{Expression{}, &Reflector{}, "fixtures/schema_with_expression.json"},
 	}
 
 	for _, tt := range tests {

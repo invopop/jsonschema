@@ -881,7 +881,7 @@ func (t *Schema) arrayKeywords(tags []string) {
 
 func (t *Schema) extraKeywords(tags []string) {
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			t.setExtra(nameValue[0], nameValue[1])
 		}
