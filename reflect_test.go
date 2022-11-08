@@ -310,18 +310,18 @@ type KeyNamed struct {
 	RenamedByComputation int `jsonschema_description:"Description was preserved"`
 }
 
-type SchemaPostTestBase struct {
+type SchemaExtendTestBase struct {
 	FirstName  string `json:"FirstName"`
 	LastName   string `json:"LastName"`
 	Age        uint   `json:"age"`
 	MiddleName string `json:"middle_name,omitempty"`
 }
 
-type SchemaPostTest struct {
-	SchemaPostTestBase `json:",inline"`
+type SchemaExtendTest struct {
+	SchemaExtendTestBase `json:",inline"`
 }
 
-func (SchemaPostTest) JSONSchemaExtend(base *Schema) {
+func (SchemaExtendTest) JSONSchemaExtend(base *Schema) {
 	base.Properties.Delete("FirstName")
 	base.Properties.Delete("age")
 	val, _ := base.Properties.Get("LastName")
@@ -463,7 +463,7 @@ func TestSchemaGeneration(t *testing.T) {
 		}, "fixtures/keynamed.json"},
 		{MapType{}, &Reflector{}, "fixtures/map_type.json"},
 		{ArrayType{}, &Reflector{}, "fixtures/array_type.json"},
-		{SchemaPostTest{}, &Reflector{}, "fixtures/custom_type_post.json"},
+		{SchemaExtendTest{}, &Reflector{}, "fixtures/custom_type_extend.json"},
 		{Expression{}, &Reflector{}, "fixtures/schema_with_expression.json"},
 	}
 

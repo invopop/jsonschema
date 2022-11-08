@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/schema-post-test",
-  "$ref": "#/$defs/SchemaPostTest",
+  "$id": "https://github.com/invopop/jsonschema/schema-extend-test",
+  "$ref": "#/$defs/SchemaExtendTest",
   "$defs": {
-    "SchemaPostTest": {
+    "SchemaExtendTest": {
       "properties": {
         "LastName": {
           "type": "string",
