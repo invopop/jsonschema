@@ -306,7 +306,7 @@ type SchemaPostTest struct {
 	SchemaPostTestBase `json:",inline"`
 }
 
-func (SchemaPostTest) JSONSchemaPost(base *Schema) {
+func (SchemaPostTest) JSONSchemaExtend(base *Schema) {
 	base.Properties.Delete("FirstName")
 	base.Properties.Delete("age")
 	val, _ := base.Properties.Get("LastName")
