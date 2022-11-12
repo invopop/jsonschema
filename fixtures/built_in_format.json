@@ -1,9 +1,9 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/invopop/jsonschema/build-in-format",
-    "$ref": "#/$defs/BuildInFormat",
+    "$id": "https://github.com/invopop/jsonschema/built-in-format",
+    "$ref": "#/$defs/BuiltInFormat",
     "$defs": {
-      "BuildInFormat": {
+      "BuiltInFormat": {
         "properties": {
           "Date": {
             "type": "string",

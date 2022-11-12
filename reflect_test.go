@@ -499,9 +499,9 @@ func TestArrayFormat(t *testing.T) {
 	require.Equal(t, pt, "uri")
 }
 
-func TestBuildInFormat(t *testing.T) {
-	//reference: https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
-	type BuildInFormat struct {
+func TestBuiltInFormat(t *testing.T) {
+	// reference: https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
+	type BuiltInFormat struct {
 		Date     time.Time     `jsonschema:"format=date"`
 		Time     time.Time     `jsonschema:"format=time"`
 		DataTime time.Time     `jsonschema:"format=date-time"`
@@ -526,6 +526,5 @@ func TestBuildInFormat(t *testing.T) {
 	}
 
 	r := new(Reflector)
-	//fmt.Println(string(resBytes))
-	compareSchemaOutput(t, "fixtures/build_in_format.json", r, &BuildInFormat{})
+	compareSchemaOutput(t, "fixtures/built_in_format.json", r, &BuiltInFormat{})
 }
