@@ -797,6 +797,9 @@ func (t *Schema) stringKeywords(tags []string) {
 					t.Format = val
 					break
 				}
+			case "deprecated":
+				i, _ := strconv.ParseBool(val)
+				t.Deprecated = i
 			case "readOnly":
 				i, _ := strconv.ParseBool(val)
 				t.ReadOnly = i
