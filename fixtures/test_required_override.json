@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/test-required-struct",
+  "$ref": "#/$defs/TestRequiredStruct",
+  "$defs": {
+    "TestRequiredStruct": {
+      "properties": {
+        "FooOmitEmpty": {
+          "type": "string"
+        },
+        "FooOmitEmptyRequired": {
+          "type": "string"
+        },
+        "FooOmitEmptyRequiredTrue": {
+          "type": "string"
+        },
+        "FooOmitEmptyRequiredFalse": {
+          "type": "string"
+        },
+        "Bar": {
+          "type": "string"
+        },
+        "BarRequired": {
+          "type": "string"
+        },
+        "BarRequiredTrue": {
+          "type": "string"
+        },
+        "BarRequiredFalse": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "FooOmitEmptyRequired",
+        "FooOmitEmptyRequiredTrue",
+        "Bar",
+        "BarRequired",
+        "BarRequiredTrue"
+      ]
+    }
+  }
+}

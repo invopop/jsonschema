@@ -61,6 +61,18 @@ const (
 	Great
 )
 
+type TestRequiredStruct struct {
+	FooOmitEmpty              string `json:",omitempty"`
+	FooOmitEmptyRequired      string `json:",omitempty" jsonschema:"required"`
+	FooOmitEmptyRequiredTrue  string `json:",omitempty" jsonschema:"required=true"`
+	FooOmitEmptyRequiredFalse string `json:",omitempty" jsonschema:"required=false"`
+
+	Bar              string
+	BarRequired      string `jsonschema:"required"`
+	BarRequiredTrue  string `jsonschema:"required=true"`
+	BarRequiredFalse string `jsonschema:"required=false"`
+}
+
 type TestUser struct {
 	SomeBaseType
 	nonExported
@@ -365,6 +377,7 @@ func TestSchemaGeneration(t *testing.T) {
 		fixture   string
 	}{
 		{&TestUser{}, &Reflector{}, "fixtures/test_user.json"},
+		{&TestRequiredStruct{}, &Reflector{RequiredOverrideFromJSONSchemaTags: true}, "fixtures/test_required_override.json"},
 		{&UserWithAnchor{}, &Reflector{}, "fixtures/user_with_anchor.json"},
 		{&TestUser{}, &Reflector{AssignAnchor: true}, "fixtures/test_user_assign_anchor.json"},
 		{&TestUser{}, &Reflector{AllowAdditionalProperties: true}, "fixtures/allow_additional_props.json"},

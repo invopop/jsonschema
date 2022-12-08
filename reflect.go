@@ -174,6 +174,11 @@ type Reflector struct {
 	// default of requiring any key *not* tagged with `json:,omitempty`.
 	RequiredFromJSONSchemaTags bool
 
+	// RequiredOverrideFromJSONSchemaTags allows to use individual `jsonschema:required=false`
+	// tags to override the required flags while RequiredFromJSONSchemaTags can still be false
+	// and use the default behaviour with omitempty.
+	RequiredOverrideFromJSONSchemaTags bool
+
 	// Do not reference definitions. This will remove the top-level $defs map and
 	// instead cause the entire structure of types to be output in one tree. The
 	// list of type definitions (`$defs`) will not be included.
@@ -956,16 +961,18 @@ func requiredFromJSONTags(tags []string) bool {
 	return true
 }
 
-func requiredFromJSONSchemaTags(tags []string) bool {
+func requiredFromJSONSchemaTags(tags []string, defaultRequired bool) bool {
 	if ignoredByJSONSchemaTags(tags) {
 		return false
 	}
 	for _, tag := range tags {
-		if tag == "required" {
+		if tag == "required" || tag == "required=true" {
 			return true
+		} else if tag == "required=false" {
+			return false
 		}
 	}
-	return false
+	return defaultRequired
 }
 
 func nullableFromJSONSchemaTags(tags []string) bool {
@@ -1002,8 +1009,12 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 	}
 
 	required := requiredFromJSONTags(jsonTags)
-	if r.RequiredFromJSONSchemaTags {
-		required = requiredFromJSONSchemaTags(schemaTags)
+	if r.RequiredFromJSONSchemaTags || r.RequiredOverrideFromJSONSchemaTags {
+		if !r.RequiredOverrideFromJSONSchemaTags {
+			required = false
+		}
+
+		required = requiredFromJSONSchemaTags(schemaTags, required)
 	}
 
 	nullable := nullableFromJSONSchemaTags(schemaTags)
