@@ -183,6 +183,9 @@ type Reflector struct {
 	// root as opposed to a definition with a reference.
 	ExpandedStruct bool
 
+	// FieldNameTag will change the tag used to get field names. json tags are used by default.
+	FieldNameTag string
+
 	// IgnoredTypes defines a slice of types that should be ignored in the schema,
 	// switching to just allowing additional properties instead.
 	IgnoredTypes []interface{}
@@ -989,7 +992,11 @@ func ignoredByJSONSchemaTags(tags []string) bool {
 }
 
 func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool, bool) {
-	jsonTagString, _ := f.Tag.Lookup("json")
+	tagKey := r.FieldNameTag
+	if tagKey == "" {
+		tagKey = "json"
+	}
+	jsonTagString := f.Tag.Get(tagKey)
 	jsonTags := strings.Split(jsonTagString, ",")
 
 	if ignoredByJSONTags(jsonTags) {
