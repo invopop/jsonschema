@@ -989,7 +989,10 @@ func ignoredByJSONSchemaTags(tags []string) bool {
 }
 
 func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool, bool) {
-	jsonTagString, _ := f.Tag.Lookup("json")
+	jsonTagString, ok := f.Tag.Lookup("json")
+	if !ok {
+		jsonTagString, _ = f.Tag.Lookup("yaml")
+	}
 	jsonTags := strings.Split(jsonTagString, ",")
 
 	if ignoredByJSONTags(jsonTags) {

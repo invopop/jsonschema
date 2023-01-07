@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/invopop/jsonschema/outer-ptr",
   "properties": {
-    "Foo": {
+    "foo": {
       "type": "string"
     },
     "Text": {
@@ -12,6 +12,6 @@
   "additionalProperties": false,
   "type": "object",
   "required": [
-    "Foo"
+    "foo"
   ]
 }

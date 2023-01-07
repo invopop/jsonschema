@@ -8,7 +8,7 @@
     "Text": {
       "type": "string"
     },
-    "Foo": {
+    "foo": {
       "type": "string"
     }
   },
@@ -16,6 +16,6 @@
   "type": "object",
   "required": [
     "TextNamed",
-    "Foo"
+    "foo"
   ]
 }

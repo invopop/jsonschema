@@ -204,6 +204,10 @@ type UserWithAnchor struct {
 	Name string `json:"name" jsonschema:"anchor=Name"`
 }
 
+type UserWithYaml struct {
+	Name string `yaml:"name"`
+}
+
 func (CompactDate) JSONSchema() *Schema {
 	return &Schema{
 		Type:        "string",
@@ -366,6 +370,7 @@ func TestSchemaGeneration(t *testing.T) {
 	}{
 		{&TestUser{}, &Reflector{}, "fixtures/test_user.json"},
 		{&UserWithAnchor{}, &Reflector{}, "fixtures/user_with_anchor.json"},
+		{&UserWithYaml{}, &Reflector{}, "fixtures/user_with_yaml.json"},
 		{&TestUser{}, &Reflector{AssignAnchor: true}, "fixtures/test_user_assign_anchor.json"},
 		{&TestUser{}, &Reflector{AllowAdditionalProperties: true}, "fixtures/allow_additional_props.json"},
 		{&TestUser{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/required_from_jsontags.json"},

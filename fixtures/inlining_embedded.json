@@ -4,14 +4,14 @@
   "$defs": {
     "Inner": {
       "properties": {
-        "Foo": {
+        "foo": {
           "type": "string"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "Foo"
+        "foo"
       ]
     }
   },
