@@ -37,6 +37,7 @@ type TestUser struct {
   BirthDate     time.Time              `json:"birth_date,omitempty" jsonschema:"oneof_required=date"`
   YearOfBirth   string                 `json:"year_of_birth,omitempty" jsonschema:"oneof_required=year"`
   Metadata      interface{}            `json:"metadata,omitempty" jsonschema:"oneof_type=string;array"`
+  IPAddress     interface{}            `json:"ipAddress,omitempty" jsonschema:"oneof_ref=#/$defs/ipv4;#/$defs/ipv6"`
   FavColor      string                 `json:"fav_color,omitempty" jsonschema:"enum=red,enum=green,enum=blue"`
 }
 ```
