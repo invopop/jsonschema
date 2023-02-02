@@ -720,6 +720,17 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 					parent.AnyOf = append(parent.AnyOf, typeFound)
 				}
 				typeFound.Required = append(typeFound.Required, propertyName)
+			case "anyof_ref":
+				if t.AnyOf == nil {
+					t.AnyOf = make([]*Schema, 0, 1)
+				}
+				t.Ref = ""
+				refs := strings.Split(nameValue[1], ";")
+				for _, r := range refs {
+					t.AnyOf = append(t.AnyOf, &Schema{
+						Ref: r,
+					})
+				}
 			case "oneof_type":
 				if t.OneOf == nil {
 					t.OneOf = make([]*Schema, 0, 1)
