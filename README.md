@@ -51,7 +51,8 @@ jsonschema.Reflect(&TestUser{})
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema_test/sample-user",
   "$ref": "#/$defs/SampleUser",
   "$defs": {
     "SampleUser": {
@@ -104,6 +105,29 @@ jsonschema.Reflect(&TestUser{})
               "type": "array"
             }
           ]
+        },
+        "ipAddress2": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ipv4"
+            },
+            {
+              "$ref": "#/$defs/ipv6"
+            }
+          ]
+        },
+        "ipAddresses2": {
+          "items": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ipv4"
+              },
+              {
+                "$ref": "#/$defs/ipv6"
+              }
+            ]
+          },
+          "type": "array"
         },
         "fav_color": {
           "type": "string",
