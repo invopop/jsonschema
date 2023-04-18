@@ -545,3 +545,15 @@ func TestArrayFormat(t *testing.T) {
 	pt := p.Items.Format
 	require.Equal(t, pt, "uri")
 }
+
+func TestFieldNameTag(t *testing.T) {
+	type Config struct {
+		Name  string `yaml:"name"`
+		Count int    `yaml:"count"`
+	}
+
+	r := Reflector{
+		FieldNameTag: "yaml",
+	}
+	compareSchemaOutput(t, "fixtures/test_config.json", &r, &Config{})
+}
