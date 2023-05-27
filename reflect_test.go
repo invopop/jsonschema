@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -43,7 +43,7 @@ type SomeBaseType struct {
 	someUnexportedUntaggedBaseProperty bool
 }
 
-type MapType map[string]interface{}
+type MapType map[string]any
 
 type ArrayType []string
 
@@ -66,12 +66,12 @@ type TestUser struct {
 	nonExported
 	MapType
 
-	ID       int                    `json:"id" jsonschema:"required"`
-	Name     string                 `json:"name" jsonschema:"required,minLength=1,maxLength=20,pattern=.*,description=this is a property,title=the name,example=joe,example=lucy,default=alex,readOnly=true"`
-	Password string                 `json:"password" jsonschema:"writeOnly=true"`
-	Friends  []int                  `json:"friends,omitempty" jsonschema_description:"list of IDs, omitted when empty"`
-	Tags     map[string]string      `json:"tags,omitempty"`
-	Options  map[string]interface{} `json:"options,omitempty"`
+	ID       int               `json:"id" jsonschema:"required"`
+	Name     string            `json:"name" jsonschema:"required,minLength=1,maxLength=20,pattern=.*,description=this is a property,title=the name,example=joe,example=lucy,default=alex,readOnly=true"`
+	Password string            `json:"password" jsonschema:"writeOnly=true"`
+	Friends  []int             `json:"friends,omitempty" jsonschema_description:"list of IDs, omitted when empty"`
+	Tags     map[string]string `json:"tags,omitempty"`
+	Options  map[string]any    `json:"options,omitempty"`
 
 	TestFlag       bool
 	TestFlagFalse  bool `json:",omitempty" jsonschema:"default=false"`
@@ -109,7 +109,7 @@ type TestUser struct {
 	Offsets    []float64 `json:"offsets,omitempty" jsonschema:"enum=1.570796,enum=3.141592,enum=6.283185"`
 
 	// Test for raw JSON
-	Anything interface{}     `json:"anything,omitempty"`
+	Anything any             `json:"anything,omitempty"`
 	Raw      json.RawMessage `json:"raw"`
 }
 
@@ -133,33 +133,33 @@ func (CustomTimeWithInterface) JSONSchema() *Schema {
 }
 
 type RootOneOf struct {
-	Field1 string      `json:"field1" jsonschema:"oneof_required=group1"`
-	Field2 string      `json:"field2" jsonschema:"oneof_required=group2"`
-	Field3 interface{} `json:"field3" jsonschema:"oneof_type=string;array"`
-	Field4 string      `json:"field4" jsonschema:"oneof_required=group1"`
-	Field5 ChildOneOf  `json:"child"`
+	Field1 string     `json:"field1" jsonschema:"oneof_required=group1"`
+	Field2 string     `json:"field2" jsonschema:"oneof_required=group2"`
+	Field3 any        `json:"field3" jsonschema:"oneof_type=string;array"`
+	Field4 string     `json:"field4" jsonschema:"oneof_required=group1"`
+	Field5 ChildOneOf `json:"child"`
 }
 
 type ChildOneOf struct {
-	Child1 string      `json:"child1" jsonschema:"oneof_required=group1"`
-	Child2 string      `json:"child2" jsonschema:"oneof_required=group2"`
-	Child3 interface{} `json:"child3" jsonschema:"oneof_required=group2,oneof_type=string;array"`
-	Child4 string      `json:"child4" jsonschema:"oneof_required=group1"`
+	Child1 string `json:"child1" jsonschema:"oneof_required=group1"`
+	Child2 string `json:"child2" jsonschema:"oneof_required=group2"`
+	Child3 any    `json:"child3" jsonschema:"oneof_required=group2,oneof_type=string;array"`
+	Child4 string `json:"child4" jsonschema:"oneof_required=group1"`
 }
 
 type RootAnyOf struct {
-	Field1 string      `json:"field1" jsonschema:"anyof_required=group1"`
-	Field2 string      `json:"field2" jsonschema:"anyof_required=group2"`
-	Field3 interface{} `json:"field3" jsonschema:"anyof_type=string;array"`
-	Field4 string      `json:"field4" jsonschema:"anyof_required=group1"`
-	Field5 ChildAnyOf  `json:"child"`
+	Field1 string     `json:"field1" jsonschema:"anyof_required=group1"`
+	Field2 string     `json:"field2" jsonschema:"anyof_required=group2"`
+	Field3 any        `json:"field3" jsonschema:"anyof_type=string;array"`
+	Field4 string     `json:"field4" jsonschema:"anyof_required=group1"`
+	Field5 ChildAnyOf `json:"child"`
 }
 
 type ChildAnyOf struct {
-	Child1 string      `json:"child1" jsonschema:"anyof_required=group1"`
-	Child2 string      `json:"child2" jsonschema:"anyof_required=group2"`
-	Child3 interface{} `json:"child3" jsonschema:"anyof_required=group2,oneof_type=string;array"`
-	Child4 string      `json:"child4" jsonschema:"anyof_required=group1"`
+	Child1 string `json:"child1" jsonschema:"anyof_required=group1"`
+	Child2 string `json:"child2" jsonschema:"anyof_required=group2"`
+	Child3 any    `json:"child3" jsonschema:"anyof_required=group2,oneof_type=string;array"`
+	Child4 string `json:"child4" jsonschema:"anyof_required=group1"`
 }
 
 type Text string
@@ -360,7 +360,7 @@ func TestReflectFromType(t *testing.T) {
 
 func TestSchemaGeneration(t *testing.T) {
 	tests := []struct {
-		typ       interface{}
+		typ       any
 		reflector *Reflector
 		fixture   string
 	}{
@@ -370,7 +370,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&TestUser{}, &Reflector{AllowAdditionalProperties: true}, "fixtures/allow_additional_props.json"},
 		{&TestUser{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/required_from_jsontags.json"},
 		{&TestUser{}, &Reflector{ExpandedStruct: true}, "fixtures/defaults_expanded_toplevel.json"},
-		{&TestUser{}, &Reflector{IgnoredTypes: []interface{}{GrandfatherType{}}}, "fixtures/ignore_type.json"},
+		{&TestUser{}, &Reflector{IgnoredTypes: []any{GrandfatherType{}}}, "fixtures/ignore_type.json"},
 		{&TestUser{}, &Reflector{DoNotReference: true}, "fixtures/no_reference.json"},
 		{&TestUser{}, &Reflector{DoNotReference: true, AssignAnchor: true}, "fixtures/no_reference_anchor.json"},
 		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/oneof.json"},
@@ -490,21 +490,21 @@ func TestBaselineUnmarshal(t *testing.T) {
 	compareSchemaOutput(t, "fixtures/test_user.json", r, &TestUser{})
 }
 
-func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) {
+func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj any) {
 	t.Helper()
-	expectedJSON, err := ioutil.ReadFile(f)
+	expectedJSON, err := os.ReadFile(f)
 	require.NoError(t, err)
 
 	actualSchema := r.Reflect(obj)
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ") //nolint:errchkjson
 
 	if *updateFixtures {
-		_ = ioutil.WriteFile(f, actualJSON, 0600)
+		_ = os.WriteFile(f, actualJSON, 0600)
 	}
 
 	if !assert.JSONEq(t, string(expectedJSON), string(actualJSON)) {
 		if *compareFixtures {
-			_ = ioutil.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
+			_ = os.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
 		}
 	}
 }

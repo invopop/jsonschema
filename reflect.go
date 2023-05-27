@@ -54,8 +54,8 @@ type Schema struct {
 	PropertyNames        *Schema                `json:"propertyNames,omitempty"`        // section 10.3.2.4
 	// RFC draft-bhutton-json-schema-validation-00, section 6
 	Type              string              `json:"type,omitempty"`              // section 6.1.1
-	Enum              []interface{}       `json:"enum,omitempty"`              // section 6.1.2
-	Const             interface{}         `json:"const,omitempty"`             // section 6.1.3
+	Enum              []any               `json:"enum,omitempty"`              // section 6.1.2
+	Const             any                 `json:"const,omitempty"`             // section 6.1.3
 	MultipleOf        int                 `json:"multipleOf,omitempty"`        // section 6.2.1
 	Maximum           int                 `json:"maximum,omitempty"`           // section 6.2.2
 	ExclusiveMaximum  bool                `json:"exclusiveMaximum,omitempty"`  // section 6.2.3
@@ -80,15 +80,15 @@ type Schema struct {
 	ContentMediaType string  `json:"contentMediaType,omitempty"` // section 8.4
 	ContentSchema    *Schema `json:"contentSchema,omitempty"`    // section 8.5
 	// RFC draft-bhutton-json-schema-validation-00, section 9
-	Title       string        `json:"title,omitempty"`       // section 9.1
-	Description string        `json:"description,omitempty"` // section 9.1
-	Default     interface{}   `json:"default,omitempty"`     // section 9.2
-	Deprecated  bool          `json:"deprecated,omitempty"`  // section 9.3
-	ReadOnly    bool          `json:"readOnly,omitempty"`    // section 9.4
-	WriteOnly   bool          `json:"writeOnly,omitempty"`   // section 9.4
-	Examples    []interface{} `json:"examples,omitempty"`    // section 9.5
+	Title       string `json:"title,omitempty"`       // section 9.1
+	Description string `json:"description,omitempty"` // section 9.1
+	Default     any    `json:"default,omitempty"`     // section 9.2
+	Deprecated  bool   `json:"deprecated,omitempty"`  // section 9.3
+	ReadOnly    bool   `json:"readOnly,omitempty"`    // section 9.4
+	WriteOnly   bool   `json:"writeOnly,omitempty"`   // section 9.4
+	Examples    []any  `json:"examples,omitempty"`    // section 9.5
 
-	Extras map[string]interface{} `json:"-"`
+	Extras map[string]any `json:"-"`
 
 	// Special boolean representation of the Schema - section 4.3.2
 	boolean *bool
@@ -127,7 +127,7 @@ type customGetFieldDocString func(fieldName string) string
 var customStructGetFieldDocString = reflect.TypeOf((*customSchemaGetFieldDocString)(nil)).Elem()
 
 // Reflect reflects to Schema from a value using the default Reflector
-func Reflect(v interface{}) *Schema {
+func Reflect(v any) *Schema {
 	return ReflectFromType(reflect.TypeOf(v))
 }
 
@@ -185,7 +185,7 @@ type Reflector struct {
 
 	// IgnoredTypes defines a slice of types that should be ignored in the schema,
 	// switching to just allowing additional properties instead.
-	IgnoredTypes []interface{}
+	IgnoredTypes []any
 
 	// Lookup allows a function to be defined that will provide a custom mapping of
 	// types to Schema IDs. This allows existing schema documents to be referenced
@@ -226,7 +226,7 @@ type Reflector struct {
 }
 
 // Reflect reflects to Schema from a value.
-func (r *Reflector) Reflect(v interface{}) *Schema {
+func (r *Reflector) Reflect(v any) *Schema {
 	return r.ReflectFromType(reflect.TypeOf(v))
 }
 
@@ -705,11 +705,18 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	t.extraKeywords(extras)
 }
 
-// read struct tags for generic keyworks
+// read struct tags for generic keywords
 func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) {
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
-		if len(nameValue) == 2 {
+		nameValue := strings.SplitN(tag, "=", 2)
+
+		switch len(nameValue) {
+		case 1:
+			switch nameValue[0] {
+			case "deprecated":
+				t.Deprecated = true
+			}
+		case 2:
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "title":
@@ -720,6 +727,10 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 				t.Type = val
 			case "anchor":
 				t.Anchor = val
+			case "deprecated":
+				if i, err := strconv.ParseBool(val); err == nil {
+					t.Deprecated = i
+				}
 			case "oneof_required":
 				var typeFound *Schema
 				for i := range parent.OneOf {
@@ -777,11 +788,13 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 				case "string":
 					t.Enum = append(t.Enum, val)
 				case "integer":
-					i, _ := strconv.Atoi(val)
-					t.Enum = append(t.Enum, i)
+					if i, err := strconv.Atoi(val); err == nil {
+						t.Enum = append(t.Enum, i)
+					}
 				case "number":
-					f, _ := strconv.ParseFloat(val, 64)
-					t.Enum = append(t.Enum, f)
+					if f, err := strconv.ParseFloat(val, 64); err == nil {
+						t.Enum = append(t.Enum, f)
+					}
 				}
 			}
 		}
@@ -814,11 +827,13 @@ func (t *Schema) stringKeywords(tags []string) {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "minLength":
-				i, _ := strconv.Atoi(val)
-				t.MinLength = i
+				if i, err := strconv.Atoi(val); err == nil {
+					t.MinLength = i
+				}
 			case "maxLength":
-				i, _ := strconv.Atoi(val)
-				t.MaxLength = i
+				if i, err := strconv.Atoi(val); err == nil {
+					t.MaxLength = i
+				}
 			case "pattern":
 				t.Pattern = val
 			case "format":
@@ -826,10 +841,6 @@ func (t *Schema) stringKeywords(tags []string) {
 				case "date-time", "email", "hostname", "ipv4", "ipv6", "uri", "uuid":
 					t.Format = val
 					break
-				}
-			case "deprecated":
-				if i, err := strconv.ParseBool(val); err == nil {
-					t.Deprecated = i
 				}
 			case "readOnly":
 				if i, err := strconv.ParseBool(val); err == nil {
@@ -856,23 +867,29 @@ func (t *Schema) numbericKeywords(tags []string) {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "multipleOf":
-				i, _ := strconv.Atoi(val)
-				t.MultipleOf = i
+				if i, err := strconv.Atoi(val); err == nil {
+					t.MultipleOf = i
+				}
 			case "minimum":
-				i, _ := strconv.Atoi(val)
-				t.Minimum = i
+				if i, err := strconv.Atoi(val); err == nil {
+					t.Minimum = i
+				}
 			case "maximum":
-				i, _ := strconv.Atoi(val)
-				t.Maximum = i
+				if i, err := strconv.Atoi(val); err == nil {
+					t.Maximum = i
+				}
 			case "exclusiveMaximum":
-				b, _ := strconv.ParseBool(val)
-				t.ExclusiveMaximum = b
+				if b, err := strconv.ParseBool(val); err == nil {
+					t.ExclusiveMaximum = b
+				}
 			case "exclusiveMinimum":
-				b, _ := strconv.ParseBool(val)
-				t.ExclusiveMinimum = b
+				if b, err := strconv.ParseBool(val); err == nil {
+					t.ExclusiveMinimum = b
+				}
 			case "default":
-				i, _ := strconv.Atoi(val)
-				t.Default = i
+				if i, err := strconv.Atoi(val); err == nil {
+					t.Default = i
+				}
 			case "example":
 				if i, err := strconv.Atoi(val); err == nil {
 					t.Examples = append(t.Examples, i)
@@ -900,18 +917,20 @@ func (t *Schema) numbericKeywords(tags []string) {
 
 // read struct tags for array type keyworks
 func (t *Schema) arrayKeywords(tags []string) {
-	var defaultValues []interface{}
+	var defaultValues []any
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "minItems":
-				i, _ := strconv.Atoi(val)
-				t.MinItems = i
+				if i, err := strconv.Atoi(val); err == nil {
+					t.MinItems = i
+				}
 			case "maxItems":
-				i, _ := strconv.Atoi(val)
-				t.MaxItems = i
+				if i, err := strconv.Atoi(val); err == nil {
+					t.MaxItems = i
+				}
 			case "uniqueItems":
 				t.UniqueItems = true
 			case "default":
@@ -921,11 +940,13 @@ func (t *Schema) arrayKeywords(tags []string) {
 				case "string":
 					t.Items.Enum = append(t.Items.Enum, val)
 				case "integer":
-					i, _ := strconv.Atoi(val)
-					t.Items.Enum = append(t.Items.Enum, i)
+					if i, err := strconv.Atoi(val); err == nil {
+						t.Items.Enum = append(t.Items.Enum, i)
+					}
 				case "number":
-					f, _ := strconv.ParseFloat(val, 64)
-					t.Items.Enum = append(t.Items.Enum, f)
+					if f, err := strconv.ParseFloat(val, 64); err == nil {
+						t.Items.Enum = append(t.Items.Enum, f)
+					}
 				}
 			case "format":
 				t.Items.Format = val
@@ -948,7 +969,7 @@ func (t *Schema) extraKeywords(tags []string) {
 
 func (t *Schema) setExtra(key, val string) {
 	if t.Extras == nil {
-		t.Extras = map[string]interface{}{}
+		t.Extras = map[string]any{}
 	}
 	if existingVal, ok := t.Extras[key]; ok {
 		switch existingVal := existingVal.(type) {
@@ -966,7 +987,7 @@ func (t *Schema) setExtra(key, val string) {
 		case "minimum":
 			t.Extras[key], _ = strconv.Atoi(val)
 		default:
-			var x interface{}
+			var x any
 			if val == "true" {
 				x = true
 			} else if val == "false" {
@@ -993,7 +1014,7 @@ func requiredFromJSONTags(tags []string) bool {
 }
 
 func requiredFromJSONSchemaTags(tags []string) bool {
-	if ignoredByJSONSchemaTags(tags) {
+	if ignoredByJSONTags(tags) {
 		return false
 	}
 	for _, tag := range tags {
@@ -1005,7 +1026,7 @@ func requiredFromJSONSchemaTags(tags []string) bool {
 }
 
 func nullableFromJSONSchemaTags(tags []string) bool {
-	if ignoredByJSONSchemaTags(tags) {
+	if ignoredByJSONTags(tags) {
 		return false
 	}
 	for _, tag := range tags {
@@ -1017,11 +1038,7 @@ func nullableFromJSONSchemaTags(tags []string) bool {
 }
 
 func ignoredByJSONTags(tags []string) bool {
-	return tags[0] == "-"
-}
-
-func ignoredByJSONSchemaTags(tags []string) bool {
-	return tags[0] == "-"
+	return len(tags) != 0 && tags[0] == "-"
 }
 
 func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool, bool) {
@@ -1033,7 +1050,7 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 	}
 
 	schemaTags := strings.Split(f.Tag.Get("jsonschema"), ",")
-	if ignoredByJSONSchemaTags(schemaTags) {
+	if ignoredByJSONTags(schemaTags) {
 		return "", false, false, false
 	}
 
