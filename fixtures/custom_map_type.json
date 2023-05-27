@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/custom-map-outer",
+  "$id": "https://github.com/authelia/jsonschema/custom-map-outer",
   "$ref": "#/$defs/CustomMapOuter",
   "$defs": {
     "CustomMapOuter": {

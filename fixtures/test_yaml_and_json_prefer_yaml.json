@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/test-yaml-and-json",
+  "$id": "https://github.com/authelia/jsonschema/test-yaml-and-json",
   "$ref": "#/$defs/TestYamlAndJson",
   "$defs": {
     "TestYamlAndJson": {

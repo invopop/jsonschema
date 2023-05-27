@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/grandfather-type",
+  "$id": "https://github.com/authelia/jsonschema/grandfather-type",
   "$ref": "#/$defs/GrandfatherType",
   "$defs": {
     "GrandfatherType": {

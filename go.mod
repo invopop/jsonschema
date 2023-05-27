@@ -1,4 +1,4 @@
-module github.com/invopop/jsonschema
+module github.com/authelia/jsonschema
 
 go 1.20
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/root-any-of",
+  "$id": "https://github.com/authelia/jsonschema/root-any-of",
   "$ref": "#/$defs/RootAnyOf",
   "$defs": {
     "ChildAnyOf": {

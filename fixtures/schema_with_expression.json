@@ -1,6 +1,6 @@
 {
     "$schema": "https://json-schema.org/draft/2020-12/schema",
-    "$id": "https://github.com/invopop/jsonschema/expression",
+    "$id": "https://github.com/authelia/jsonschema/expression",
     "$ref": "#/$defs/Expression",
     "$defs": {
       "Expression": {

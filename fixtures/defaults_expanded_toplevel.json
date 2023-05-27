@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/test-user",
+  "$id": "https://github.com/authelia/jsonschema/test-user",
   "$defs": {
     "Bytes": {
       "type": "string",

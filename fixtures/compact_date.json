@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/compact-date",
+  "$id": "https://github.com/authelia/jsonschema/compact-date",
   "$ref": "#/$defs/CompactDate",
   "$defs": {
     "CompactDate": {

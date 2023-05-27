@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/test-nullable",
+  "$id": "https://github.com/authelia/jsonschema/test-nullable",
   "$ref": "#/$defs/TestNullable",
   "$defs": {
     "TestNullable": {
