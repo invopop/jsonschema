@@ -453,6 +453,12 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 
 	if st.Description == "" {
 		st.Description = r.lookupComment(t, "")
+
+		if !st.Deprecated {
+			st.Deprecated = isDeprecatedComment(st.Description)
+		}
+	} else if !st.Deprecated {
+		st.Deprecated = r.lookupDeprecated(t, "")
 	}
 
 	if t.Kind() == reflect.Array {
@@ -475,6 +481,12 @@ func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Sche
 	st.Type = "object"
 	if st.Description == "" {
 		st.Description = r.lookupComment(t, "")
+
+		if !st.Deprecated {
+			st.Deprecated = isDeprecatedComment(st.Description)
+		}
+	} else if !st.Deprecated {
+		st.Deprecated = r.lookupDeprecated(t, "")
 	}
 
 	switch t.Key().Kind() {
@@ -510,6 +522,8 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 	s.Type = "object"
 	s.Properties = orderedmap.New()
 	s.Description = r.lookupComment(t, "")
+	s.Deprecated = isDeprecatedComment(s.Description)
+
 	if r.AssignAnchor {
 		s.Anchor = t.Name()
 	}
@@ -557,9 +571,17 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 
 		property := r.refOrReflectTypeToSchema(definitions, f.Type)
 		property.structKeywordsFromTags(f, st, name)
+
 		if property.Description == "" {
 			property.Description = r.lookupComment(t, f.Name)
+
+			if !property.Deprecated {
+				property.Deprecated = isDeprecatedComment(property.Description)
+			}
+		} else if !property.Deprecated {
+			property.Deprecated = r.lookupDeprecated(t, "")
 		}
+
 		if getFieldDocString != nil {
 			property.Description = getFieldDocString(f.Name)
 		}
@@ -601,6 +623,14 @@ func appendUniqueString(base []string, value string) []string {
 		}
 	}
 	return append(base, value)
+}
+
+func (r *Reflector) lookupDeprecated(t reflect.Type, name string) bool {
+	if comment := r.lookupComment(t, name); comment == "" {
+		return false
+	} else {
+		return isDeprecatedComment(comment)
+	}
 }
 
 func (r *Reflector) lookupComment(t reflect.Type, name string) string {
@@ -797,12 +827,18 @@ func (t *Schema) stringKeywords(tags []string) {
 					t.Format = val
 					break
 				}
+			case "deprecated":
+				if i, err := strconv.ParseBool(val); err == nil {
+					t.Deprecated = i
+				}
 			case "readOnly":
-				i, _ := strconv.ParseBool(val)
-				t.ReadOnly = i
+				if i, err := strconv.ParseBool(val); err == nil {
+					t.ReadOnly = i
+				}
 			case "writeOnly":
-				i, _ := strconv.ParseBool(val)
-				t.WriteOnly = i
+				if i, err := strconv.ParseBool(val); err == nil {
+					t.WriteOnly = i
+				}
 			case "default":
 				t.Default = val
 			case "example":

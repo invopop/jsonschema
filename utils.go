@@ -16,3 +16,7 @@ func ToSnakeCase(str string) string {
 	snake = matchAllCap.ReplaceAllString(snake, "${1}-${2}")
 	return strings.ToLower(snake)
 }
+
+func isDeprecatedComment(comment string) bool {
+	return strings.HasPrefix(comment, "Deprecated:")
+}
