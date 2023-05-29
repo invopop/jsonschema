@@ -1,0 +1,57 @@
+package jsonschema
+
+const (
+	keywordSep      = ","
+	keywordSepValue = "="
+
+	kwDefault          = "default"
+	kwFormat           = "format"
+	kwPattern          = "pattern"
+	kwTitle            = "title"
+	kwDescription      = "description"
+	kwExample          = "example"
+	kwAnchor           = "anchor"
+	kwEnum             = "enum"
+	kwDeprecated       = "deprecated"
+	kwMinLength        = "minLength"
+	kwMaxLength        = "maxLength"
+	kwExclusiveMinimum = "exclusiveMinimum"
+	kwExclusiveMaximum = "exclusiveMaximum"
+	kwMinimum          = "minimum"
+	kwMaximum          = "maximum"
+	kwMinItems         = "minItems"
+	kwMaxItems         = "maxItems"
+	kwUniqueItems      = "uniqueItems"
+	kwMultipleOf       = "multipleOf"
+	kwType             = "type"
+	kwAnyOfType        = "anyof_type"
+	kwOneOfType        = "oneof_type"
+	kwAnyOfRequired    = "anyof_required"
+	kwOneOfRequired    = "oneof_required"
+	kwOmitEmpty        = "omitempty"
+	kwNullable         = "nullable"
+
+	kwReadOnly  = "readOnly"
+	kwWriteOnly = "writeOnly"
+
+	typeString  = "string"
+	typeInteger = "integer"
+	typeNumber  = "number"
+	typeBoolean = "boolean"
+	typeArray   = "array"
+	typeObject  = "object"
+	typeNull    = "null"
+
+	formatDateTime = "date-time"
+	formatURI      = "uri"
+
+	valueT     = "t"
+	valueTrue  = "true"
+	valueFalse = "false"
+
+	tagJSON                  = "json"
+	tagJSONSchema            = "jsonschema"
+	tagJSONSchemaDescription = "jsonschema_description"
+	tagJSONSchemaExtras      = "jsonschema_extras"
+	tagRequired              = "required"
+)
