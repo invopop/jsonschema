@@ -753,6 +753,8 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 					f, _ := strconv.ParseFloat(val, 64)
 					t.Enum = append(t.Enum, f)
 				}
+			case "deprecated":
+				t.Deprecated, _ = strconv.ParseBool(val)
 			}
 		}
 	}
