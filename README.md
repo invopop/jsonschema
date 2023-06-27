@@ -37,8 +37,8 @@ type TestUser struct {
   BirthDate     time.Time              `json:"birth_date,omitempty" jsonschema:"oneof_required=date"`
   YearOfBirth   string                 `json:"year_of_birth,omitempty" jsonschema:"oneof_required=year"`
   Metadata      interface{}            `json:"metadata,omitempty" jsonschema:"oneof_type=string;array"`
-  IPAddress     interface{}            `json:"ipAddress,omitempty" jsonschema:"oneof_ref=#/$defs/ipv4;#/$defs/ipv6"`
-  IPAddresses   []interface{}          `json:"ipAddresses,omitempty" jsonschema:"oneof_ref=#/$defs/ipv4;#/$defs/ipv6"`
+  IPAddress     interface{}            `json:"ip_address,omitempty" jsonschema:"oneof_ref=#/$defs/ipv4;#/$defs/ipv6"`
+  IPAddresses   []interface{}          `json:"ip_addresses,omitempty" jsonschema:"oneof_ref=#/$defs/ipv4;#/$defs/ipv6"`
   FavColor      string                 `json:"fav_color,omitempty" jsonschema:"enum=red,enum=green,enum=blue"`
 }
 ```
@@ -106,7 +106,7 @@ jsonschema.Reflect(&TestUser{})
             }
           ]
         },
-        "ipAddress": {
+        "ip_address": {
           "oneOf": [
             {
               "$ref": "#/$defs/ipv4"
@@ -116,7 +116,7 @@ jsonschema.Reflect(&TestUser{})
             }
           ]
         },
-        "ipAddresses": {
+        "ip_addresses": {
           "items": {
             "oneOf": [
               {
