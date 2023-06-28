@@ -153,6 +153,7 @@ type RootAnyOf struct {
 	Field3 interface{} `json:"field3" jsonschema:"anyof_type=string;array"`
 	Field4 string      `json:"field4" jsonschema:"anyof_required=group1"`
 	Field5 ChildAnyOf  `json:"child"`
+	Field6 interface{} `json:"field6" jsonschema:"anyof_ref=Outer;OuterNamed;OuterPtr"`
 }
 
 type ChildAnyOf struct {

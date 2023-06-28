@@ -82,6 +82,19 @@
         },
         "child": {
           "$ref": "#/$defs/ChildAnyOf"
+        },
+        "field6": {
+          "anyOf": [
+            {
+              "$ref": "Outer"
+            },
+            {
+              "$ref": "OuterNamed"
+            },
+            {
+              "$ref": "OuterPtr"
+            }
+          ]
         }
       },
       "additionalProperties": false,
