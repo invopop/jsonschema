@@ -260,7 +260,7 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 			}
 		}
 		if baseSchemaID != EmptyID {
-			s.ID = baseSchemaID.Add(ToSnakeCase(name))
+			s.ID = baseSchemaID.Add(name)
 		}
 	}
 

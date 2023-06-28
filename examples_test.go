@@ -29,7 +29,7 @@ func ExampleReflect() {
 	// Output:
 	// {
 	//   "$schema": "https://json-schema.org/draft/2020-12/schema",
-	//   "$id": "https://github.com/invopop/jsonschema_test/sample-user",
+	//   "$id": "https://github.com/invopop/jsonschema_test/SampleUser",
 	//   "$ref": "#/$defs/SampleUser",
 	//   "$defs": {
 	//     "SampleUser": {

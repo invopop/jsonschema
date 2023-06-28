@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://example.com/schemas/lookup-user",
+  "$id": "https://example.com/schemas/LookupUser",
   "$anchor": "LookupUser",
   "properties": {
     "name": {
-      "$ref": "https://example.com/schemas/lookup-name"
+      "$ref": "https://example.com/schemas/LookupName"
     },
     "alias": {
       "type": "string"
