@@ -200,6 +200,10 @@ type Reflector struct {
 	// provided by the reflect package.
 	Namer func(reflect.Type) string
 
+	// Requirer custom the requiring of any struct field, its behaves after the
+	// `json:,omitempty` or `jsonschema:required` parsed.
+	Requirer func(reflect.StructField, bool) bool
+
 	// KeyNamer allows customizing of key names.
 	// The default is to use the key's name as is, or the json tag if present.
 	// If a json tag is present, KeyNamer will receive the tag's name as an argument, not the original key name.
@@ -1004,6 +1008,10 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 	required := requiredFromJSONTags(jsonTags)
 	if r.RequiredFromJSONSchemaTags {
 		required = requiredFromJSONSchemaTags(schemaTags)
+	}
+	// Custom struct field requiring.
+	if r.Requirer != nil {
+		required = r.Requirer(f, required)
 	}
 
 	nullable := nullableFromJSONSchemaTags(schemaTags)
