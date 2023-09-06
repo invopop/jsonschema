@@ -149,9 +149,11 @@ type Reflector struct {
 	// include a schema ID.
 	BaseSchemaID ID
 
-	// UseCamelCaseForIDs determines if missing IDs will use CamelCase (e.g. `TestUser`)
-	// or the default snake-case (e.g. `test-user`) when creating the BaseSchemaID.
-	UseCamelCaseForIDs bool
+	// SchemaIDNameFormatter optionally formats the names of missing IDs.
+	// If nil, ToSnakeCase will be used (e.g. `test-user`).
+	// Providing the identity function: func(id string) string { return id }
+	// will result in CamelCase (e.g. `TestUser`) IDs.
+	SchemaIDNameFormatter func(id string) string
 
 	// Anonymous when true will hide the auto-generated Schema ID and provide what is
 	// known as an "anonymous schema". As a rule, this is not recommended.
@@ -264,8 +266,8 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 			}
 		}
 		if baseSchemaID != EmptyID {
-			if r.UseCamelCaseForIDs {
-				s.ID = baseSchemaID.Add(name)
+			if r.SchemaIDNameFormatter != nil {
+				s.ID = baseSchemaID.Add(r.SchemaIDNameFormatter(name))
 			} else {
 				s.ID = baseSchemaID.Add(ToSnakeCase(name))
 			}
