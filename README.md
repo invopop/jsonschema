@@ -304,6 +304,8 @@ Sometimes it can be useful to have custom JSON Marshal and Unmarshal methods in 
 
 To override auto-generating an object type for your type, implement the `JSONSchema() *Schema` method and whatever is defined will be provided in the schema definitions.
 
+You also have the option of defining a `JSONSchemaExtend(schema *jsonschema.Schema)` method for your types that will be called _after_ the schema has been generated, allowing you to add or manipulate the fields easily.
+
 Take the following simplified example of a `CompactDate` that only includes the Year and Month:
 
 ```go
