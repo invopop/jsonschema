@@ -211,6 +211,8 @@
         "name",
         "password",
         "TestFlag",
+        "photo",
+        "photo2",
         "age",
         "email",
         "uuid",
