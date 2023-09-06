@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -492,19 +492,19 @@ func TestBaselineUnmarshal(t *testing.T) {
 
 func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) {
 	t.Helper()
-	expectedJSON, err := ioutil.ReadFile(f)
+	expectedJSON, err := os.ReadFile(f)
 	require.NoError(t, err)
 
 	actualSchema := r.Reflect(obj)
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ") //nolint:errchkjson
 
 	if *updateFixtures {
-		_ = ioutil.WriteFile(f, actualJSON, 0600)
+		_ = os.WriteFile(f, actualJSON, 0600)
 	}
 
 	if !assert.JSONEq(t, string(expectedJSON), string(actualJSON)) {
 		if *compareFixtures {
-			_ = ioutil.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
+			_ = os.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
 		}
 	}
 }

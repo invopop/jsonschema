@@ -943,29 +943,29 @@ func (t *Schema) setExtra(key, val string) {
 	}
 }
 
-func requiredFromJSONTags(tags []string) bool {
+func requiredFromJSONTags(tags []string, val *bool) {
 	if ignoredByJSONTags(tags) {
-		return false
+		return
 	}
 
 	for _, tag := range tags[1:] {
 		if tag == "omitempty" {
-			return false
+			*val = false
+			return
 		}
 	}
-	return true
+	*val = true
 }
 
-func requiredFromJSONSchemaTags(tags []string) bool {
+func requiredFromJSONSchemaTags(tags []string, val *bool) {
 	if ignoredByJSONSchemaTags(tags) {
-		return false
+		return
 	}
 	for _, tag := range tags {
 		if tag == "required" {
-			return true
+			*val = true
 		}
 	}
-	return false
 }
 
 func nullableFromJSONSchemaTags(tags []string) bool {
@@ -1001,10 +1001,11 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 		return "", false, false, false
 	}
 
-	required := requiredFromJSONTags(jsonTags)
-	if r.RequiredFromJSONSchemaTags {
-		required = requiredFromJSONSchemaTags(schemaTags)
+	var required bool
+	if !r.RequiredFromJSONSchemaTags {
+		requiredFromJSONTags(jsonTags, &required)
 	}
+	requiredFromJSONSchemaTags(schemaTags, &required)
 
 	nullable := nullableFromJSONSchemaTags(schemaTags)
 
