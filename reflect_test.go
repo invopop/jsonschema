@@ -547,3 +547,15 @@ func TestArrayExtraTags(t *testing.T) {
 	pt = p.Items.Pattern
 	require.Equal(t, pt, "^https://.*")
 }
+
+func TestFieldNameTag(t *testing.T) {
+	type Config struct {
+		Name  string `yaml:"name"`
+		Count int    `yaml:"count"`
+	}
+
+	r := Reflector{
+		FieldNameTag: "yaml",
+	}
+	compareSchemaOutput(t, "fixtures/test_config.json", &r, &Config{})
+}
