@@ -749,6 +749,21 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 						Type: ty,
 					})
 				}
+			case "anyof_ref":
+				subSchema := t
+				if t.Items != nil {
+					subSchema = t.Items
+				}
+				if subSchema.AnyOf == nil {
+					subSchema.AnyOf = make([]*Schema, 0, 1)
+				}
+				subSchema.Ref = ""
+				refs := strings.Split(nameValue[1], ";")
+				for _, r := range refs {
+					subSchema.AnyOf = append(subSchema.AnyOf, &Schema{
+						Ref: r,
+					})
+				}
 			case "anyof_type":
 				if t.AnyOf == nil {
 					t.AnyOf = make([]*Schema, 0, 1)

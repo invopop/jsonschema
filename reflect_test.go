@@ -560,3 +560,15 @@ func TestFieldNameTag(t *testing.T) {
 	}
 	compareSchemaOutput(t, "fixtures/test_config.json", &r, &Config{})
 }
+
+func TestFieldOneOfRef(t *testing.T) {
+	type Server struct {
+		IPAddress      interface{}   `json:"ip_address,omitempty" jsonschema:"oneof_ref=#/$defs/ipv4;#/$defs/ipv6"`
+		IPAddresses    []interface{} `json:"ip_addresses,omitempty" jsonschema:"oneof_ref=#/$defs/ipv4;#/$defs/ipv6"`
+		IPAddressAny   interface{}   `json:"ip_address_any,omitempty" jsonschema:"anyof_ref=#/$defs/ipv4;#/$defs/ipv6"`
+		IPAddressesAny []interface{} `json:"ip_addresses_any,omitempty" jsonschema:"anyof_ref=#/$defs/ipv4;#/$defs/ipv6"`
+	}
+
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/oneof_ref.json", r, &Server{})
+}
