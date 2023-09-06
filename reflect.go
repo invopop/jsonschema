@@ -892,6 +892,8 @@ func (t *Schema) arrayKeywords(tags []string) {
 				}
 			case "format":
 				t.Items.Format = val
+			case "pattern":
+				t.Items.Pattern = val
 			}
 		}
 	}

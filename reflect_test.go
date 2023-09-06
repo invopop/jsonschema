@@ -527,9 +527,9 @@ func TestSplitOnUnescapedCommas(t *testing.T) {
 	}
 }
 
-func TestArrayFormat(t *testing.T) {
+func TestArrayExtraTags(t *testing.T) {
 	type URIArray struct {
-		TestURIs []string `jsonschema:"type=array,format=uri"`
+		TestURIs []string `jsonschema:"type=array,format=uri,pattern=^https://.*"`
 	}
 
 	r := new(Reflector)
@@ -544,4 +544,6 @@ func TestArrayFormat(t *testing.T) {
 	p := i.(*Schema)
 	pt := p.Items.Format
 	require.Equal(t, pt, "uri")
+	pt = p.Items.Pattern
+	require.Equal(t, pt, "^https://.*")
 }
