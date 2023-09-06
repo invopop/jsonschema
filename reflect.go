@@ -666,9 +666,9 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	case "string":
 		t.stringKeywords(tags)
 	case "number":
-		t.numbericKeywords(tags)
+		t.numericalKeywords(tags)
 	case "integer":
-		t.numbericKeywords(tags)
+		t.numericalKeywords(tags)
 	case "array":
 		t.arrayKeywords(tags)
 	case "boolean":
@@ -844,8 +844,8 @@ func (t *Schema) stringKeywords(tags []string) {
 	}
 }
 
-// read struct tags for numberic type keyworks
-func (t *Schema) numbericKeywords(tags []string) {
+// read struct tags for numerical type keyworks
+func (t *Schema) numericalKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -867,8 +867,8 @@ func (t *Schema) numbericKeywords(tags []string) {
 				b, _ := strconv.ParseBool(val)
 				t.ExclusiveMinimum = b
 			case "default":
-				i, _ := strconv.Atoi(val)
-				t.Default = i
+				n, _ := strconv.ParseFloat(val, 64)
+				t.Default = n
 			case "example":
 				if i, err := strconv.Atoi(val); err == nil {
 					t.Examples = append(t.Examples, i)

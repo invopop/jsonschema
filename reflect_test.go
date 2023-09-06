@@ -510,6 +510,13 @@ func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) 
 	}
 }
 
+func fixtureContains(t *testing.T, f, s string) {
+	t.Helper()
+	b, err := os.ReadFile(f)
+	require.NoError(t, err)
+	assert.Contains(t, string(b), s)
+}
+
 func TestSplitOnUnescapedCommas(t *testing.T) {
 	tests := []struct {
 		strToSplit string
@@ -571,4 +578,16 @@ func TestFieldOneOfRef(t *testing.T) {
 
 	r := &Reflector{}
 	compareSchemaOutput(t, "fixtures/oneof_ref.json", r, &Server{})
+}
+
+func TestNumberHandling(t *testing.T) {
+	type NumberHandler struct {
+		Int64   int64   `json:"int64" jsonschema:"default=12"`
+		Float32 float32 `json:"float32" jsonschema:"default=12.5"`
+	}
+
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/number_handling.json", r, &NumberHandler{})
+	fixtureContains(t, "fixtures/number_handling.json", `"default": 12`)
+	fixtureContains(t, "fixtures/number_handling.json", `"default": 12.5`)
 }
