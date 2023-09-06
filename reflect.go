@@ -992,12 +992,15 @@ func ignoredByJSONSchemaTags(tags []string) bool {
 	return tags[0] == "-"
 }
 
-func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool, bool) {
-	tagKey := r.FieldNameTag
-	if tagKey == "" {
-		tagKey = "json"
+func (r *Reflector) fieldNameTag() string {
+	if r.FieldNameTag != "" {
+		return r.FieldNameTag
 	}
-	jsonTagString := f.Tag.Get(tagKey)
+	return "json"
+}
+
+func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool, bool) {
+	jsonTagString := f.Tag.Get(r.fieldNameTag())
 	jsonTags := strings.Split(jsonTagString, ",")
 
 	if ignoredByJSONTags(jsonTags) {
