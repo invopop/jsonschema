@@ -346,7 +346,7 @@ func TestReflectFromType(t *testing.T) {
 	typ := reflect.TypeOf(tu)
 
 	s := r.ReflectFromType(typ)
-	assert.EqualValues(t, "https://github.com/invopop/jsonschema/TestUser", s.ID)
+	assert.EqualValues(t, "https://github.com/invopop/jsonschema/test-user", s.ID)
 
 	x := struct {
 		Test string
@@ -391,9 +391,9 @@ func TestSchemaGeneration(t *testing.T) {
 			Lookup: func(i reflect.Type) ID {
 				switch i {
 				case reflect.TypeOf(LookupUser{}):
-					return ID("https://example.com/schemas/LookupUser")
+					return ID("https://example.com/schemas/lookup-user")
 				case reflect.TypeOf(LookupName{}):
-					return ID("https://example.com/schemas/LookupName")
+					return ID("https://example.com/schemas/lookup-name")
 				}
 				return EmptyID
 			},
@@ -405,9 +405,9 @@ func TestSchemaGeneration(t *testing.T) {
 			Lookup: func(i reflect.Type) ID {
 				switch i {
 				case reflect.TypeOf(LookupUser{}):
-					return ID("https://example.com/schemas/LookupUser")
+					return ID("https://example.com/schemas/lookup-user")
 				case reflect.TypeOf(LookupName{}):
-					return ID("https://example.com/schemas/LookupName")
+					return ID("https://example.com/schemas/lookup-name")
 				}
 				return EmptyID
 			},

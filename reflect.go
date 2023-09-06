@@ -149,6 +149,10 @@ type Reflector struct {
 	// include a schema ID.
 	BaseSchemaID ID
 
+	// UseCamelCaseForIDs determines if missing IDs will use CamelCase (e.g. `TestUser`)
+	// or the default snake-case (e.g. `test-user`) when creating the BaseSchemaID.
+	UseCamelCaseForIDs bool
+
 	// Anonymous when true will hide the auto-generated Schema ID and provide what is
 	// known as an "anonymous schema". As a rule, this is not recommended.
 	Anonymous bool
@@ -260,7 +264,11 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 			}
 		}
 		if baseSchemaID != EmptyID {
-			s.ID = baseSchemaID.Add(name)
+			if r.UseCamelCaseForIDs {
+				s.ID = baseSchemaID.Add(name)
+			} else {
+				s.ID = baseSchemaID.Add(ToSnakeCase(name))
+			}
 		}
 	}
 
