@@ -676,7 +676,7 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 }
 
 // read struct tags for generic keyworks
-func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) {
+func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) { //nolint:gocyclo
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -795,7 +795,6 @@ func (t *Schema) stringKeywords(tags []string) {
 				switch val {
 				case "date-time", "email", "hostname", "ipv4", "ipv6", "uri", "uuid":
 					t.Format = val
-					break
 				}
 			case "readOnly":
 				i, _ := strconv.ParseBool(val)
@@ -943,29 +942,29 @@ func (t *Schema) setExtra(key, val string) {
 	}
 }
 
-func requiredFromJSONTags(tags []string) bool {
+func requiredFromJSONTags(tags []string, val *bool) {
 	if ignoredByJSONTags(tags) {
-		return false
+		return
 	}
 
 	for _, tag := range tags[1:] {
 		if tag == "omitempty" {
-			return false
+			*val = false
+			return
 		}
 	}
-	return true
+	*val = true
 }
 
-func requiredFromJSONSchemaTags(tags []string) bool {
+func requiredFromJSONSchemaTags(tags []string, val *bool) {
 	if ignoredByJSONSchemaTags(tags) {
-		return false
+		return
 	}
 	for _, tag := range tags {
 		if tag == "required" {
-			return true
+			*val = true
 		}
 	}
-	return false
 }
 
 func nullableFromJSONSchemaTags(tags []string) bool {
@@ -1001,10 +1000,11 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 		return "", false, false, false
 	}
 
-	required := requiredFromJSONTags(jsonTags)
-	if r.RequiredFromJSONSchemaTags {
-		required = requiredFromJSONSchemaTags(schemaTags)
+	var required bool
+	if !r.RequiredFromJSONSchemaTags {
+		requiredFromJSONTags(jsonTags, &required)
 	}
+	requiredFromJSONSchemaTags(schemaTags, &required)
 
 	nullable := nullableFromJSONSchemaTags(schemaTags)
 
@@ -1044,29 +1044,29 @@ func (t *Schema) UnmarshalJSON(data []byte) error {
 		*t = *FalseSchema
 		return nil
 	}
-	type Schema_ Schema
+	type SchemaAlt Schema
 	aux := &struct {
-		*Schema_
+		*SchemaAlt
 	}{
-		Schema_: (*Schema_)(t),
+		SchemaAlt: (*SchemaAlt)(t),
 	}
 	return json.Unmarshal(data, aux)
 }
 
+// MarshalJSON is used to serialize a schema object or boolean.
 func (t *Schema) MarshalJSON() ([]byte, error) {
 	if t.boolean != nil {
 		if *t.boolean {
 			return []byte("true"), nil
-		} else {
-			return []byte("false"), nil
 		}
+		return []byte("false"), nil
 	}
 	if reflect.DeepEqual(&Schema{}, t) {
 		// Don't bother returning empty schemas
 		return []byte("true"), nil
 	}
-	type Schema_ Schema
-	b, err := json.Marshal((*Schema_)(t))
+	type SchemaAlt Schema
+	b, err := json.Marshal((*SchemaAlt)(t))
 	if err != nil {
 		return nil, err
 	}

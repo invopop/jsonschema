@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -34,13 +34,13 @@ type SomeBaseType struct {
 	// The jsonschema required tag is nonsensical for private and ignored properties.
 	// Their presence here tests that the fields *will not* be required in the output
 	// schema, even if they are tagged required.
-	somePrivateBaseProperty   string          `jsonschema:"required"`
+	somePrivateBaseProperty   string          `jsonschema:"required"` //nolint:unused
 	SomeIgnoredBaseProperty   string          `json:"-" jsonschema:"required"`
 	SomeSchemaIgnoredProperty string          `jsonschema:"-,required"`
 	Grandfather               GrandfatherType `json:"grand"`
 
 	SomeUntaggedBaseProperty           bool `jsonschema:"required"`
-	someUnexportedUntaggedBaseProperty bool
+	someUnexportedUntaggedBaseProperty bool //nolint:unused
 }
 
 type MapType map[string]interface{}
@@ -49,7 +49,7 @@ type ArrayType []string
 
 type nonExported struct {
 	PublicNonExported  int
-	privateNonExported int
+	privateNonExported int // nolint:unused
 }
 
 type ProtoEnum int32
@@ -492,19 +492,19 @@ func TestBaselineUnmarshal(t *testing.T) {
 
 func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) {
 	t.Helper()
-	expectedJSON, err := ioutil.ReadFile(f)
+	expectedJSON, err := os.ReadFile(f)
 	require.NoError(t, err)
 
 	actualSchema := r.Reflect(obj)
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ") //nolint:errchkjson
 
 	if *updateFixtures {
-		_ = ioutil.WriteFile(f, actualJSON, 0600)
+		_ = os.WriteFile(f, actualJSON, 0600)
 	}
 
 	if !assert.JSONEq(t, string(expectedJSON), string(actualJSON)) {
 		if *compareFixtures {
-			_ = ioutil.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
+			_ = os.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
 		}
 	}
 }
