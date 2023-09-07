@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"net/url"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -34,13 +34,13 @@ type SomeBaseType struct {
 	// The jsonschema required tag is nonsensical for private and ignored properties.
 	// Their presence here tests that the fields *will not* be required in the output
 	// schema, even if they are tagged required.
-	somePrivateBaseProperty   string          `jsonschema:"required"`
+	somePrivateBaseProperty   string          `jsonschema:"required"` //nolint:unused
 	SomeIgnoredBaseProperty   string          `json:"-" jsonschema:"required"`
 	SomeSchemaIgnoredProperty string          `jsonschema:"-,required"`
 	Grandfather               GrandfatherType `json:"grand"`
 
 	SomeUntaggedBaseProperty           bool `jsonschema:"required"`
-	someUnexportedUntaggedBaseProperty bool
+	someUnexportedUntaggedBaseProperty bool //nolint:unused
 }
 
 type MapType map[string]interface{}
@@ -49,7 +49,7 @@ type ArrayType []string
 
 type nonExported struct {
 	PublicNonExported  int
-	privateNonExported int
+	privateNonExported int // nolint:unused
 }
 
 type ProtoEnum int32
@@ -138,6 +138,7 @@ type RootOneOf struct {
 	Field3 interface{} `json:"field3" jsonschema:"oneof_type=string;array"`
 	Field4 string      `json:"field4" jsonschema:"oneof_required=group1"`
 	Field5 ChildOneOf  `json:"child"`
+	Field6 interface{} `json:"field6" jsonschema:"oneof_ref=Outer;OuterNamed;OuterPtr"`
 }
 
 type ChildOneOf struct {
@@ -492,21 +493,28 @@ func TestBaselineUnmarshal(t *testing.T) {
 
 func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj interface{}) {
 	t.Helper()
-	expectedJSON, err := ioutil.ReadFile(f)
+	expectedJSON, err := os.ReadFile(f)
 	require.NoError(t, err)
 
 	actualSchema := r.Reflect(obj)
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ") //nolint:errchkjson
 
 	if *updateFixtures {
-		_ = ioutil.WriteFile(f, actualJSON, 0600)
+		_ = os.WriteFile(f, actualJSON, 0600)
 	}
 
 	if !assert.JSONEq(t, string(expectedJSON), string(actualJSON)) {
 		if *compareFixtures {
-			_ = ioutil.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
+			_ = os.WriteFile(strings.TrimSuffix(f, ".json")+".out.json", actualJSON, 0600)
 		}
 	}
+}
+
+func fixtureContains(t *testing.T, f, s string) {
+	t.Helper()
+	b, err := os.ReadFile(f)
+	require.NoError(t, err)
+	assert.Contains(t, string(b), s)
 }
 
 func TestSplitOnUnescapedCommas(t *testing.T) {
@@ -527,9 +535,9 @@ func TestSplitOnUnescapedCommas(t *testing.T) {
 	}
 }
 
-func TestArrayFormat(t *testing.T) {
+func TestArrayExtraTags(t *testing.T) {
 	type URIArray struct {
-		TestURIs []string `jsonschema:"type=array,format=uri"`
+		TestURIs []string `jsonschema:"type=array,format=uri,pattern=^https://.*"`
 	}
 
 	r := new(Reflector)
@@ -544,4 +552,42 @@ func TestArrayFormat(t *testing.T) {
 	p := i.(*Schema)
 	pt := p.Items.Format
 	require.Equal(t, pt, "uri")
+	pt = p.Items.Pattern
+	require.Equal(t, pt, "^https://.*")
+}
+
+func TestFieldNameTag(t *testing.T) {
+	type Config struct {
+		Name  string `yaml:"name"`
+		Count int    `yaml:"count"`
+	}
+
+	r := Reflector{
+		FieldNameTag: "yaml",
+	}
+	compareSchemaOutput(t, "fixtures/test_config.json", &r, &Config{})
+}
+
+func TestFieldOneOfRef(t *testing.T) {
+	type Server struct {
+		IPAddress      interface{}   `json:"ip_address,omitempty" jsonschema:"oneof_ref=#/$defs/ipv4;#/$defs/ipv6"`
+		IPAddresses    []interface{} `json:"ip_addresses,omitempty" jsonschema:"oneof_ref=#/$defs/ipv4;#/$defs/ipv6"`
+		IPAddressAny   interface{}   `json:"ip_address_any,omitempty" jsonschema:"anyof_ref=#/$defs/ipv4;#/$defs/ipv6"`
+		IPAddressesAny []interface{} `json:"ip_addresses_any,omitempty" jsonschema:"anyof_ref=#/$defs/ipv4;#/$defs/ipv6"`
+	}
+
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/oneof_ref.json", r, &Server{})
+}
+
+func TestNumberHandling(t *testing.T) {
+	type NumberHandler struct {
+		Int64   int64   `json:"int64" jsonschema:"default=12"`
+		Float32 float32 `json:"float32" jsonschema:"default=12.5"`
+	}
+
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/number_handling.json", r, &NumberHandler{})
+	fixtureContains(t, "fixtures/number_handling.json", `"default": 12`)
+	fixtureContains(t, "fixtures/number_handling.json", `"default": 12.5`)
 }

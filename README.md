@@ -49,7 +49,8 @@ jsonschema.Reflect(&TestUser{})
 
 ```json
 {
-  "$schema": "http://json-schema.org/draft/2020-12/schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema_test/sample-user",
   "$ref": "#/$defs/SampleUser",
   "$defs": {
     "SampleUser": {
@@ -302,6 +303,8 @@ As you can see, if a field name has a `json:""` tag set, the `key` argument to `
 Sometimes it can be useful to have custom JSON Marshal and Unmarshal methods in your structs that automatically convert for example a string into an object.
 
 To override auto-generating an object type for your type, implement the `JSONSchema() *Schema` method and whatever is defined will be provided in the schema definitions.
+
+You also have the option of defining a `JSONSchemaExtend(schema *jsonschema.Schema)` method for your types that will be called _after_ the schema has been generated, allowing you to add or manipulate the fields easily.
 
 Take the following simplified example of a `CompactDate` that only includes the Year and Month:
 

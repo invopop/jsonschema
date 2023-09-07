@@ -4,10 +4,8 @@
   "$ref": "#/$defs/User",
   "$defs": {
     "NamedPets": {
-      "patternProperties": {
-        ".*": {
-          "$ref": "#/$defs/Pet"
-        }
+      "additionalProperties": {
+        "$ref": "#/$defs/Pet"
       },
       "type": "object",
       "description": "NamedPets is a map of animal names to pets."

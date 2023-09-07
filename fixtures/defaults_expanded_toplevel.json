@@ -67,10 +67,8 @@
       "description": "list of IDs, omitted when empty"
     },
     "tags": {
-      "patternProperties": {
-        ".*": {
-          "type": "string"
-        }
+      "additionalProperties": {
+        "type": "string"
       },
       "type": "object"
     },
@@ -217,6 +215,8 @@
     "name",
     "password",
     "TestFlag",
+    "photo",
+    "photo2",
     "age",
     "email",
     "uuid",
