@@ -108,6 +108,10 @@ type TestUser struct {
 	Priorities []int     `json:"priorities,omitempty" jsonschema:"enum=-1,enum=0,enum=1,enun=2"`
 	Offsets    []float64 `json:"offsets,omitempty" jsonschema:"enum=1.570796,enum=3.141592,enum=6.283185"`
 
+	// Tests for deprecated
+	DeprecatedField string   `json:"deprecated_field" jsonschema:"deprecated=true"`
+	DeprecatedSlice []string `json:"deprecated_slice" jsonschema:"deprecated=true"`
+
 	// Test for raw JSON
 	Anything interface{}     `json:"anything,omitempty"`
 	Raw      json.RawMessage `json:"raw"`

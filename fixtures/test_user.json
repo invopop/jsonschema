@@ -201,6 +201,17 @@
           },
           "type": "array"
         },
+        "deprecated_field": {
+          "type": "string",
+          "deprecated": true
+        },
+        "deprecated_slice": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "deprecated": true
+        },
         "anything": true,
         "raw": true
       },
@@ -224,6 +235,8 @@
         "Baz",
         "color",
         "roles",
+        "deprecated_field",
+        "deprecated_slice",
         "raw"
       ]
     }

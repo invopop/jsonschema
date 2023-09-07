@@ -927,6 +927,8 @@ func (t *Schema) arrayKeywords(tags []string) {
 				t.Items.Format = val
 			case "pattern":
 				t.Items.Pattern = val
+			case "deprecated":
+				t.Deprecated, _ = strconv.ParseBool(val)
 			}
 		}
 	}
