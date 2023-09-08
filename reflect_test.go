@@ -591,3 +591,33 @@ func TestNumberHandling(t *testing.T) {
 	fixtureContains(t, "fixtures/number_handling.json", `"default": 12`)
 	fixtureContains(t, "fixtures/number_handling.json", `"default": 12.5`)
 }
+
+func TestBuiltInFormat(t *testing.T) {
+	// reference: https://json-schema.org/understanding-json-schema/reference/string.html#built-in-formats
+	type BuiltInFormat struct {
+		Date     time.Time     `jsonschema:"format=date"`
+		Time     time.Time     `jsonschema:"format=time"`
+		DataTime time.Time     `jsonschema:"format=date-time"`
+		Duration time.Duration `jsonschema:"format=duration"`
+
+		Email    string `jsonschema:"format=email"`
+		IDNEmail string `jsonschema:"format=idn-email"`
+
+		Hostname    string `jsonschema:"format=hostname"`
+		IDNHostname string `jsonschema:"format=idn-hostname"`
+
+		IPv4 string `jsonschema:"format=ipv4"`
+		IPv6 string `jsonschema:"format=ipv6"`
+
+		UUID         string `jsonschema:"format=uuid"`
+		URI          string `jsonschema:"format=uri"`
+		URIReference string `jsonschema:"format=uri-reference"`
+		IRI          string `jsonschema:"format=iri"`
+		IRIReference string `jsonschema:"format=iri-reference"`
+
+		RegEx string `jsonschema:"format=regex"`
+	}
+
+	r := new(Reflector)
+	compareSchemaOutput(t, "fixtures/built_in_format.json", r, &BuiltInFormat{})
+}
