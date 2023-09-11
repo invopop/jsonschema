@@ -2,15 +2,14 @@ package jsonschema
 
 import (
 	"fmt"
-	"io/fs"
-	gopath "path"
-	"path/filepath"
-	"strings"
-
 	"go/ast"
 	"go/doc"
 	"go/parser"
 	"go/token"
+	"io/fs"
+	gopath "path"
+	"path/filepath"
+	"strings"
 )
 
 // ExtractGoComments will read all the go files contained in the provided path,
@@ -69,6 +68,9 @@ func ExtractGoComments(base, path string, commentMap map[string]string) error {
 					}
 				case *ast.Field:
 					txt := x.Doc.Text()
+					if txt == "" {
+						txt = x.Comment.Text()
+					}
 					if typ != "" && txt != "" {
 						for _, n := range x.Names {
 							if ast.IsExported(n.String()) {
