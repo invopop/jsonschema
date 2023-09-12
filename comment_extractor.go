@@ -2,14 +2,15 @@ package jsonschema
 
 import (
 	"fmt"
-	"go/ast"
-	"go/doc"
-	"go/parser"
-	"go/token"
 	"io/fs"
 	gopath "path"
 	"path/filepath"
 	"strings"
+
+	"go/ast"
+	"go/doc"
+	"go/parser"
+	"go/token"
 )
 
 // ExtractGoComments will read all the go files contained in the provided path,
