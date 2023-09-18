@@ -334,6 +334,11 @@ type Expression struct {
 	Value int `json:"value" jsonschema_extras:"foo=bar=='baz'"`
 }
 
+type PatternEqualsTest struct {
+	WithEquals string `jsonschema:"pattern=foo=bar"`
+	WithEqualsAndCommas string `jsonschema:"pattern=foo\\,=bar"`
+}
+
 func TestReflector(t *testing.T) {
 	r := new(Reflector)
 	s := "http://example.com/schema"
@@ -466,6 +471,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{ArrayType{}, &Reflector{}, "fixtures/array_type.json"},
 		{SchemaExtendTest{}, &Reflector{}, "fixtures/custom_type_extend.json"},
 		{Expression{}, &Reflector{}, "fixtures/schema_with_expression.json"},
+		{PatternEqualsTest{}, &Reflector{}, "fixtures/equals_in_pattern.json"},
 	}
 
 	for _, tt := range tests {
