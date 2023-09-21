@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/iancoleman/orderedmap"
+	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
 
 // Version is the JSON Schema version.
@@ -48,10 +48,10 @@ type Schema struct {
 	Items       *Schema   `json:"items,omitempty"`       // section 10.3.1.2  (replaces additionalItems)
 	Contains    *Schema   `json:"contains,omitempty"`    // section 10.3.1.3
 	// RFC draft-bhutton-json-schema-00 section 10.3.2 (sub-schemas)
-	Properties           *orderedmap.OrderedMap `json:"properties,omitempty"`           // section 10.3.2.1
-	PatternProperties    map[string]*Schema     `json:"patternProperties,omitempty"`    // section 10.3.2.2
-	AdditionalProperties *Schema                `json:"additionalProperties,omitempty"` // section 10.3.2.3
-	PropertyNames        *Schema                `json:"propertyNames,omitempty"`        // section 10.3.2.4
+	Properties           *orderedmap.OrderedMap[string, *Schema] `json:"properties,omitempty"`           // section 10.3.2.1
+	PatternProperties    map[string]*Schema                      `json:"patternProperties,omitempty"`    // section 10.3.2.2
+	AdditionalProperties *Schema                                 `json:"additionalProperties,omitempty"` // section 10.3.2.3
+	PropertyNames        *Schema                                 `json:"propertyNames,omitempty"`        // section 10.3.2.4
 	// RFC draft-bhutton-json-schema-validation-00, section 6
 	Type              string              `json:"type,omitempty"`              // section 6.1.1
 	Enum              []interface{}       `json:"enum,omitempty"`              // section 6.1.2
@@ -509,7 +509,7 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 
 	r.addDefinition(definitions, t, s)
 	s.Type = "object"
-	s.Properties = orderedmap.New()
+	s.Properties = NewProperties()
 	s.Description = r.lookupComment(t, "")
 	if r.AssignAnchor {
 		s.Anchor = t.Name()

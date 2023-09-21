@@ -13,8 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iancoleman/orderedmap"
-
 	"github.com/invopop/jsonschema/examples"
 
 	"github.com/stretchr/testify/assert"
@@ -268,7 +266,7 @@ func (CustomSliceType) JSONSchema() *Schema {
 type CustomMapType map[string]string
 
 func (CustomMapType) JSONSchema() *Schema {
-	properties := orderedmap.New()
+	properties := NewProperties()
 	properties.Set("key", &Schema{
 		Type: "string",
 	})
@@ -326,7 +324,7 @@ func (SchemaExtendTest) JSONSchemaExtend(base *Schema) {
 	base.Properties.Delete("FirstName")
 	base.Properties.Delete("age")
 	val, _ := base.Properties.Get("LastName")
-	(val).(*Schema).Description = "some extra words"
+	val.Description = "some extra words"
 	base.Required = []string{"LastName"}
 }
 
@@ -546,10 +544,9 @@ func TestArrayExtraTags(t *testing.T) {
 	require.NotNil(t, d)
 	props := d.Properties
 	require.NotNil(t, props)
-	i, found := props.Get("TestURIs")
+	p, found := props.Get("TestURIs")
 	require.True(t, found)
 
-	p := i.(*Schema)
 	pt := p.Items.Format
 	require.Equal(t, pt, "uri")
 	pt = p.Items.Pattern
