@@ -64,7 +64,7 @@ type TestUser struct {
 	nonExported
 	MapType
 
-	ID       int                    `json:"id" jsonschema:"required"`
+	ID       int                    `json:"id" jsonschema:"required,minimum=bad,maximum=bad,exclusiveMinimum=bad,exclusiveMaximum=bad,default=bad"`
 	Name     string                 `json:"name" jsonschema:"required,minLength=1,maxLength=20,pattern=.*,description=this is a property,title=the name,example=joe,example=lucy,default=alex,readOnly=true"`
 	Password string                 `json:"password" jsonschema:"writeOnly=true"`
 	Friends  []int                  `json:"friends,omitempty" jsonschema_description:"list of IDs, omitted when empty"`
@@ -88,7 +88,7 @@ type TestUser struct {
 	// Tests for jsonpb enum support
 	Feeling ProtoEnum `json:"feeling,omitempty"`
 
-	Age   int    `json:"age" jsonschema:"minimum=18,maximum=120,exclusiveMaximum=true,exclusiveMinimum=true"`
+	Age   int    `json:"age" jsonschema:"minimum=18,maximum=120,exclusiveMaximum=121,exclusiveMinimum=17"`
 	Email string `json:"email" jsonschema:"format=email"`
 	UUID  string `json:"uuid" jsonschema:"format=uuid"`
 

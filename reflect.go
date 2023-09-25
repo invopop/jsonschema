@@ -56,11 +56,11 @@ type Schema struct {
 	Type              string              `json:"type,omitempty"`              // section 6.1.1
 	Enum              []interface{}       `json:"enum,omitempty"`              // section 6.1.2
 	Const             interface{}         `json:"const,omitempty"`             // section 6.1.3
-	MultipleOf        json.Number         `json:"multipleOf,omitempty"`        // section 6.2.1
-	Maximum           json.Number         `json:"maximum,omitempty"`           // section 6.2.2
-	ExclusiveMaximum  json.Number         `json:"exclusiveMaximum,omitempty"`  // section 6.2.3
-	Minimum           json.Number         `json:"minimum,omitempty"`           // section 6.2.4
-	ExclusiveMinimum  json.Number         `json:"exclusiveMinimum,omitempty"`  // section 6.2.5
+	MultipleOf        *json.Number        `json:"multipleOf,omitempty"`        // section 6.2.1
+	Maximum           *json.Number        `json:"maximum,omitempty"`           // section 6.2.2
+	ExclusiveMaximum  *json.Number        `json:"exclusiveMaximum,omitempty"`  // section 6.2.3
+	Minimum           *json.Number        `json:"minimum,omitempty"`           // section 6.2.4
+	ExclusiveMinimum  *json.Number        `json:"exclusiveMinimum,omitempty"`  // section 6.2.5
 	MaxLength         int                 `json:"maxLength,omitempty"`         // section 6.3.1
 	MinLength         int                 `json:"minLength,omitempty"`         // section 6.3.2
 	Pattern           string              `json:"pattern,omitempty"`           // section 6.3.3
@@ -850,21 +850,23 @@ func (t *Schema) numericalKeywords(tags []string) {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "multipleOf":
-				t.MultipleOf = json.Number(val)
+				t.MultipleOf = toJSONNumber(val)
 			case "minimum":
-				t.Minimum = json.Number(val)
+				t.Minimum = toJSONNumber(val)
 			case "maximum":
-				t.Maximum = json.Number(val)
+				t.Maximum = toJSONNumber(val)
 			case "exclusiveMaximum":
-				t.ExclusiveMaximum = json.Number(val)
+				t.ExclusiveMaximum = toJSONNumber(val)
 			case "exclusiveMinimum":
-				t.ExclusiveMinimum = json.Number(val)
+				t.ExclusiveMinimum = toJSONNumber(val)
 			case "default":
-				n, _ := strconv.ParseFloat(val, 64)
-				t.Default = n
+				if num := toJSONNumber(val); num != nil {
+					// toJSONNumber returns typed nil, so we need to account for that
+					t.Default = num
+				}
 			case "example":
-				if i, err := strconv.Atoi(val); err == nil {
-					t.Examples = append(t.Examples, i)
+				if num := toJSONNumber(val); num != nil {
+					t.Examples = append(t.Examples, num)
 				}
 			}
 		}
@@ -1013,6 +1015,19 @@ func ignoredByJSONTags(tags []string) bool {
 
 func ignoredByJSONSchemaTags(tags []string) bool {
 	return tags[0] == "-"
+}
+
+// toJSONNumber converts string to *json.Number
+// it'll return nil if the number is invalid
+func toJSONNumber(s string) *json.Number {
+	num := json.Number(s)
+	if _, err := num.Int64(); err == nil {
+		return &num
+	}
+	if _, err := num.Float64(); err == nil {
+		return &num
+	}
+	return nil
 }
 
 func (r *Reflector) fieldNameTag() string {
