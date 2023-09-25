@@ -56,11 +56,11 @@ type Schema struct {
 	Type              string              `json:"type,omitempty"`              // section 6.1.1
 	Enum              []interface{}       `json:"enum,omitempty"`              // section 6.1.2
 	Const             interface{}         `json:"const,omitempty"`             // section 6.1.3
-	MultipleOf        int                 `json:"multipleOf,omitempty"`        // section 6.2.1
-	Maximum           int                 `json:"maximum,omitempty"`           // section 6.2.2
-	ExclusiveMaximum  bool                `json:"exclusiveMaximum,omitempty"`  // section 6.2.3
-	Minimum           int                 `json:"minimum,omitempty"`           // section 6.2.4
-	ExclusiveMinimum  bool                `json:"exclusiveMinimum,omitempty"`  // section 6.2.5
+	MultipleOf        json.Number         `json:"multipleOf,omitempty"`        // section 6.2.1
+	Maximum           json.Number         `json:"maximum,omitempty"`           // section 6.2.2
+	ExclusiveMaximum  json.Number         `json:"exclusiveMaximum,omitempty"`  // section 6.2.3
+	Minimum           json.Number         `json:"minimum,omitempty"`           // section 6.2.4
+	ExclusiveMinimum  json.Number         `json:"exclusiveMinimum,omitempty"`  // section 6.2.5
 	MaxLength         int                 `json:"maxLength,omitempty"`         // section 6.3.1
 	MinLength         int                 `json:"minLength,omitempty"`         // section 6.3.2
 	Pattern           string              `json:"pattern,omitempty"`           // section 6.3.3
@@ -850,20 +850,15 @@ func (t *Schema) numericalKeywords(tags []string) {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "multipleOf":
-				i, _ := strconv.Atoi(val)
-				t.MultipleOf = i
+				t.MultipleOf = json.Number(val)
 			case "minimum":
-				i, _ := strconv.Atoi(val)
-				t.Minimum = i
+				t.Minimum = json.Number(val)
 			case "maximum":
-				i, _ := strconv.Atoi(val)
-				t.Maximum = i
+				t.Maximum = json.Number(val)
 			case "exclusiveMaximum":
-				b, _ := strconv.ParseBool(val)
-				t.ExclusiveMaximum = b
+				t.ExclusiveMaximum = json.Number(val)
 			case "exclusiveMinimum":
-				b, _ := strconv.ParseBool(val)
-				t.ExclusiveMinimum = b
+				t.ExclusiveMinimum = json.Number(val)
 			case "default":
 				n, _ := strconv.ParseFloat(val, 64)
 				t.Default = n
