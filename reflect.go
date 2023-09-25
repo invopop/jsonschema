@@ -54,8 +54,8 @@ type Schema struct {
 	PropertyNames        *Schema                                 `json:"propertyNames,omitempty"`        // section 10.3.2.4
 	// RFC draft-bhutton-json-schema-validation-00, section 6
 	Type              string              `json:"type,omitempty"`              // section 6.1.1
-	Enum              []interface{}       `json:"enum,omitempty"`              // section 6.1.2
-	Const             interface{}         `json:"const,omitempty"`             // section 6.1.3
+	Enum              []any               `json:"enum,omitempty"`              // section 6.1.2
+	Const             any                 `json:"const,omitempty"`             // section 6.1.3
 	MultipleOf        *json.Number        `json:"multipleOf,omitempty"`        // section 6.2.1
 	Maximum           *json.Number        `json:"maximum,omitempty"`           // section 6.2.2
 	ExclusiveMaximum  *json.Number        `json:"exclusiveMaximum,omitempty"`  // section 6.2.3
@@ -80,15 +80,15 @@ type Schema struct {
 	ContentMediaType string  `json:"contentMediaType,omitempty"` // section 8.4
 	ContentSchema    *Schema `json:"contentSchema,omitempty"`    // section 8.5
 	// RFC draft-bhutton-json-schema-validation-00, section 9
-	Title       string        `json:"title,omitempty"`       // section 9.1
-	Description string        `json:"description,omitempty"` // section 9.1
-	Default     interface{}   `json:"default,omitempty"`     // section 9.2
-	Deprecated  bool          `json:"deprecated,omitempty"`  // section 9.3
-	ReadOnly    bool          `json:"readOnly,omitempty"`    // section 9.4
-	WriteOnly   bool          `json:"writeOnly,omitempty"`   // section 9.4
-	Examples    []interface{} `json:"examples,omitempty"`    // section 9.5
+	Title       string `json:"title,omitempty"`       // section 9.1
+	Description string `json:"description,omitempty"` // section 9.1
+	Default     any    `json:"default,omitempty"`     // section 9.2
+	Deprecated  bool   `json:"deprecated,omitempty"`  // section 9.3
+	ReadOnly    bool   `json:"readOnly,omitempty"`    // section 9.4
+	WriteOnly   bool   `json:"writeOnly,omitempty"`   // section 9.4
+	Examples    []any  `json:"examples,omitempty"`    // section 9.5
 
-	Extras map[string]interface{} `json:"-"`
+	Extras map[string]any `json:"-"`
 
 	// Special boolean representation of the Schema - section 4.3.2
 	boolean *bool
@@ -127,7 +127,7 @@ type customGetFieldDocString func(fieldName string) string
 var customStructGetFieldDocString = reflect.TypeOf((*customSchemaGetFieldDocString)(nil)).Elem()
 
 // Reflect reflects to Schema from a value using the default Reflector
-func Reflect(v interface{}) *Schema {
+func Reflect(v any) *Schema {
 	return ReflectFromType(reflect.TypeOf(v))
 }
 
@@ -188,7 +188,7 @@ type Reflector struct {
 
 	// IgnoredTypes defines a slice of types that should be ignored in the schema,
 	// switching to just allowing additional properties instead.
-	IgnoredTypes []interface{}
+	IgnoredTypes []any
 
 	// Lookup allows a function to be defined that will provide a custom mapping of
 	// types to Schema IDs. This allows existing schema documents to be referenced
@@ -229,7 +229,7 @@ type Reflector struct {
 }
 
 // Reflect reflects to Schema from a value.
-func (r *Reflector) Reflect(v interface{}) *Schema {
+func (r *Reflector) Reflect(v any) *Schema {
 	return r.ReflectFromType(reflect.TypeOf(v))
 }
 
@@ -891,7 +891,7 @@ func (t *Schema) numericalKeywords(tags []string) {
 
 // read struct tags for array type keywords
 func (t *Schema) arrayKeywords(tags []string) {
-	var defaultValues []interface{}
+	var defaultValues []any
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -941,7 +941,7 @@ func (t *Schema) extraKeywords(tags []string) {
 
 func (t *Schema) setExtra(key, val string) {
 	if t.Extras == nil {
-		t.Extras = map[string]interface{}{}
+		t.Extras = map[string]any{}
 	}
 	if existingVal, ok := t.Extras[key]; ok {
 		switch existingVal := existingVal.(type) {
@@ -959,7 +959,7 @@ func (t *Schema) setExtra(key, val string) {
 		case "minimum":
 			t.Extras[key], _ = strconv.Atoi(val)
 		default:
-			var x interface{}
+			var x any
 			if val == "true" {
 				x = true
 			} else if val == "false" {
