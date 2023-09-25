@@ -3,7 +3,6 @@ module github.com/invopop/jsonschema
 go 1.18
 
 require (
-	github.com/iancoleman/orderedmap v0.0.0-20190318233801-ac98e3ecb4b0
 	github.com/stretchr/testify v1.8.1
 	github.com/wk8/go-ordered-map/v2 v2.1.8
 )

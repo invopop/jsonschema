@@ -676,7 +676,7 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	t.extraKeywords(extras)
 }
 
-// read struct tags for generic keyworks
+// read struct tags for generic keywords
 func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) { //nolint:gocyclo
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -789,7 +789,7 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 	}
 }
 
-// read struct tags for boolean type keyworks
+// read struct tags for boolean type keywords
 func (t *Schema) booleanKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -807,7 +807,7 @@ func (t *Schema) booleanKeywords(tags []string) {
 	}
 }
 
-// read struct tags for string type keyworks
+// read struct tags for string type keywords
 func (t *Schema) stringKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -842,7 +842,7 @@ func (t *Schema) stringKeywords(tags []string) {
 	}
 }
 
-// read struct tags for numerical type keyworks
+// read struct tags for numerical type keywords
 func (t *Schema) numericalKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -876,7 +876,7 @@ func (t *Schema) numericalKeywords(tags []string) {
 	}
 }
 
-// read struct tags for object type keyworks
+// read struct tags for object type keywords
 // func (t *Type) objectKeywords(tags []string) {
 //     for _, tag := range tags{
 //         nameValue := strings.Split(tag, "=")
@@ -892,7 +892,7 @@ func (t *Schema) numericalKeywords(tags []string) {
 //     }
 // }
 
-// read struct tags for array type keyworks
+// read struct tags for array type keywords
 func (t *Schema) arrayKeywords(tags []string) {
 	var defaultValues []interface{}
 	for _, tag := range tags {
