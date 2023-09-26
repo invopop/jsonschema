@@ -54,13 +54,13 @@ type Schema struct {
 	PropertyNames        *Schema                                 `json:"propertyNames,omitempty"`        // section 10.3.2.4
 	// RFC draft-bhutton-json-schema-validation-00, section 6
 	Type              string              `json:"type,omitempty"`              // section 6.1.1
-	Enum              []interface{}       `json:"enum,omitempty"`              // section 6.1.2
-	Const             interface{}         `json:"const,omitempty"`             // section 6.1.3
-	MultipleOf        int                 `json:"multipleOf,omitempty"`        // section 6.2.1
-	Maximum           int                 `json:"maximum,omitempty"`           // section 6.2.2
-	ExclusiveMaximum  bool                `json:"exclusiveMaximum,omitempty"`  // section 6.2.3
-	Minimum           int                 `json:"minimum,omitempty"`           // section 6.2.4
-	ExclusiveMinimum  bool                `json:"exclusiveMinimum,omitempty"`  // section 6.2.5
+	Enum              []any               `json:"enum,omitempty"`              // section 6.1.2
+	Const             any                 `json:"const,omitempty"`             // section 6.1.3
+	MultipleOf        json.Number         `json:"multipleOf,omitempty"`        // section 6.2.1
+	Maximum           json.Number         `json:"maximum,omitempty"`           // section 6.2.2
+	ExclusiveMaximum  json.Number         `json:"exclusiveMaximum,omitempty"`  // section 6.2.3
+	Minimum           json.Number         `json:"minimum,omitempty"`           // section 6.2.4
+	ExclusiveMinimum  json.Number         `json:"exclusiveMinimum,omitempty"`  // section 6.2.5
 	MaxLength         int                 `json:"maxLength,omitempty"`         // section 6.3.1
 	MinLength         int                 `json:"minLength,omitempty"`         // section 6.3.2
 	Pattern           string              `json:"pattern,omitempty"`           // section 6.3.3
@@ -80,15 +80,15 @@ type Schema struct {
 	ContentMediaType string  `json:"contentMediaType,omitempty"` // section 8.4
 	ContentSchema    *Schema `json:"contentSchema,omitempty"`    // section 8.5
 	// RFC draft-bhutton-json-schema-validation-00, section 9
-	Title       string        `json:"title,omitempty"`       // section 9.1
-	Description string        `json:"description,omitempty"` // section 9.1
-	Default     interface{}   `json:"default,omitempty"`     // section 9.2
-	Deprecated  bool          `json:"deprecated,omitempty"`  // section 9.3
-	ReadOnly    bool          `json:"readOnly,omitempty"`    // section 9.4
-	WriteOnly   bool          `json:"writeOnly,omitempty"`   // section 9.4
-	Examples    []interface{} `json:"examples,omitempty"`    // section 9.5
+	Title       string `json:"title,omitempty"`       // section 9.1
+	Description string `json:"description,omitempty"` // section 9.1
+	Default     any    `json:"default,omitempty"`     // section 9.2
+	Deprecated  bool   `json:"deprecated,omitempty"`  // section 9.3
+	ReadOnly    bool   `json:"readOnly,omitempty"`    // section 9.4
+	WriteOnly   bool   `json:"writeOnly,omitempty"`   // section 9.4
+	Examples    []any  `json:"examples,omitempty"`    // section 9.5
 
-	Extras map[string]interface{} `json:"-"`
+	Extras map[string]any `json:"-"`
 
 	// Special boolean representation of the Schema - section 4.3.2
 	boolean *bool
@@ -127,7 +127,7 @@ type customGetFieldDocString func(fieldName string) string
 var customStructGetFieldDocString = reflect.TypeOf((*customSchemaGetFieldDocString)(nil)).Elem()
 
 // Reflect reflects to Schema from a value using the default Reflector
-func Reflect(v interface{}) *Schema {
+func Reflect(v any) *Schema {
 	return ReflectFromType(reflect.TypeOf(v))
 }
 
@@ -188,7 +188,7 @@ type Reflector struct {
 
 	// IgnoredTypes defines a slice of types that should be ignored in the schema,
 	// switching to just allowing additional properties instead.
-	IgnoredTypes []interface{}
+	IgnoredTypes []any
 
 	// Lookup allows a function to be defined that will provide a custom mapping of
 	// types to Schema IDs. This allows existing schema documents to be referenced
@@ -229,7 +229,7 @@ type Reflector struct {
 }
 
 // Reflect reflects to Schema from a value.
-func (r *Reflector) Reflect(v interface{}) *Schema {
+func (r *Reflector) Reflect(v any) *Schema {
 	return r.ReflectFromType(reflect.TypeOf(v))
 }
 
@@ -676,7 +676,7 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	t.extraKeywords(extras)
 }
 
-// read struct tags for generic keyworks
+// read struct tags for generic keywords
 func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) { //nolint:gocyclo
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -789,7 +789,7 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 	}
 }
 
-// read struct tags for boolean type keyworks
+// read struct tags for boolean type keywords
 func (t *Schema) booleanKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -807,7 +807,7 @@ func (t *Schema) booleanKeywords(tags []string) {
 	}
 }
 
-// read struct tags for string type keyworks
+// read struct tags for string type keywords
 func (t *Schema) stringKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -842,7 +842,7 @@ func (t *Schema) stringKeywords(tags []string) {
 	}
 }
 
-// read struct tags for numerical type keyworks
+// read struct tags for numerical type keywords
 func (t *Schema) numericalKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -850,33 +850,29 @@ func (t *Schema) numericalKeywords(tags []string) {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "multipleOf":
-				i, _ := strconv.Atoi(val)
-				t.MultipleOf = i
+				t.MultipleOf, _ = toJSONNumber(val)
 			case "minimum":
-				i, _ := strconv.Atoi(val)
-				t.Minimum = i
+				t.Minimum, _ = toJSONNumber(val)
 			case "maximum":
-				i, _ := strconv.Atoi(val)
-				t.Maximum = i
+				t.Maximum, _ = toJSONNumber(val)
 			case "exclusiveMaximum":
-				b, _ := strconv.ParseBool(val)
-				t.ExclusiveMaximum = b
+				t.ExclusiveMaximum, _ = toJSONNumber(val)
 			case "exclusiveMinimum":
-				b, _ := strconv.ParseBool(val)
-				t.ExclusiveMinimum = b
+				t.ExclusiveMinimum, _ = toJSONNumber(val)
 			case "default":
-				n, _ := strconv.ParseFloat(val, 64)
-				t.Default = n
+				if num, ok := toJSONNumber(val); ok {
+					t.Default = num
+				}
 			case "example":
-				if i, err := strconv.Atoi(val); err == nil {
-					t.Examples = append(t.Examples, i)
+				if num, ok := toJSONNumber(val); ok {
+					t.Examples = append(t.Examples, num)
 				}
 			}
 		}
 	}
 }
 
-// read struct tags for object type keyworks
+// read struct tags for object type keywords
 // func (t *Type) objectKeywords(tags []string) {
 //     for _, tag := range tags{
 //         nameValue := strings.Split(tag, "=")
@@ -892,9 +888,9 @@ func (t *Schema) numericalKeywords(tags []string) {
 //     }
 // }
 
-// read struct tags for array type keyworks
+// read struct tags for array type keywords
 func (t *Schema) arrayKeywords(tags []string) {
-	var defaultValues []interface{}
+	var defaultValues []any
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -944,7 +940,7 @@ func (t *Schema) extraKeywords(tags []string) {
 
 func (t *Schema) setExtra(key, val string) {
 	if t.Extras == nil {
-		t.Extras = map[string]interface{}{}
+		t.Extras = map[string]any{}
 	}
 	if existingVal, ok := t.Extras[key]; ok {
 		switch existingVal := existingVal.(type) {
@@ -962,7 +958,7 @@ func (t *Schema) setExtra(key, val string) {
 		case "minimum":
 			t.Extras[key], _ = strconv.Atoi(val)
 		default:
-			var x interface{}
+			var x any
 			if val == "true" {
 				x = true
 			} else if val == "false" {
@@ -1018,6 +1014,19 @@ func ignoredByJSONTags(tags []string) bool {
 
 func ignoredByJSONSchemaTags(tags []string) bool {
 	return tags[0] == "-"
+}
+
+// toJSONNumber converts string to *json.Number.
+// It'll aso return whether the number is valid.
+func toJSONNumber(s string) (json.Number, bool) {
+	num := json.Number(s)
+	if _, err := num.Int64(); err == nil {
+		return num, true
+	}
+	if _, err := num.Float64(); err == nil {
+		return num, true
+	}
+	return json.Number(""), false
 }
 
 func (r *Reflector) fieldNameTag() string {
