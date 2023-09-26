@@ -591,7 +591,7 @@ func TestNumberHandling(t *testing.T) {
 
 func TestArrayHandling(t *testing.T) {
 	type ArrayHandler struct {
-		MinLen []string  `json:"min_len" jsonschema:"minLength=2"`
+		MinLen []string  `json:"min_len" jsonschema:"minLength=2,default=qwerty"`
 		MinVal []float64 `json:"min_val" jsonschema:"minimum=2.5"`
 	}
 
