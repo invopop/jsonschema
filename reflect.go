@@ -773,17 +773,6 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 						Type: ty,
 					})
 				}
-			case "enum":
-				switch t.Type {
-				case "string":
-					t.Enum = append(t.Enum, val)
-				case "integer":
-					i, _ := strconv.Atoi(val)
-					t.Enum = append(t.Enum, i)
-				case "number":
-					f, _ := strconv.ParseFloat(val, 64)
-					t.Enum = append(t.Enum, f)
-				}
 			}
 		}
 	}
@@ -837,6 +826,8 @@ func (t *Schema) stringKeywords(tags []string) {
 				t.Default = val
 			case "example":
 				t.Examples = append(t.Examples, val)
+			case "enum":
+				t.Enum = append(t.Enum, val)
 			}
 		}
 	}
@@ -866,6 +857,10 @@ func (t *Schema) numericalKeywords(tags []string) {
 			case "example":
 				if num, ok := toJSONNumber(val); ok {
 					t.Examples = append(t.Examples, num)
+				}
+			case "enum":
+				if num, ok := toJSONNumber(val); ok {
+					t.Enum = append(t.Enum, num)
 				}
 			}
 		}
@@ -906,17 +901,6 @@ func (t *Schema) arrayKeywords(tags []string) {
 				t.UniqueItems = true
 			case "default":
 				defaultValues = append(defaultValues, val)
-			case "enum":
-				switch t.Items.Type {
-				case "string":
-					t.Items.Enum = append(t.Items.Enum, val)
-				case "integer":
-					i, _ := strconv.Atoi(val)
-					t.Items.Enum = append(t.Items.Enum, i)
-				case "number":
-					f, _ := strconv.ParseFloat(val, 64)
-					t.Items.Enum = append(t.Items.Enum, f)
-				}
 			case "format":
 				t.Items.Format = val
 			case "pattern":
@@ -926,6 +910,19 @@ func (t *Schema) arrayKeywords(tags []string) {
 	}
 	if len(defaultValues) > 0 {
 		t.Default = defaultValues
+	}
+
+	switch t.Items.Type {
+	case "string":
+		t.Items.stringKeywords(tags)
+	case "number":
+		t.Items.numericalKeywords(tags)
+	case "integer":
+		t.Items.numericalKeywords(tags)
+	case "array":
+		// explicitly don't support traversal for the [][]..., as it's unclear where the array tags belong
+	case "boolean":
+		t.Items.booleanKeywords(tags)
 	}
 }
 
