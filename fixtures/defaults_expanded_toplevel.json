@@ -201,21 +201,7 @@
       "type": "array"
     },
     "anything": true,
-    "raw": true,
-    "min_len": {
-      "items": {
-        "type": "string",
-        "minLength": 2
-      },
-      "type": "array"
-    },
-    "min_val": {
-      "items": {
-        "type": "number",
-        "minimum": 2.5
-      },
-      "type": "array"
-    }
+    "raw": true
   },
   "additionalProperties": false,
   "type": "object",
@@ -237,8 +223,6 @@
     "Baz",
     "color",
     "roles",
-    "raw",
-    "min_len",
-    "min_val"
+    "raw"
   ]
 }

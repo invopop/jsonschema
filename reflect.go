@@ -920,7 +920,7 @@ func (t *Schema) arrayKeywords(tags []string) {
 	case "integer":
 		t.Items.numericalKeywords(tags)
 	case "array":
-		t.Items.arrayKeywords(tags)
+		// explicitly don't support traversal for the [][]..., as it's unclear where the array tags belong
 	case "boolean":
 		t.Items.booleanKeywords(tags)
 	}

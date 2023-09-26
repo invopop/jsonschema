@@ -109,10 +109,6 @@ type TestUser struct {
 	// Test for raw JSON
 	Anything any             `json:"anything,omitempty"`
 	Raw      json.RawMessage `json:"raw"`
-
-	// Test for minLength working for string slice
-	MinLen []string  `json:"min_len" jsonschema:"minLength=2"`
-	MinVal []float64 `json:"min_val" jsonschema:"minimum=2.5"`
 }
 
 type CustomTime time.Time
@@ -591,4 +587,16 @@ func TestNumberHandling(t *testing.T) {
 	compareSchemaOutput(t, "fixtures/number_handling.json", r, &NumberHandler{})
 	fixtureContains(t, "fixtures/number_handling.json", `"default": 12`)
 	fixtureContains(t, "fixtures/number_handling.json", `"default": 12.5`)
+}
+
+func TestArrayHandling(t *testing.T) {
+	type ArrayHandler struct {
+		MinLen []string  `json:"min_len" jsonschema:"minLength=2"`
+		MinVal []float64 `json:"min_val" jsonschema:"minimum=2.5"`
+	}
+
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/array_handling.json", r, &ArrayHandler{})
+	fixtureContains(t, "fixtures/array_handling.json", `"minLength": 2`)
+	fixtureContains(t, "fixtures/array_handling.json", `"minimum": 2.5`)
 }
