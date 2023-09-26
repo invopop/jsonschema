@@ -859,13 +859,8 @@ func (t *Schema) numericalKeywords(tags []string) {
 					t.Examples = append(t.Examples, num)
 				}
 			case "enum":
-				switch t.Type {
-				case "integer":
-					i, _ := strconv.Atoi(val)
-					t.Enum = append(t.Enum, i)
-				case "number":
-					f, _ := strconv.ParseFloat(val, 64)
-					t.Enum = append(t.Enum, f)
+				if num, ok := toJSONNumber(val); ok {
+					t.Enum = append(t.Enum, num)
 				}
 			}
 		}
