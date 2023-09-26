@@ -109,6 +109,10 @@ type TestUser struct {
 	// Test for raw JSON
 	Anything any             `json:"anything,omitempty"`
 	Raw      json.RawMessage `json:"raw"`
+
+	// Test for minLength working for string slice
+	MinLen []string  `json:"min_len" jsonschema:"minLength=2"`
+	MinVal []float64 `json:"min_val" jsonschema:"minimum=2.5"`
 }
 
 type CustomTime time.Time
