@@ -6,6 +6,9 @@
     "ArrayHandler": {
       "properties": {
         "min_len": {
+          "default": [
+            "qwerty"
+          ],
           "items": {
             "type": "string",
             "minLength": 2

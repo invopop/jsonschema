@@ -658,7 +658,7 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	t.Description = f.Tag.Get("jsonschema_description")
 
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
-	t.genericKeywords(tags, parent, propertyName)
+	tags = t.genericKeywords(tags, parent, propertyName)
 
 	switch t.Type {
 	case "string":
@@ -677,7 +677,8 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 }
 
 // read struct tags for generic keywords
-func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) { //nolint:gocyclo
+func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) []string { //nolint:gocyclo
+	unprocessed := make([]string, 0, len(tags))
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -773,9 +774,12 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 						Type: ty,
 					})
 				}
+			default:
+				unprocessed = append(unprocessed, tag)
 			}
 		}
 	}
+	return unprocessed
 }
 
 // read struct tags for boolean type keywords
@@ -886,6 +890,8 @@ func (t *Schema) numericalKeywords(tags []string) {
 // read struct tags for array type keywords
 func (t *Schema) arrayKeywords(tags []string) {
 	var defaultValues []any
+
+	unprocessed := make([]string, 0, len(tags))
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
@@ -905,6 +911,8 @@ func (t *Schema) arrayKeywords(tags []string) {
 				t.Items.Format = val
 			case "pattern":
 				t.Items.Pattern = val
+			default:
+				unprocessed = append(unprocessed, tag) // left for further processing by underlying type
 			}
 		}
 	}
@@ -912,17 +920,22 @@ func (t *Schema) arrayKeywords(tags []string) {
 		t.Default = defaultValues
 	}
 
+	if len(unprocessed) == 0 {
+		// we don't have anything else to process
+		return
+	}
+
 	switch t.Items.Type {
 	case "string":
-		t.Items.stringKeywords(tags)
+		t.Items.stringKeywords(unprocessed)
 	case "number":
-		t.Items.numericalKeywords(tags)
+		t.Items.numericalKeywords(unprocessed)
 	case "integer":
-		t.Items.numericalKeywords(tags)
+		t.Items.numericalKeywords(unprocessed)
 	case "array":
 		// explicitly don't support traversal for the [][]..., as it's unclear where the array tags belong
 	case "boolean":
-		t.Items.booleanKeywords(tags)
+		t.Items.booleanKeywords(unprocessed)
 	}
 }
 
