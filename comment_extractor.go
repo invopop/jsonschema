@@ -69,6 +69,9 @@ func ExtractGoComments(base, path string, commentMap map[string]string) error {
 					}
 				case *ast.Field:
 					txt := x.Doc.Text()
+					if txt == "" {
+						txt = x.Comment.Text()
+					}
 					if typ != "" && txt != "" {
 						for _, n := range x.Names {
 							if ast.IsExported(n.String()) {
