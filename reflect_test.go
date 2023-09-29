@@ -335,7 +335,7 @@ type Expression struct {
 }
 
 type PatternEqualsTest struct {
-	WithEquals string `jsonschema:"pattern=foo=bar"`
+	WithEquals          string `jsonschema:"pattern=foo=bar"`
 	WithEqualsAndCommas string `jsonschema:"pattern=foo\\,=bar"`
 }
 
