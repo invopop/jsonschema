@@ -61,16 +61,16 @@ type Schema struct {
 	ExclusiveMaximum  json.Number         `json:"exclusiveMaximum,omitempty"`  // section 6.2.3
 	Minimum           json.Number         `json:"minimum,omitempty"`           // section 6.2.4
 	ExclusiveMinimum  json.Number         `json:"exclusiveMinimum,omitempty"`  // section 6.2.5
-	MaxLength         int                 `json:"maxLength,omitempty"`         // section 6.3.1
-	MinLength         int                 `json:"minLength,omitempty"`         // section 6.3.2
+	MaxLength         *uint64             `json:"maxLength,omitempty"`         // section 6.3.1
+	MinLength         *uint64             `json:"minLength,omitempty"`         // section 6.3.2
 	Pattern           string              `json:"pattern,omitempty"`           // section 6.3.3
-	MaxItems          int                 `json:"maxItems,omitempty"`          // section 6.4.1
-	MinItems          int                 `json:"minItems,omitempty"`          // section 6.4.2
+	MaxItems          *uint64             `json:"maxItems,omitempty"`          // section 6.4.1
+	MinItems          *uint64             `json:"minItems,omitempty"`          // section 6.4.2
 	UniqueItems       bool                `json:"uniqueItems,omitempty"`       // section 6.4.3
-	MaxContains       uint                `json:"maxContains,omitempty"`       // section 6.4.4
-	MinContains       uint                `json:"minContains,omitempty"`       // section 6.4.5
-	MaxProperties     int                 `json:"maxProperties,omitempty"`     // section 6.5.1
-	MinProperties     int                 `json:"minProperties,omitempty"`     // section 6.5.2
+	MaxContains       *uint64             `json:"maxContains,omitempty"`       // section 6.4.4
+	MinContains       *uint64             `json:"minContains,omitempty"`       // section 6.4.5
+	MaxProperties     *uint64             `json:"maxProperties,omitempty"`     // section 6.5.1
+	MinProperties     *uint64             `json:"minProperties,omitempty"`     // section 6.5.2
 	Required          []string            `json:"required,omitempty"`          // section 6.5.3
 	DependentRequired map[string][]string `json:"dependentRequired,omitempty"` // section 6.5.4
 	// RFC draft-bhutton-json-schema-validation-00, section 7
@@ -459,8 +459,9 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 	}
 
 	if t.Kind() == reflect.Array {
-		st.MinItems = t.Len()
-		st.MaxItems = st.MinItems
+		l := uint64(t.Len())
+		st.MinItems = &l
+		st.MaxItems = &l
 	}
 	if t.Kind() == reflect.Slice && t.Elem() == byteSliceType.Elem() {
 		st.Type = "string"
@@ -808,11 +809,9 @@ func (t *Schema) stringKeywords(tags []string) {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "minLength":
-				i, _ := strconv.Atoi(val)
-				t.MinLength = i
+				t.MinLength = parseUint(val)
 			case "maxLength":
-				i, _ := strconv.Atoi(val)
-				t.MaxLength = i
+				t.MaxLength = parseUint(val)
 			case "pattern":
 				t.Pattern = val
 			case "format":
@@ -898,11 +897,9 @@ func (t *Schema) arrayKeywords(tags []string) {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "minItems":
-				i, _ := strconv.Atoi(val)
-				t.MinItems = i
+				t.MinItems = parseUint(val)
 			case "maxItems":
-				i, _ := strconv.Atoi(val)
-				t.MaxItems = i
+				t.MaxItems = parseUint(val)
 			case "uniqueItems":
 				t.UniqueItems = true
 			case "default":
@@ -1037,6 +1034,14 @@ func toJSONNumber(s string) (json.Number, bool) {
 		return num, true
 	}
 	return json.Number(""), false
+}
+
+func parseUint(num string) *uint64 {
+	val, err := strconv.ParseUint(num, 10, 64)
+	if err != nil {
+		return nil
+	}
+	return &val
 }
 
 func (r *Reflector) fieldNameTag() string {

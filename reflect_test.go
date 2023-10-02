@@ -600,3 +600,19 @@ func TestArrayHandling(t *testing.T) {
 	fixtureContains(t, "fixtures/array_handling.json", `"minLength": 2`)
 	fixtureContains(t, "fixtures/array_handling.json", `"minimum": 2.5`)
 }
+
+func TestUnsignedIntHandling(t *testing.T) {
+	type UnsignedIntHandler struct {
+		MinLen   []string `json:"min_len" jsonschema:"minLength=0"`
+		MaxLen   []string `json:"max_len" jsonschema:"maxLength=0"`
+		MinItems []string `json:"min_items" jsonschema:"minItems=0"`
+		MaxItems []string `json:"max_items" jsonschema:"maxItems=0"`
+	}
+
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/unsigned_int_handling.json", r, &UnsignedIntHandler{})
+	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"minLength": 0`)
+	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxLength": 0`)
+	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"minItems": 0`)
+	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxItems": 0`)
+}
