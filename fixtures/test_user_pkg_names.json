@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/invopop/jsonschema/test-user",
-  "$ref": "#/$defs/github.com/invopop/jsonschema/TestUser",
+  "$ref": "#/$defs/github.com~1invopop~1jsonschema~1TestUser",
   "$defs": {
     "github.com/invopop/jsonschema/Bytes": {
       "type": "string",
@@ -31,7 +31,7 @@
           "type": "integer"
         },
         "grand": {
-          "$ref": "#/$defs/github.com/invopop/jsonschema/GrandfatherType"
+          "$ref": "#/$defs/github.com~1invopop~1jsonschema~1GrandfatherType"
         },
         "SomeUntaggedBaseProperty": {
           "type": "boolean"
@@ -40,7 +40,7 @@
           "type": "integer"
         },
         "MapType": {
-          "$ref": "#/$defs/github.com/invopop/jsonschema/MapType"
+          "$ref": "#/$defs/github.com~1invopop~1jsonschema~1MapType"
         },
         "name": {
           "type": "string",
@@ -104,7 +104,7 @@
           "contentEncoding": "base64"
         },
         "photo2": {
-          "$ref": "#/$defs/github.com/invopop/jsonschema/Bytes"
+          "$ref": "#/$defs/github.com~1invopop~1jsonschema~1Bytes"
         },
         "feeling": {
           "oneOf": [

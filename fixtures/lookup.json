@@ -6,7 +6,7 @@
     "LookupUser": {
       "properties": {
         "name": {
-          "$ref": "https://example.com/schemas/lookup-name"
+          "$ref": "https:~1~1example.com~1schemas~1lookup-name"
         },
         "alias": {
           "type": "string"

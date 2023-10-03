@@ -315,7 +315,7 @@ func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.
 	id := r.lookupID(t)
 	if id != EmptyID {
 		return &Schema{
-			Ref: id.String(),
+			Ref: JSONPointer(id.String()), // we link only by JSON pointers
 		}
 	}
 
@@ -644,7 +644,7 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 		return nil
 	}
 	return &Schema{
-		Ref: "#/$defs/" + name,
+		Ref: "#/$defs/" + JSONPointer(name), // we link only by JSON pointers
 	}
 }
 
