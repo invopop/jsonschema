@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/invopop/jsonschema/examples"
+	"github.com/invopop/jsonschema/testdata"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -377,6 +378,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&TestUser{}, &Reflector{IgnoredTypes: []any{GrandfatherType{}}}, "fixtures/ignore_type.json"},
 		{&TestUser{}, &Reflector{DoNotReference: true}, "fixtures/no_reference.json"},
 		{&TestUser{}, &Reflector{DoNotReference: true, AssignAnchor: true}, "fixtures/no_reference_anchor.json"},
+		{&TestUser{}, &Reflector{NamesWithPkg: true}, "fixtures/test_user_pkg_names.json"},
 		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/oneof.json"},
 		{&RootAnyOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/anyof.json"},
 		{&CustomTypeField{}, &Reflector{
@@ -621,4 +623,9 @@ func TestUnsignedIntHandling(t *testing.T) {
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxLength": 0`)
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"minItems": 0`)
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxItems": 0`)
+}
+
+func TestClashingTypes(t *testing.T) {
+	r := &Reflector{NamesWithPkg: true}
+	compareSchemaOutput(t, "fixtures/clashing_types.json", r, &testdata.Odd{})
 }
