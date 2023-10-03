@@ -4,7 +4,7 @@
   "$anchor": "LookupUser",
   "properties": {
     "name": {
-      "$ref": "https:~1~1example.com~1schemas~1lookup-name"
+      "$ref": "https://example.com/schemas/lookup-name"
     },
     "alias": {
       "type": "string"
