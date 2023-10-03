@@ -13,12 +13,16 @@
             "$ref": "#/$defs/RecursiveExample"
           },
           "type": "array"
+        },
+        "pointer_child": {
+          "$ref": "#/$defs/RecursiveExample"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "text"
+        "text",
+        "pointer_child"
       ]
     }
   }

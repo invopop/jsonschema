@@ -292,8 +292,9 @@ type PatternTest struct {
 }
 
 type RecursiveExample struct {
-	Text  string              `json:"text"`
-	Child []*RecursiveExample `json:"children,omitempty"`
+	Text         string              `json:"text"`
+	Child        []*RecursiveExample `json:"children,omitempty"`
+	PointerChild *RecursiveExample   `json:"pointer_child"`
 }
 
 type KeyNamedNested struct {
