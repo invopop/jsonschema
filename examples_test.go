@@ -62,18 +62,32 @@ func ExampleReflect() {
 	//           ]
 	//         },
 	//         "friends": {
-	//           "items": {
-	//             "type": "integer"
-	//           },
-	//           "type": "array",
-	//           "description": "The list of IDs, omitted when empty"
+	//           "oneOf": [
+	//             {
+	//               "items": {
+	//                 "type": "integer"
+	//               },
+	//               "type": "array",
+	//               "description": "The list of IDs, omitted when empty"
+	//             },
+	//             {
+	//               "type": "null"
+	//             }
+	//           ]
 	//         },
 	//         "tags": {
-	//           "type": "object",
-	//           "a": "b",
-	//           "foo": [
-	//             "bar",
-	//             "bar1"
+	//           "oneOf": [
+	//             {
+	//               "type": "object",
+	//               "a": "b",
+	//               "foo": [
+	//                 "bar",
+	//                 "bar1"
+	//               ]
+	//             },
+	//             {
+	//               "type": "null"
+	//             }
 	//           ]
 	//         },
 	//         "birth_date": {
@@ -86,10 +100,17 @@ func ExampleReflect() {
 	//         "metadata": {
 	//           "oneOf": [
 	//             {
-	//               "type": "string"
+	//               "oneOf": [
+	//                 {
+	//                   "type": "string"
+	//                 },
+	//                 {
+	//                   "type": "array"
+	//                 }
+	//               ]
 	//             },
 	//             {
-	//               "type": "array"
+	//               "type": "null"
 	//             }
 	//           ]
 	//         },

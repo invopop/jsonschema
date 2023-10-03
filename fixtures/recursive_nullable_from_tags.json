@@ -9,17 +9,10 @@
           "type": "string"
         },
         "children": {
-          "oneOf": [
-            {
-              "items": {
-                "$ref": "#/$defs/RecursiveExample"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ]
+          "items": {
+            "$ref": "#/$defs/RecursiveExample"
+          },
+          "type": "array"
         }
       },
       "additionalProperties": false,

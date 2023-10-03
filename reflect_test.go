@@ -369,16 +369,16 @@ func TestSchemaGeneration(t *testing.T) {
 		fixture   string
 	}{
 		{&TestUser{}, &Reflector{}, "fixtures/test_user.json"},
-		{&UserWithAnchor{}, &Reflector{}, "fixtures/user_with_anchor.json"},
-		{&TestUser{}, &Reflector{AssignAnchor: true}, "fixtures/test_user_assign_anchor.json"},
-		{&TestUser{}, &Reflector{AllowAdditionalProperties: true}, "fixtures/allow_additional_props.json"},
-		{&TestUser{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/required_from_jsontags.json"},
-		{&TestUser{}, &Reflector{ExpandedStruct: true}, "fixtures/defaults_expanded_toplevel.json"},
-		{&TestUser{}, &Reflector{IgnoredTypes: []any{GrandfatherType{}}}, "fixtures/ignore_type.json"},
-		{&TestUser{}, &Reflector{DoNotReference: true}, "fixtures/no_reference.json"},
-		{&TestUser{}, &Reflector{DoNotReference: true, AssignAnchor: true}, "fixtures/no_reference_anchor.json"},
-		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/oneof.json"},
-		{&RootAnyOf{}, &Reflector{RequiredFromJSONSchemaTags: true}, "fixtures/anyof.json"},
+		{&UserWithAnchor{}, &Reflector{NullableFromJSONSchemaTags: true}, "fixtures/user_with_anchor.json"},
+		{&TestUser{}, &Reflector{AssignAnchor: true, NullableFromJSONSchemaTags: true}, "fixtures/test_user_assign_anchor.json"},
+		{&TestUser{}, &Reflector{AllowAdditionalProperties: true, NullableFromJSONSchemaTags: true}, "fixtures/allow_additional_props.json"},
+		{&TestUser{}, &Reflector{RequiredFromJSONSchemaTags: true, NullableFromJSONSchemaTags: true}, "fixtures/required_from_jsontags.json"},
+		{&TestUser{}, &Reflector{ExpandedStruct: true, NullableFromJSONSchemaTags: true}, "fixtures/defaults_expanded_toplevel.json"},
+		{&TestUser{}, &Reflector{IgnoredTypes: []any{GrandfatherType{}}, NullableFromJSONSchemaTags: true}, "fixtures/ignore_type.json"},
+		{&TestUser{}, &Reflector{DoNotReference: true, NullableFromJSONSchemaTags: true}, "fixtures/no_reference.json"},
+		{&TestUser{}, &Reflector{DoNotReference: true, AssignAnchor: true, NullableFromJSONSchemaTags: true}, "fixtures/no_reference_anchor.json"},
+		{&RootOneOf{}, &Reflector{RequiredFromJSONSchemaTags: true, NullableFromJSONSchemaTags: true}, "fixtures/oneof.json"},
+		{&RootAnyOf{}, &Reflector{RequiredFromJSONSchemaTags: true, NullableFromJSONSchemaTags: true}, "fixtures/anyof.json"},
 		{&CustomTypeField{}, &Reflector{
 			Mapper: func(i reflect.Type) *Schema {
 				if i == reflect.TypeOf(CustomTime{}) {
@@ -390,7 +390,7 @@ func TestSchemaGeneration(t *testing.T) {
 				return nil
 			},
 		}, "fixtures/custom_type.json"},
-		{LookupUser{}, &Reflector{BaseSchemaID: "https://example.com/schemas"}, "fixtures/base_schema_id.json"},
+		{LookupUser{}, &Reflector{BaseSchemaID: "https://example.com/schemas", NullableFromJSONSchemaTags: true}, "fixtures/base_schema_id.json"},
 		{LookupUser{}, &Reflector{
 			Lookup: func(i reflect.Type) ID {
 				switch i {
@@ -401,6 +401,7 @@ func TestSchemaGeneration(t *testing.T) {
 				}
 				return EmptyID
 			},
+			NullableFromJSONSchemaTags: true,
 		}, "fixtures/lookup.json"},
 		{&LookupUser{}, &Reflector{
 			BaseSchemaID:   "https://example.com/schemas",
@@ -415,13 +416,14 @@ func TestSchemaGeneration(t *testing.T) {
 				}
 				return EmptyID
 			},
+			NullableFromJSONSchemaTags: true,
 		}, "fixtures/lookup_expanded.json"},
 		{&Outer{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_inheritance.json"},
 		{&OuterNamed{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_embedded.json"},
 		{&OuterNamed{}, &Reflector{ExpandedStruct: true, AssignAnchor: true}, "fixtures/inlining_embedded_anchored.json"},
 		{&OuterPtr{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_ptr.json"},
 		{&MinValue{}, &Reflector{}, "fixtures/schema_with_minimum.json"},
-		{&TestNullable{}, &Reflector{}, "fixtures/nullable.json"},
+		{&TestNullable{}, &Reflector{NullableFromJSONSchemaTags: true}, "fixtures/nullable.json"},
 		{&GrandfatherType{}, &Reflector{
 			AdditionalFields: func(r reflect.Type) []reflect.StructField {
 				return []reflect.StructField{
@@ -433,15 +435,17 @@ func TestSchemaGeneration(t *testing.T) {
 					},
 				}
 			},
+			NullableFromJSONSchemaTags: true,
 		}, "fixtures/custom_additional.json"},
 		{&TestDescriptionOverride{}, &Reflector{}, "fixtures/test_description_override.json"},
 		{&CompactDate{}, &Reflector{}, "fixtures/compact_date.json"},
-		{&CustomSliceOuter{}, &Reflector{}, "fixtures/custom_slice_type.json"},
-		{&CustomMapOuter{}, &Reflector{}, "fixtures/custom_map_type.json"},
+		{&CustomSliceOuter{}, &Reflector{NullableFromJSONSchemaTags: true}, "fixtures/custom_slice_type.json"},
+		{&CustomMapOuter{}, &Reflector{NullableFromJSONSchemaTags: true}, "fixtures/custom_map_type.json"},
 		{&CustomTypeFieldWithInterface{}, &Reflector{}, "fixtures/custom_type_with_interface.json"},
 		{&PatternTest{}, &Reflector{}, "fixtures/commas_in_pattern.json"},
 		{&examples.User{}, prepareCommentReflector(t), "fixtures/go_comments.json"},
 		{&RecursiveExample{}, &Reflector{}, "fixtures/recursive.json"},
+		{&RecursiveExample{}, &Reflector{NullableFromJSONSchemaTags: true}, "fixtures/recursive_nullable_from_tags.json"},
 		{&KeyNamed{}, &Reflector{
 			KeyNamer: func(s string) string {
 				switch s {
@@ -484,7 +488,7 @@ func TestSchemaGeneration(t *testing.T) {
 
 func prepareCommentReflector(t *testing.T) *Reflector {
 	t.Helper()
-	r := new(Reflector)
+	r := &Reflector{NullableFromJSONSchemaTags: true}
 	err := r.AddGoComments("github.com/invopop/jsonschema", "./examples")
 	require.NoError(t, err, "did not expect error while adding comments")
 	return r
@@ -493,6 +497,11 @@ func prepareCommentReflector(t *testing.T) *Reflector {
 func TestBaselineUnmarshal(t *testing.T) {
 	r := &Reflector{}
 	compareSchemaOutput(t, "fixtures/test_user.json", r, &TestUser{})
+}
+
+func TestNullableFromTagsUnmarshal(t *testing.T) {
+	r := &Reflector{NullableFromJSONSchemaTags: true}
+	compareSchemaOutput(t, "fixtures/test_user_nullable_from_tags.json", r, &TestUser{})
 }
 
 func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj any) {
@@ -544,7 +553,7 @@ func TestArrayExtraTags(t *testing.T) {
 		TestURIs []string `jsonschema:"type=array,format=uri,pattern=^https://.*"`
 	}
 
-	r := new(Reflector)
+	r := &Reflector{NullableFromJSONSchemaTags: true}
 	schema := r.Reflect(&URIArray{})
 	d := schema.Definitions["URIArray"]
 	require.NotNil(t, d)
@@ -579,7 +588,7 @@ func TestFieldOneOfRef(t *testing.T) {
 		IPAddressesAny []any `json:"ip_addresses_any,omitempty" jsonschema:"anyof_ref=#/$defs/ipv4;#/$defs/ipv6"`
 	}
 
-	r := &Reflector{}
+	r := &Reflector{NullableFromJSONSchemaTags: true}
 	compareSchemaOutput(t, "fixtures/oneof_ref.json", r, &Server{})
 }
 
@@ -601,7 +610,7 @@ func TestArrayHandling(t *testing.T) {
 		MinVal []float64 `json:"min_val" jsonschema:"minimum=2.5"`
 	}
 
-	r := &Reflector{}
+	r := &Reflector{NullableFromJSONSchemaTags: true}
 	compareSchemaOutput(t, "fixtures/array_handling.json", r, &ArrayHandler{})
 	fixtureContains(t, "fixtures/array_handling.json", `"minLength": 2`)
 	fixtureContains(t, "fixtures/array_handling.json", `"minimum": 2.5`)
@@ -615,7 +624,7 @@ func TestUnsignedIntHandling(t *testing.T) {
 		MaxItems []string `json:"max_items" jsonschema:"maxItems=0"`
 	}
 
-	r := &Reflector{}
+	r := &Reflector{NullableFromJSONSchemaTags: true}
 	compareSchemaOutput(t, "fixtures/unsigned_int_handling.json", r, &UnsignedIntHandler{})
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"minLength": 0`)
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxLength": 0`)

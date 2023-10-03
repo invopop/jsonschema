@@ -8,7 +8,6 @@
       "contentEncoding": "base64"
     },
     "GrandfatherType": {
-      "$anchor": "GrandfatherType",
       "properties": {
         "family_name": {
           "type": "string"
@@ -24,7 +23,6 @@
       "type": "object"
     },
     "TestUser": {
-      "$anchor": "TestUser",
       "properties": {
         "id": {
           "type": "integer"

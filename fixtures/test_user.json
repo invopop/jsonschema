@@ -40,7 +40,14 @@
           "type": "integer"
         },
         "MapType": {
-          "$ref": "#/$defs/MapType"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/MapType"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "name": {
           "type": "string",
@@ -61,20 +68,41 @@
           "writeOnly": true
         },
         "friends": {
-          "items": {
-            "type": "integer"
-          },
-          "type": "array",
-          "description": "list of IDs, omitted when empty"
+          "oneOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array",
+              "description": "list of IDs, omitted when empty"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "tags": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "type": "object"
+          "oneOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "options": {
-          "type": "object"
+          "oneOf": [
+            {
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "TestFlag": {
           "type": "boolean"
@@ -96,15 +124,36 @@
           "format": "uri"
         },
         "network_address": {
-          "type": "string",
-          "format": "ipv4"
+          "oneOf": [
+            {
+              "type": "string",
+              "format": "ipv4"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "photo": {
-          "type": "string",
-          "contentEncoding": "base64"
+          "oneOf": [
+            {
+              "type": "string",
+              "contentEncoding": "base64"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "photo2": {
-          "$ref": "#/$defs/Bytes"
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Bytes"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "feeling": {
           "oneOf": [
@@ -163,46 +212,81 @@
         "mult": {
           "type": "number",
           "enum": [
-            1,
+            1.0,
             1.5,
-            2
+            2.0
           ]
         },
         "roles": {
-          "items": {
-            "type": "string",
-            "enum": [
-              "admin",
-              "moderator",
-              "user"
-            ]
-          },
-          "type": "array"
+          "oneOf": [
+            {
+              "items": {
+                "type": "string",
+                "enum": [
+                  "admin",
+                  "moderator",
+                  "user"
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "priorities": {
-          "items": {
-            "type": "integer",
-            "enum": [
-              -1,
-              0,
-              1
-            ]
-          },
-          "type": "array"
+          "oneOf": [
+            {
+              "items": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "offsets": {
-          "items": {
-            "type": "number",
-            "enum": [
-              1.570796,
-              3.141592,
-              6.283185
-            ]
-          },
-          "type": "array"
+          "oneOf": [
+            {
+              "items": {
+                "type": "number",
+                "enum": [
+                  1.570796,
+                  3.141592,
+                  6.283185
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
-        "anything": true,
-        "raw": true
+        "anything": {
+          "oneOf": [
+            true,
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "raw": {
+          "oneOf": [
+            true,
+            {
+              "type": "null"
+            }
+          ]
+        }
       },
       "additionalProperties": false,
       "type": "object",

@@ -6,14 +6,14 @@
     "ArrayHandler": {
       "properties": {
         "min_len": {
-          "default": [
-            "qwerty"
-          ],
           "items": {
             "type": "string",
             "minLength": 2
           },
-          "type": "array"
+          "type": "array",
+          "default": [
+            "qwerty"
+          ]
         },
         "min_val": {
           "items": {
