@@ -681,7 +681,7 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) []string { //nolint:gocyclo
 	unprocessed := make([]string, 0, len(tags))
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
@@ -804,7 +804,7 @@ func (t *Schema) booleanKeywords(tags []string) {
 // read struct tags for string type keywords
 func (t *Schema) stringKeywords(tags []string) {
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
