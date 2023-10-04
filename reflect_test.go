@@ -637,8 +637,7 @@ type AliasPropertyObjectBase struct {
 }
 
 func (AliasPropertyObjectBase) JSONSchemaProperty(prop string) any {
-	switch prop {
-	case "object":
+	if prop == "object" {
 		return &AliasObjectA{}
 	}
 	return nil
