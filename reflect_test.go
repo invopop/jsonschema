@@ -195,6 +195,10 @@ type TestNullable struct {
 	Child1 string `json:"child1" jsonschema:"nullable"`
 }
 
+type TestNullableField struct {
+	A *string `json:"a"`
+}
+
 type CompactDate struct {
 	Year  int
 	Month int
@@ -426,6 +430,8 @@ func TestSchemaGeneration(t *testing.T) {
 		{&OuterPtr{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_ptr.json"},
 		{&MinValue{}, &Reflector{}, "fixtures/schema_with_minimum.json"},
 		{&TestNullable{}, &Reflector{NullableFromJSONSchemaTags: true}, "fixtures/nullable.json"},
+		{&TestNullableField{}, &Reflector{}, "fixtures/nullable_field.json"},
+		{&TestNullableField{}, &Reflector{NullableFromJSONSchemaTags: true}, "fixtures/nullable_from_tags_field.json"},
 		{&GrandfatherType{}, &Reflector{
 			AdditionalFields: func(r reflect.Type) []reflect.StructField {
 				return []reflect.StructField{

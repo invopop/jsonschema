@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/test-nullable-field",
+  "$ref": "#/$defs/TestNullableField",
+  "$defs": {
+    "TestNullableField": {
+      "properties": {
+        "a": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "a"
+      ]
+    }
+  }
+}
