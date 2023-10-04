@@ -1,14 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/invopop/jsonschema/test-user",
-  "$ref": "#/$defs/TestUser",
+  "$ref": "#/$defs/github.com~1invopop~1jsonschema~1TestUser",
   "$defs": {
-    "Bytes": {
+    "github.com/invopop/jsonschema/Bytes": {
       "type": "string",
       "contentEncoding": "base64"
     },
-    "GrandfatherType": {
-      "$anchor": "GrandfatherType",
+    "github.com/invopop/jsonschema/GrandfatherType": {
       "properties": {
         "family_name": {
           "type": "string"
@@ -20,11 +19,10 @@
         "family_name"
       ]
     },
-    "MapType": {
+    "github.com/invopop/jsonschema/MapType": {
       "type": "object"
     },
-    "TestUser": {
-      "$anchor": "TestUser",
+    "github.com/invopop/jsonschema/TestUser": {
       "properties": {
         "id": {
           "type": "integer"
@@ -33,7 +31,7 @@
           "type": "integer"
         },
         "grand": {
-          "$ref": "#/$defs/GrandfatherType"
+          "$ref": "#/$defs/github.com~1invopop~1jsonschema~1GrandfatherType"
         },
         "SomeUntaggedBaseProperty": {
           "type": "boolean"
@@ -42,7 +40,7 @@
           "type": "integer"
         },
         "MapType": {
-          "$ref": "#/$defs/MapType"
+          "$ref": "#/$defs/github.com~1invopop~1jsonschema~1MapType"
         },
         "name": {
           "type": "string",
@@ -106,7 +104,7 @@
           "contentEncoding": "base64"
         },
         "photo2": {
-          "$ref": "#/$defs/Bytes"
+          "$ref": "#/$defs/github.com~1invopop~1jsonschema~1Bytes"
         },
         "feeling": {
           "oneOf": [

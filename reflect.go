@@ -203,6 +203,9 @@ type Reflector struct {
 	// provided by the reflect package.
 	Namer func(reflect.Type) string
 
+	// NamesWithPkg allows to prepend type name with package path (useful for situations with type name clashes).
+	NamesWithPkg bool
+
 	// KeyNamer allows customizing of key names.
 	// The default is to use the key's name as is, or the json tag if present.
 	// If a json tag is present, KeyNamer will receive the tag's name as an argument, not the original key name.
@@ -239,7 +242,7 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 		t = t.Elem() // re-assign from pointer
 	}
 
-	name := r.typeName(t)
+	name := r.typeNameWithPkg(t)
 
 	s := new(Schema)
 	definitions := Definitions{}
@@ -263,7 +266,8 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 			}
 		}
 		if baseSchemaID != EmptyID {
-			s.ID = baseSchemaID.Add(ToSnakeCase(name))
+			// we use bare type name for ID
+			s.ID = baseSchemaID.Add(ToSnakeCase(r.typeName(t)))
 		}
 	}
 
@@ -311,7 +315,7 @@ func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.
 	id := r.lookupID(t)
 	if id != EmptyID {
 		return &Schema{
-			Ref: id.String(),
+			Ref: id.String(), // we don't escape here with JSONPointer as it's an explicitly defined ID
 		}
 	}
 
@@ -620,7 +624,7 @@ func (r *Reflector) lookupComment(t reflect.Type, name string) string {
 
 // addDefinition will append the provided schema. If needed, an ID and anchor will also be added.
 func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Schema) {
-	name := r.typeName(t)
+	name := r.typeNameWithPkg(t)
 	if name == "" {
 		return
 	}
@@ -632,7 +636,7 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 	if r.DoNotReference {
 		return nil
 	}
-	name := r.typeName(t)
+	name := r.typeNameWithPkg(t)
 	if name == "" {
 		return nil
 	}
@@ -640,7 +644,7 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 		return nil
 	}
 	return &Schema{
-		Ref: "#/$defs/" + name,
+		Ref: "#/$defs/" + JSONPointer(name), // we link only by JSON pointers
 	}
 }
 
@@ -1155,6 +1159,14 @@ func (r *Reflector) typeName(t reflect.Type) string {
 		}
 	}
 	return t.Name()
+}
+
+func (r *Reflector) typeNameWithPkg(t reflect.Type) string {
+	name := r.typeName(t)
+	if len(name) == 0 || !r.NamesWithPkg {
+		return name
+	}
+	return t.PkgPath() + "/" + name
 }
 
 // Split on commas that are not preceded by `\`.
