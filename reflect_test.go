@@ -629,19 +629,32 @@ type AliasObjectA struct {
 type AliasObjectB struct {
 	PropB string `json:"prop_b"`
 }
-type AliasObjectBase struct {
-	Object *AliasObjectA `json:"object"`
+type AliasObjectC struct {
+	ObjB *AliasObjectB `json:"obj_b"`
+}
+type AliasPropertyObjectBase struct {
+	Object any `json:"object"`
 }
 
-func (AliasObjectBase) JSONSchemaAlias(prop string) any {
+func (AliasPropertyObjectBase) JSONSchemaProperty(prop string) any {
 	switch prop {
 	case "object":
-		return &AliasObjectB{}
+		return &AliasObjectA{}
 	}
 	return nil
 }
 
+func (AliasObjectB) JSONSchemaAlias() any {
+	return AliasObjectA{}
+}
+
+func TestJSONSchemaProperty(t *testing.T) {
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/schema_property_alias.json", r, &AliasPropertyObjectBase{})
+}
+
 func TestJSONSchemaAlias(t *testing.T) {
 	r := &Reflector{}
-	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectBase{})
+	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectB{})
+	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
 }

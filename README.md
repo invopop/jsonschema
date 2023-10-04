@@ -308,7 +308,8 @@ This library will recognize and attempt to call three different methods that hel
 
 - `JSONSchema() *Schema` - will prevent auto-generation of the schema so that you can provide your own definition.
 - `JSONSchemaExtend(schema *jsonschema.Schema)` - will be called _after_ the schema has been generated, allowing you to add or manipulate the fields easily.
-- `JSONSchemaAlias(prop string) any` - will be called for every property inside a struct giving you the chance to provide an alternative object to convert into a schema.
+- `JSONSchemaAlias() any` - is called when reflecting the type of object and allows for an alternative to be used instead.
+- `JSONSchemaProperty(prop string) any` - will be called for every property inside a struct giving you the chance to provide an alternative object to convert into a schema.
 
 Note that all of these methods **must** be defined on a non-pointer object for them to be called.
 

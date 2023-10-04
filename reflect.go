@@ -30,14 +30,21 @@ type extendSchemaImpl interface {
 	JSONSchemaExtend(*Schema)
 }
 
-// If an object to be reflected defines a `JSONSchemaAlias` method,
+// If the object to be reflected defines a `JSONSchemaAlias` method, its type will
+// be used instead of the original type.
+type aliasSchemaImpl interface {
+	JSONSchemaAlias() any
+}
+
+// If an object to be reflected defines a `JSONSchemaPropertyAlias` method,
 // it will be called for each property to determine if another object
 // should be used for the contents.
-type aliasSchemaImpl interface {
-	JSONSchemaAlias(prop string) any
+type propertyAliasSchemaImpl interface {
+	JSONSchemaProperty(prop string) any
 }
 
 var customAliasSchema = reflect.TypeOf((*aliasSchemaImpl)(nil)).Elem()
+var customPropertyAliasSchema = reflect.TypeOf((*propertyAliasSchemaImpl)(nil)).Elem()
 
 var customType = reflect.TypeOf((*customSchemaImpl)(nil)).Elem()
 var extendType = reflect.TypeOf((*extendSchemaImpl)(nil)).Elem()
@@ -262,6 +269,15 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		return r.refOrReflectTypeToSchema(definitions, t.Elem())
 	}
 
+	// Check if the there is an alias method that provides an object
+	// that we should use instead of this one.
+	if t.Implements(customAliasSchema) {
+		v := reflect.New(t)
+		o := v.Interface().(aliasSchemaImpl)
+		t = reflect.TypeOf(o.JSONSchemaAlias())
+		return r.refOrReflectTypeToSchema(definitions, t)
+	}
+
 	// Do any pre-definitions exist?
 	if r.Mapper != nil {
 		if t := r.Mapper(t); t != nil {
@@ -466,13 +482,13 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 		getFieldDocString = o.GetFieldDocString
 	}
 
-	customAliasMethod := func(string) any {
+	customPropertyMethod := func(string) any {
 		return nil
 	}
-	if t.Implements(customAliasSchema) {
+	if t.Implements(customPropertyAliasSchema) {
 		v := reflect.New(t)
-		o := v.Interface().(aliasSchemaImpl)
-		customAliasMethod = o.JSONSchemaAlias
+		o := v.Interface().(propertyAliasSchemaImpl)
+		customPropertyMethod = o.JSONSchemaProperty
 	}
 
 	handleField := func(f reflect.StructField) {
@@ -489,7 +505,7 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 		// If a JSONSchemaAlias(prop string) method is defined, attempt to use
 		// the provided object's type instead of the field's type.
 		var property *Schema
-		if alias := customAliasMethod(name); alias != nil {
+		if alias := customPropertyMethod(name); alias != nil {
 			property = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias))
 		} else {
 			property = r.refOrReflectTypeToSchema(definitions, f.Type)
