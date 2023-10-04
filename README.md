@@ -304,7 +304,7 @@ As you can see, if a field name has a `json:""` tag set, the `key` argument to `
 
 Sometimes it can be useful to have custom JSON Marshal and Unmarshal methods in your structs that automatically convert for example a string into an object.
 
-This library will recognize and attempt to call three different methods that help you adjust schemas to your specific needs:
+This library will recognize and attempt to call four different methods that help you adjust schemas to your specific needs:
 
 - `JSONSchema() *Schema` - will prevent auto-generation of the schema so that you can provide your own definition.
 - `JSONSchemaExtend(schema *jsonschema.Schema)` - will be called _after_ the schema has been generated, allowing you to add or manipulate the fields easily.
