@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/alias-object-base",
+  "$ref": "#/$defs/AliasObjectBase",
+  "$defs": {
+    "AliasObjectB": {
+      "properties": {
+        "prop_b": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "prop_b"
+      ]
+    },
+    "AliasObjectBase": {
+      "properties": {
+        "object": {
+          "$ref": "#/$defs/AliasObjectB"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "object"
+      ]
+    }
+  }
+}

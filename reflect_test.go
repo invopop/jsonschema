@@ -622,3 +622,26 @@ func TestUnsignedIntHandling(t *testing.T) {
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"minItems": 0`)
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxItems": 0`)
 }
+
+type AliasObjectA struct {
+	PropA string `json:"prop_a"`
+}
+type AliasObjectB struct {
+	PropB string `json:"prop_b"`
+}
+type AliasObjectBase struct {
+	Object *AliasObjectA `json:"object"`
+}
+
+func (AliasObjectBase) JSONSchemaAlias(prop string) any {
+	switch prop {
+	case "object":
+		return &AliasObjectB{}
+	}
+	return nil
+}
+
+func TestJSONSchemaAlias(t *testing.T) {
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectBase{})
+}
