@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/invopop/jsonschema/examples"
+	"github.com/invopop/jsonschema/testdata"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -631,4 +632,9 @@ func TestUnsignedIntHandling(t *testing.T) {
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxLength": 0`)
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"minItems": 0`)
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxItems": 0`)
+}
+
+func TestClashingTypes(t *testing.T) {
+	r := &Reflector{NamesWithPkg: true}
+	compareSchemaOutput(t, "fixtures/clashing_types.json", r, &testdata.Odd{})
 }
