@@ -304,9 +304,14 @@ As you can see, if a field name has a `json:""` tag set, the `key` argument to `
 
 Sometimes it can be useful to have custom JSON Marshal and Unmarshal methods in your structs that automatically convert for example a string into an object.
 
-To override auto-generating an object type for your type, implement the `JSONSchema() *Schema` method and whatever is defined will be provided in the schema definitions.
+This library will recognize and attempt to call four different methods that help you adjust schemas to your specific needs:
 
-You also have the option of defining a `JSONSchemaExtend(schema *jsonschema.Schema)` method for your types that will be called _after_ the schema has been generated, allowing you to add or manipulate the fields easily.
+- `JSONSchema() *Schema` - will prevent auto-generation of the schema so that you can provide your own definition.
+- `JSONSchemaExtend(schema *jsonschema.Schema)` - will be called _after_ the schema has been generated, allowing you to add or manipulate the fields easily.
+- `JSONSchemaAlias() any` - is called when reflecting the type of object and allows for an alternative to be used instead.
+- `JSONSchemaProperty(prop string) any` - will be called for every property inside a struct giving you the chance to provide an alternative object to convert into a schema.
+
+Note that all of these methods **must** be defined on a non-pointer object for them to be called.
 
 Take the following simplified example of a `CompactDate` that only includes the Year and Month:
 
