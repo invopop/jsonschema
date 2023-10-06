@@ -7,9 +7,14 @@ import (
 
 type (
 	Odd struct {
-		Dummy1 types.Dummy  `json:"dummy1"`
-		Dummy2 deeper.Dummy `json:"dummy2"`
-		Dummy3 Dummy        `json:"dummy3"`
+		Dummy1  types.Dummy
+		Dummy1a types.Dummy
+
+		Dummy2  deeper.Dummy
+		Dummy2a deeper.Dummy
+
+		Dummy3  Dummy
+		Dummy3a Dummy
 	}
 	Dummy struct {
 		B int

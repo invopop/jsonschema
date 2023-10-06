@@ -7,12 +7,16 @@
       "properties": {
         "A": {
           "type": "string"
+        },
+        "Dummy": {
+          "$ref": "#/$defs/Dummy_1"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "A"
+        "A",
+        "Dummy"
       ]
     },
     "Dummy_1": {
@@ -41,22 +45,34 @@
     },
     "Odd": {
       "properties": {
-        "dummy1": {
+        "Dummy1": {
           "$ref": "#/$defs/Dummy"
         },
-        "dummy2": {
+        "Dummy1a": {
+          "$ref": "#/$defs/Dummy"
+        },
+        "Dummy2": {
           "$ref": "#/$defs/Dummy_1"
         },
-        "dummy3": {
+        "Dummy2a": {
+          "$ref": "#/$defs/Dummy_1"
+        },
+        "Dummy3": {
+          "$ref": "#/$defs/Dummy_2"
+        },
+        "Dummy3a": {
           "$ref": "#/$defs/Dummy_2"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "dummy1",
-        "dummy2",
-        "dummy3"
+        "Dummy1",
+        "Dummy1a",
+        "Dummy2",
+        "Dummy2a",
+        "Dummy3",
+        "Dummy3a"
       ]
     }
   }
