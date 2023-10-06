@@ -577,7 +577,25 @@ func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Sc
 	if name == "" {
 		return
 	}
-	definitions[name] = s
+	s.sourceType = t
+
+	typeName, pkgPath := t.Name(), t.PkgPath()
+	def, ok := r.findDef(definitions, name, typeName, pkgPath)
+	if !ok || def != nil { // def != nil means the same type, so we're OK to overwrite
+		definitions[name] = s
+		return
+	}
+
+	idx := 0
+	defName := name
+	for ok && def == nil { // we skip all names where we found entry but have different type
+		idx++
+		defName = name + "_" + strconv.Itoa(idx)
+		def, ok = r.findDef(definitions, defName, typeName, pkgPath)
+	}
+
+	// wither def != nil & we're overwriting, or it's a new one
+	definitions[defName] = s
 }
 
 // refDefinition will provide a schema with a reference to an existing definition.
@@ -589,12 +607,43 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 	if name == "" {
 		return nil
 	}
-	if _, ok := definitions[name]; !ok {
+
+	typeName, pkgPath := t.Name(), t.PkgPath()
+	def, ok := r.findDef(definitions, name, typeName, pkgPath)
+	if !ok {
 		return nil
 	}
-	return &Schema{
-		Ref: "#/$defs/" + name,
+
+	idx := 0
+	defName := name
+	for def == nil {
+		idx++
+		defName = name + "_" + strconv.Itoa(idx)
+		def, ok = r.findDef(definitions, defName, typeName, pkgPath)
+		if !ok {
+			return nil
+		}
 	}
+
+	// here we have def != nil
+	return &Schema{
+		Ref: "#/$defs/" + defName,
+	}
+}
+
+// findDef returns the matching definition + whether the def with the defName passed was found
+func (r *Reflector) findDef(definitions Definitions, defName, typeName, pkgPath string) (*Schema, bool) {
+	def, ok := definitions[defName]
+	if !ok {
+		return nil, false
+	}
+
+	// now we need to check that the def is indeed created from the same type
+	if def.sourceType.PkgPath() != pkgPath || def.sourceType.Name() != typeName {
+		return nil, true
+	}
+
+	return def, true
 }
 
 func (r *Reflector) lookupID(t reflect.Type) ID {

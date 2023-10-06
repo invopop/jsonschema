@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/internal/testdata/odd",
+  "$ref": "#/$defs/Odd",
+  "$defs": {
+    "Dummy": {
+      "properties": {
+        "A": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "A"
+      ]
+    },
+    "Dummy_1": {
+      "properties": {
+        "A": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "A"
+      ]
+    },
+    "Dummy_2": {
+      "properties": {
+        "B": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "B"
+      ]
+    },
+    "Odd": {
+      "properties": {
+        "dummy1": {
+          "$ref": "#/$defs/Dummy"
+        },
+        "dummy2": {
+          "$ref": "#/$defs/Dummy_1"
+        },
+        "dummy3": {
+          "$ref": "#/$defs/Dummy_2"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "dummy1",
+        "dummy2",
+        "dummy3"
+      ]
+    }
+  }
+}
