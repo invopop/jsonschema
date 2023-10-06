@@ -594,7 +594,7 @@ func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Sc
 		def, ok = r.findDef(definitions, defName, typeName, pkgPath)
 	}
 
-	// wither def != nil & we're overwriting, or it's a new one
+	// either def != nil & we're overwriting, or it's a new one
 	definitions[defName] = s
 }
 
@@ -611,12 +611,13 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 	typeName, pkgPath := t.Name(), t.PkgPath()
 	def, ok := r.findDef(definitions, name, typeName, pkgPath)
 	if !ok {
+		// no entry even for a bare name
 		return nil
 	}
 
 	idx := 0
 	defName := name
-	for def == nil {
+	for def == nil { // this will result in 0 iterations if def is already found
 		idx++
 		defName = name + "_" + strconv.Itoa(idx)
 		def, ok = r.findDef(definitions, defName, typeName, pkgPath)
