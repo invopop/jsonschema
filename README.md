@@ -371,3 +371,19 @@ The resulting schema generated for this struct would look like:
   }
 }
 ```
+
+### Nullability
+
+Nullability in JSON schema is expressed via
+[`oneOf`](https://json-schema.org/draft/2020-12/json-schema-core#section-10.2.1.3) choice
+between original schema & `{"type":"null"}`.
+
+By default, only the struct fields that are explicitly annotated with `jsonschema:"nullable"` tag are marked nullable.
+However, when setting `NullableFromType` to `true`, `jsonschema:"nullable"` is ignored &
+the following Go reflect types are marked as nullable instead:
+
+- `reflect.Pointer`
+- `reflect.UnsafePointer`
+- `reflect.Map`
+- `reflect.Slice`
+- `reflect.Interface`
