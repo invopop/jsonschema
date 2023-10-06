@@ -369,6 +369,7 @@ func TestSchemaGeneration(t *testing.T) {
 		fixture   string
 	}{
 		{&TestUser{}, &Reflector{}, "fixtures/test_user.json"},
+		{&TestUser{}, &Reflector{NullableFromType: true}, "fixtures/test_user_nullable_from_type.json"},
 		{&UserWithAnchor{}, &Reflector{}, "fixtures/user_with_anchor.json"},
 		{&TestUser{}, &Reflector{AssignAnchor: true}, "fixtures/test_user_assign_anchor.json"},
 		{&TestUser{}, &Reflector{AllowAdditionalProperties: true}, "fixtures/allow_additional_props.json"},

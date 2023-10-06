@@ -106,6 +106,17 @@ type Reflector struct {
 	// default of requiring any key *not* tagged with `json:,omitempty`.
 	RequiredFromJSONSchemaTags bool
 
+	// NullableFromType will cause the Reflector to determine nullability based on the field type
+	// as opposed to the default behavior to honor `jsonschema:"nullable"` tag.
+	// The following reflect.Kind types can be safely parsed as nil in Go
+	// & will be marked nullable if NullableFromType=true:
+	// - reflect.Pointer
+	// - reflect.UnsafePointer
+	// - reflect.Map
+	// - reflect.Slice
+	// - reflect.Interface
+	NullableFromType bool
+
 	// Do not reference definitions. This will remove the top-level $defs map and
 	// instead cause the entire structure of types to be output in one tree. The
 	// list of type definitions (`$defs`) will not be included.
@@ -167,7 +178,7 @@ func (r *Reflector) Reflect(v any) *Schema {
 
 // ReflectFromType generates root schema
 func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem() // re-assign from pointer
 	}
 
@@ -265,7 +276,7 @@ func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) 
 
 func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
 	// only try to reflect non-pointers
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		return r.refOrReflectTypeToSchema(definitions, t.Elem())
 	}
 
@@ -352,7 +363,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 }
 
 func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type) *Schema {
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		return r.reflectCustomSchema(definitions, t.Elem())
 	}
 
@@ -468,7 +479,7 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 }
 
 func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t reflect.Type) {
-	if t.Kind() == reflect.Ptr {
+	if t.Kind() == reflect.Pointer {
 		t = t.Elem()
 	}
 	if t.Kind() != reflect.Struct {
@@ -599,7 +610,7 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 
 func (r *Reflector) lookupID(t reflect.Type) ID {
 	if r.Lookup != nil {
-		if t.Kind() == reflect.Ptr {
+		if t.Kind() == reflect.Pointer {
 			t = t.Elem()
 		}
 		return r.Lookup(t)
@@ -968,6 +979,19 @@ func nullableFromJSONSchemaTags(tags []string) bool {
 	return false
 }
 
+func isNullable(k reflect.Kind) bool {
+	switch k {
+	case reflect.Pointer,
+		reflect.UnsafePointer,
+		reflect.Map,
+		reflect.Slice,
+		reflect.Interface:
+		return true
+	default:
+		return false
+	}
+}
+
 func ignoredByJSONTags(tags []string) bool {
 	return tags[0] == "-"
 }
@@ -1023,7 +1047,12 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 	}
 	requiredFromJSONSchemaTags(schemaTags, &required)
 
-	nullable := nullableFromJSONSchemaTags(schemaTags)
+	var nullable bool
+	if r.NullableFromType {
+		nullable = isNullable(f.Type.Kind())
+	} else {
+		nullable = nullableFromJSONSchemaTags(schemaTags)
+	}
 
 	if f.Anonymous && jsonTags[0] == "" {
 		// As per JSON Marshal rules, anonymous structs are inherited
@@ -1032,7 +1061,7 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 		}
 
 		// As per JSON Marshal rules, anonymous pointer to structs are inherited
-		if f.Type.Kind() == reflect.Ptr && f.Type.Elem().Kind() == reflect.Struct {
+		if f.Type.Kind() == reflect.Pointer && f.Type.Elem().Kind() == reflect.Struct {
 			return "", true, false, false
 		}
 	}
