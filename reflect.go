@@ -577,23 +577,10 @@ func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Sc
 	if name == "" {
 		return
 	}
-	s.sourceType = t
+	// we save both type & pkg info to match against reflected type later
+	s.sourceType = fullyQualifiedTypeName(t)
 
-	typeName, pkgPath := t.Name(), t.PkgPath()
-	def, ok := r.findDef(definitions, name, typeName, pkgPath)
-	if !ok || def != nil { // def != nil means the same type, so we're OK to overwrite
-		definitions[name] = s
-		return
-	}
-
-	idx := 0
-	defName := name
-	for ok && def == nil { // we skip all names where we found entry but have different type
-		idx++
-		defName = name + "_" + strconv.Itoa(idx)
-		def, ok = r.findDef(definitions, defName, typeName, pkgPath)
-	}
-
+	_, defName := r.findDef(definitions, t)
 	// either def != nil & we're overwriting, or it's a new one
 	definitions[defName] = s
 }
@@ -608,43 +595,38 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 		return nil
 	}
 
-	typeName, pkgPath := t.Name(), t.PkgPath()
-	def, ok := r.findDef(definitions, name, typeName, pkgPath)
-	if !ok {
-		// no entry even for a bare name
+	def, defName := r.findDef(definitions, t)
+	if def == nil {
+		// no entry present in definitions
 		return nil
 	}
 
-	idx := 0
-	defName := name
-	for def == nil { // this will result in 0 iterations if def is already found
-		idx++
-		defName = name + "_" + strconv.Itoa(idx)
-		def, ok = r.findDef(definitions, defName, typeName, pkgPath)
-		if !ok {
-			return nil
-		}
-	}
-
-	// here we have def != nil
 	return &Schema{
 		Ref: "#/$defs/" + defName,
 	}
 }
 
-// findDef returns the matching definition + whether the def with the defName passed was found
-func (r *Reflector) findDef(definitions Definitions, defName, typeName, pkgPath string) (*Schema, bool) {
-	def, ok := definitions[defName]
-	if !ok {
-		return nil, false
+// findDef returns the matching definition for the passed reflect.Type
+// It will add suffix like `_idx` if necessary & return the corresponding key as well.
+// If no applicable entry is available, it will return nil & the key available to use.
+func (r *Reflector) findDef(definitions Definitions, t reflect.Type) (*Schema, string) {
+	name := r.typeName(t)
+	if name == "" {
+		return nil, ""
 	}
+	sourceType := fullyQualifiedTypeName(t)
 
-	// now we need to check that the def is indeed created from the same type
-	if def.sourceType.PkgPath() != pkgPath || def.sourceType.Name() != typeName {
-		return nil, true
+	defName := name
+	for idx := 1; ; idx++ {
+		def, ok := definitions[defName]
+		if !ok {
+			return nil, defName
+		}
+		if def.sourceType == sourceType {
+			return def, defName
+		}
+		defName = name + "_" + strconv.Itoa(idx)
 	}
-
-	return def, true
 }
 
 func (r *Reflector) lookupID(t reflect.Type) ID {
