@@ -659,6 +659,12 @@ func TestJSONSchemaAlias(t *testing.T) {
 }
 
 func TestClashingTypes(t *testing.T) {
+	type Odd struct {
+		SomeBaseType
+		Internal testdata.Odd `json:"internal"`
+		Link     *Odd         `json:"link"`
+	}
+
 	r := &Reflector{}
-	compareSchemaOutput(t, "fixtures/clashing_types.json", r, &testdata.Odd{})
+	compareSchemaOutput(t, "fixtures/clashing_types.json", r, &Odd{})
 }

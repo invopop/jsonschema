@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/internal/testdata/odd",
+  "$id": "https://github.com/invopop/jsonschema/odd",
   "$ref": "#/$defs/Odd",
   "$defs": {
     "Dummy": {
@@ -43,7 +43,51 @@
         "B"
       ]
     },
+    "GrandfatherType": {
+      "properties": {
+        "family_name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "family_name"
+      ]
+    },
     "Odd": {
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "some_base_property": {
+          "type": "integer"
+        },
+        "grand": {
+          "$ref": "#/$defs/GrandfatherType"
+        },
+        "SomeUntaggedBaseProperty": {
+          "type": "boolean"
+        },
+        "internal": {
+          "$ref": "#/$defs/Odd_1"
+        },
+        "link": {
+          "$ref": "#/$defs/Odd"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "id",
+        "some_base_property",
+        "grand",
+        "SomeUntaggedBaseProperty",
+        "internal",
+        "link"
+      ]
+    },
+    "Odd_1": {
       "properties": {
         "Dummy1": {
           "$ref": "#/$defs/Dummy"
