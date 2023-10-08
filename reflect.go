@@ -573,16 +573,14 @@ func (r *Reflector) lookupComment(t reflect.Type, name string) string {
 
 // addDefinition will append the provided schema. If needed, an ID and anchor will also be added.
 func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Schema) {
-	name := r.typeName(t)
-	if name == "" {
-		return
-	}
 	// we save both type & pkg info to match against reflected type later
 	s.sourceType = fullyQualifiedTypeName(t)
 
-	_, defName := r.findDef(definitions, t)
-	// either def != nil & we're overwriting, or it's a new one
-	definitions[defName] = s
+	_, name := r.findDef(definitions, t)
+	if name == "" {
+		return
+	}
+	definitions[name] = s
 }
 
 // refDefinition will provide a schema with a reference to an existing definition.
@@ -590,19 +588,15 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 	if r.DoNotReference {
 		return nil
 	}
-	name := r.typeName(t)
-	if name == "" {
-		return nil
-	}
 
-	def, defName := r.findDef(definitions, t)
+	def, name := r.findDef(definitions, t)
 	if def == nil {
 		// no entry present in definitions
+		// This is also true if name == "" (~ r.typeName() == "")
 		return nil
 	}
-
 	return &Schema{
-		Ref: "#/$defs/" + defName,
+		Ref: "#/$defs/" + name,
 	}
 }
 
