@@ -574,7 +574,7 @@ func (r *Reflector) lookupComment(t reflect.Type, name string) string {
 // addDefinition will append the provided schema. If needed, an ID and anchor will also be added.
 func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Schema) {
 	// we save both type & pkg info to match against reflected type later
-	s.sourceType = fullyQualifiedTypeName(t)
+	s._type = t
 
 	_, name := r.findDef(definitions, t)
 	if name == "" {
@@ -608,7 +608,6 @@ func (r *Reflector) findDef(definitions Definitions, t reflect.Type) (*Schema, s
 	if name == "" {
 		return nil, ""
 	}
-	sourceType := fullyQualifiedTypeName(t)
 
 	defName := name
 	for idx := 1; ; idx++ {
@@ -616,11 +615,19 @@ func (r *Reflector) findDef(definitions Definitions, t reflect.Type) (*Schema, s
 		if !ok {
 			return nil, defName
 		}
-		if def.sourceType == sourceType {
+		if sameReflectTypes(def._type, t) {
 			return def, defName
 		}
 		defName = name + "_" + strconv.Itoa(idx)
 	}
+}
+
+func sameReflectTypes(a, b reflect.Type) bool {
+	if fullyQualifiedTypeName(a) != fullyQualifiedTypeName(b) {
+		return false
+	}
+
+	return a.AssignableTo(b) && b.AssignableTo(a)
 }
 
 func (r *Reflector) lookupID(t reflect.Type) ID {

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/grandfather-type",
+  "$ref": "#/$defs/GrandfatherType",
+  "$defs": {
+    "GrandfatherType": {
+      "properties": {
+        "odd": {
+          "$ref": "#/$defs/Odd"
+        },
+        "link": {
+          "$ref": "#/$defs/GrandfatherType"
+        },
+        "pkg_link": {
+          "$ref": "#/$defs/GrandfatherType_1"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "odd",
+        "link",
+        "pkg_link"
+      ]
+    },
+    "GrandfatherType_1": {
+      "properties": {
+        "family_name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "family_name"
+      ]
+    },
+    "Odd": {
+      "properties": {
+        "base": {
+          "$ref": "#/$defs/GrandfatherType_1"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "base"
+      ]
+    }
+  }
+}

@@ -2,6 +2,7 @@ package jsonschema
 
 import (
 	"encoding/json"
+	"reflect"
 
 	orderedmap "github.com/wk8/go-ordered-map/v2"
 )
@@ -80,8 +81,8 @@ type Schema struct {
 	// Special boolean representation of the Schema - section 4.3.2
 	boolean *bool
 
-	// sourceType is used to define whether the looked-up definition points to the proper type or not
-	sourceType string
+	// _type is used to define whether the looked-up definition points to the proper type or not
+	_type reflect.Type
 }
 
 var (
