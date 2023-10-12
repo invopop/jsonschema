@@ -12,7 +12,7 @@
           "$ref": "#/$defs/GrandfatherType"
         },
         "pkg_link": {
-          "$ref": "#/$defs/GrandfatherType_1"
+          "$ref": "#/$defs/GrandfatherType-1"
         }
       },
       "additionalProperties": false,
@@ -23,7 +23,7 @@
         "pkg_link"
       ]
     },
-    "GrandfatherType_1": {
+    "GrandfatherType-1": {
       "properties": {
         "family_name": {
           "type": "string"
@@ -38,7 +38,7 @@
     "Odd": {
       "properties": {
         "base": {
-          "$ref": "#/$defs/GrandfatherType_1"
+          "$ref": "#/$defs/GrandfatherType-1"
         }
       },
       "additionalProperties": false,

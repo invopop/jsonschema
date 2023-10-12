@@ -618,7 +618,7 @@ func (r *Reflector) findDef(definitions Definitions, t reflect.Type) (*Schema, s
 		if sameReflectTypes(def._type, t) {
 			return def, defName
 		}
-		defName = name + "_" + strconv.Itoa(idx)
+		defName = name + "-" + strconv.Itoa(idx)
 	}
 }
 

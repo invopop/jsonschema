@@ -9,7 +9,7 @@
           "type": "string"
         },
         "Dummy": {
-          "$ref": "#/$defs/Dummy_1"
+          "$ref": "#/$defs/Dummy-1"
         }
       },
       "additionalProperties": false,
@@ -19,7 +19,7 @@
         "Dummy"
       ]
     },
-    "Dummy_1": {
+    "Dummy-1": {
       "properties": {
         "A": {
           "type": "string"
@@ -31,7 +31,7 @@
         "A"
       ]
     },
-    "Dummy_2": {
+    "Dummy-2": {
       "properties": {
         "B": {
           "type": "integer"
@@ -70,7 +70,7 @@
           "type": "boolean"
         },
         "internal": {
-          "$ref": "#/$defs/Odd_1"
+          "$ref": "#/$defs/Odd-1"
         },
         "link": {
           "$ref": "#/$defs/Odd"
@@ -87,7 +87,7 @@
         "link"
       ]
     },
-    "Odd_1": {
+    "Odd-1": {
       "properties": {
         "Dummy1": {
           "$ref": "#/$defs/Dummy"
@@ -96,16 +96,16 @@
           "$ref": "#/$defs/Dummy"
         },
         "Dummy2": {
-          "$ref": "#/$defs/Dummy_1"
+          "$ref": "#/$defs/Dummy-1"
         },
         "Dummy2a": {
-          "$ref": "#/$defs/Dummy_1"
+          "$ref": "#/$defs/Dummy-1"
         },
         "Dummy3": {
-          "$ref": "#/$defs/Dummy_2"
+          "$ref": "#/$defs/Dummy-2"
         },
         "Dummy3a": {
-          "$ref": "#/$defs/Dummy_2"
+          "$ref": "#/$defs/Dummy-2"
         }
       },
       "additionalProperties": false,
