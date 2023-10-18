@@ -485,7 +485,7 @@ func TestSchemaGeneration(t *testing.T) {
 func prepareCommentReflector(t *testing.T) *Reflector {
 	t.Helper()
 	r := new(Reflector)
-	err := r.AddGoComments("github.com/invopop/jsonschema", "./examples")
+	err := r.AddGoComments("github.com/invopop/jsonschema/examples", "./examples")
 	require.NoError(t, err, "did not expect error while adding comments")
 	return r
 }
