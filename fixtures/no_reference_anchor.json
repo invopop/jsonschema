@@ -109,9 +109,9 @@
     "age": {
       "type": "integer",
       "maximum": 120,
-      "exclusiveMaximum": true,
+      "exclusiveMaximum": 121,
       "minimum": 18,
-      "exclusiveMinimum": true
+      "exclusiveMinimum": 17
     },
     "email": {
       "type": "string",
@@ -153,9 +153,9 @@
     "mult": {
       "type": "number",
       "enum": [
-        1,
+        1.0,
         1.5,
-        2
+        2.0
       ]
     },
     "roles": {

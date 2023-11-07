@@ -43,6 +43,12 @@ linters-settings:
   gocritic:
     disabled-checks:
       - ifElseChain
+  gofmt:
+    rewrite-rules:
+    - pattern:     'interface{}'
+      replacement: 'any'
+    - pattern:     'a[b:len(a)]'
+      replacement: 'a[b:]'
 
 issues:
   max-per-linter: 0

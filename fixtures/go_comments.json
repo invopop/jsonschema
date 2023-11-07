@@ -36,7 +36,13 @@
       "properties": {
         "variant": {
           "type": "string",
-          "title": "Variant"
+          "title": "Variant",
+          "description": "This comment will be used"
+        },
+        "multicellular": {
+          "type": "boolean",
+          "title": "Multicellular",
+          "description": "Multicellular is true if the plant is multicellular"
         }
       },
       "additionalProperties": false,

@@ -10,9 +10,9 @@ type User struct {
 	// Unique sequential identifier.
 	ID int `json:"id" jsonschema:"required"`
 	// This comment will be ignored
-	Name    string                 `json:"name" jsonschema:"required,minLength=1,maxLength=20,pattern=.*,description=this is a property,title=the name,example=joe,example=lucy,default=alex"`
-	Friends []int                  `json:"friends,omitempty" jsonschema_description:"list of IDs, omitted when empty"`
-	Tags    map[string]interface{} `json:"tags,omitempty"`
+	Name    string         `json:"name" jsonschema:"required,minLength=1,maxLength=20,pattern=.*,description=this is a property,title=the name,example=joe,example=lucy,default=alex"`
+	Friends []int          `json:"friends,omitempty" jsonschema_description:"list of IDs, omitted when empty"`
+	Tags    map[string]any `json:"tags,omitempty"`
 
 	// An array of pets the user cares for.
 	Pets nested.Pets `json:"pets"`
