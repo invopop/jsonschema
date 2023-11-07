@@ -728,17 +728,6 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 						Type: ty,
 					})
 				}
-			case "enum":
-				switch t.Type {
-				case "string":
-					t.Enum = append(t.Enum, val)
-				case "integer":
-					i, _ := strconv.Atoi(val)
-					t.Enum = append(t.Enum, i)
-				case "number":
-					f, _ := strconv.ParseFloat(val, 64)
-					t.Enum = append(t.Enum, f)
-				}
 			case "deprecated":
 				t.Deprecated, _ = strconv.ParseBool(val)
 			default:
