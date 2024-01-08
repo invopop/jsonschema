@@ -64,16 +64,16 @@ type TestUser struct {
 	nonExported
 	MapType
 
-	ID       int               `json:"id" jsonschema:"required,minimum=bad,maximum=bad,exclusiveMinimum=bad,exclusiveMaximum=bad,default=bad"`
-	Name     string            `json:"name" jsonschema:"required,minLength=1,maxLength=20,pattern=.*,description=this is a property,title=the name,example=joe,example=lucy,default=alex,readOnly=true"`
+	ID       int               `json:"id" jsonschema:"required,minimum=bad,maximum=bad,exclusiveMinimum=bad,exclusiveMaximum=bad,default=bad,const=bad"`
+	Name     string            `json:"name" jsonschema:"required,minLength=1,maxLength=20,pattern=.*,description=this is a property,title=the name,example=joe,example=lucy,default=alex,const=alex,readOnly=true"`
 	Password string            `json:"password" jsonschema:"writeOnly=true"`
 	Friends  []int             `json:"friends,omitempty" jsonschema_description:"list of IDs, omitted when empty"`
 	Tags     map[string]string `json:"tags,omitempty"`
 	Options  map[string]any    `json:"options,omitempty"`
 
 	TestFlag       bool
-	TestFlagFalse  bool `json:",omitempty" jsonschema:"default=false"`
-	TestFlagTrue   bool `json:",omitempty" jsonschema:"default=true"`
+	TestFlagFalse  bool `json:",omitempty" jsonschema:"default=false,const=false"`
+	TestFlagTrue   bool `json:",omitempty" jsonschema:"default=true,const=true"`
 	IgnoredCounter int  `json:"-"`
 
 	// Tests for RFC draft-wright-json-schema-validation-00, section 7.3
@@ -585,19 +585,21 @@ func TestFieldOneOfRef(t *testing.T) {
 
 func TestNumberHandling(t *testing.T) {
 	type NumberHandler struct {
-		Int64   int64   `json:"int64" jsonschema:"default=12"`
-		Float32 float32 `json:"float32" jsonschema:"default=12.5"`
+		Int64   int64   `json:"int64" jsonschema:"default=12,const=12"`
+		Float32 float32 `json:"float32" jsonschema:"default=12.5,const=12.5"`
 	}
 
 	r := &Reflector{}
 	compareSchemaOutput(t, "fixtures/number_handling.json", r, &NumberHandler{})
 	fixtureContains(t, "fixtures/number_handling.json", `"default": 12`)
 	fixtureContains(t, "fixtures/number_handling.json", `"default": 12.5`)
+	fixtureContains(t, "fixtures/number_handling.json", `"const": 12`)
+	fixtureContains(t, "fixtures/number_handling.json", `"const": 12.5`)
 }
 
 func TestArrayHandling(t *testing.T) {
 	type ArrayHandler struct {
-		MinLen []string  `json:"min_len" jsonschema:"minLength=2,default=qwerty"`
+		MinLen []string  `json:"min_len" jsonschema:"minLength=2,default=qwerty,const=foo,const=bar"`
 		MinVal []float64 `json:"min_val" jsonschema:"minimum=2.5"`
 	}
 
