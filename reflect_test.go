@@ -176,6 +176,11 @@ type OuterNamed struct {
 	Inner `json:"inner"`
 }
 
+type OuterInlined struct {
+	Text  `json:"text,omitempty"`
+	Inner `json:",inline"`
+}
+
 type OuterPtr struct {
 	*Inner
 	Text `json:",omitempty"`
@@ -419,6 +424,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&Outer{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_inheritance.json"},
 		{&OuterNamed{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_embedded.json"},
 		{&OuterNamed{}, &Reflector{ExpandedStruct: true, AssignAnchor: true}, "fixtures/inlining_embedded_anchored.json"},
+		{&OuterInlined{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_tag.json"},
 		{&OuterPtr{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_ptr.json"},
 		{&MinValue{}, &Reflector{}, "fixtures/schema_with_minimum.json"},
 		{&TestNullable{}, &Reflector{}, "fixtures/nullable.json"},
