@@ -307,6 +307,7 @@ Sometimes it can be useful to have custom JSON Marshal and Unmarshal methods in 
 This library will recognize and attempt to call four different methods that help you adjust schemas to your specific needs:
 
 - `JSONSchema() *Schema` - will prevent auto-generation of the schema so that you can provide your own definition.
+- `JSONSchema(reflect func(t any) *Schema) *Schema` - like the `JSONSchema()` method, will prevent auto-generation so that you can provide your own schema, however it also provides a `reflect` callback which can be used to reflect over children of the parent.
 - `JSONSchemaExtend(schema *jsonschema.Schema)` - will be called _after_ the schema has been generated, allowing you to add or manipulate the fields easily.
 - `JSONSchemaAlias() any` - is called when reflecting the type of object and allows for an alternative to be used instead.
 - `JSONSchemaProperty(prop string) any` - will be called for every property inside a struct giving you the chance to provide an alternative object to convert into a schema.

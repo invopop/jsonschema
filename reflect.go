@@ -24,6 +24,13 @@ type customSchemaImpl interface {
 	JSONSchema() *Schema
 }
 
+// customInterceptorSchemaImpl is used in a similar fashion to customSchemaImpl,
+// however it provides reflect callback so that you only need to provide the alternate
+// schema for the current node, and can hand reflection of children back to jsonschema.
+type customInterceptorSchemaImpl interface {
+	JSONSchema(func(any) *Schema) *Schema
+}
+
 // Function to be run after the schema has been generated.
 // this will let you modify a schema afterwards
 type extendSchemaImpl interface {
@@ -47,6 +54,7 @@ var customAliasSchema = reflect.TypeOf((*aliasSchemaImpl)(nil)).Elem()
 var customPropertyAliasSchema = reflect.TypeOf((*propertyAliasSchemaImpl)(nil)).Elem()
 
 var customType = reflect.TypeOf((*customSchemaImpl)(nil)).Elem()
+var customInterceptorType = reflect.TypeOf((*customInterceptorSchemaImpl)(nil)).Elem()
 var extendType = reflect.TypeOf((*extendSchemaImpl)(nil)).Elem()
 
 // customSchemaGetFieldDocString
@@ -360,6 +368,19 @@ func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type)
 		v := reflect.New(t)
 		o := v.Interface().(customSchemaImpl)
 		st := o.JSONSchema()
+		r.addDefinition(definitions, t, st)
+		if ref := r.refDefinition(definitions, t); ref != nil {
+			return ref
+		}
+		return st
+	}
+
+	if t.Implements(customInterceptorType) {
+		v := reflect.New(t)
+		o := v.Interface().(customInterceptorSchemaImpl)
+		st := o.JSONSchema(func(t any) *Schema {
+			return r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(t))
+		})
 		r.addDefinition(definitions, t, st)
 		if ref := r.refDefinition(definitions, t); ref != nil {
 			return ref
