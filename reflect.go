@@ -628,7 +628,11 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	t.extraKeywords(extras)
 }
 
-func (t *Schema) parseValue(val string) (parsed interface{}, ok bool) {
+// parseValue parses a string into a value matching the type of this schema.
+// It is used to parse default and example values from a struct tag.
+// If the string could be successfully parsed into the target type,
+// the second return value will be set to true.
+func (t *Schema) parseValue(val string) (any, bool) {
 	switch t.Type {
 	case "number":
 		return toJSONNumber(val)
