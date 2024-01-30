@@ -1,7 +1,6 @@
 package jsonschema
 
 import (
-	"fmt"
 	"go/ast"
 	"go/doc"
 	"go/parser"
@@ -12,7 +11,33 @@ import (
 	"strings"
 )
 
-func handleType(expr ast.Expr, breadcrumb string, comments map[string]string) {
+type breadcrumb []string
+
+func (b breadcrumb) With(breadcrumb string) breadcrumb {
+	return append(b, breadcrumb)
+}
+
+func (b breadcrumb) Field(fieldName string) breadcrumb {
+	return b.With(fieldName)
+}
+
+func (b breadcrumb) SliceElem() breadcrumb {
+	return b.With("[]")
+}
+
+func (b breadcrumb) MapKey() breadcrumb {
+	return b.With("[key]")
+}
+
+func (b breadcrumb) MapElem() breadcrumb {
+	return b.With("[value]")
+}
+
+func (b breadcrumb) String() string {
+	return strings.Join(b, ".")
+}
+
+func handleType(expr ast.Expr, breadcrumb breadcrumb, comments map[string]string) {
 	switch t := expr.(type) {
 	case *ast.StructType:
 		for _, field := range t.Fields.List {
@@ -21,20 +46,20 @@ func handleType(expr ast.Expr, breadcrumb string, comments map[string]string) {
 					continue
 				}
 
-				b := fmt.Sprintf("%s.%s", breadcrumb, name.Name)
+				b := breadcrumb.Field(name.Name)
 				txt := field.Doc.Text()
 				if txt == "" {
 					txt = field.Comment.Text()
 				}
-				comments[b] = strings.TrimSpace(txt)
+				comments[b.String()] = strings.TrimSpace(txt)
 				handleType(field.Type, b, comments)
 			}
 		}
 	case *ast.ArrayType:
-		handleType(t.Elt, fmt.Sprintf("%s.[]", breadcrumb), comments)
+		handleType(t.Elt, breadcrumb.SliceElem(), comments)
 	case *ast.MapType:
-		handleType(t.Key, fmt.Sprintf("%s.[key]", breadcrumb), comments)
-		handleType(t.Value, fmt.Sprintf("%s.[value]", breadcrumb), comments)
+		handleType(t.Key, breadcrumb.MapKey(), comments)
+		handleType(t.Value, breadcrumb.MapElem(), comments)
 	case *ast.StarExpr:
 		handleType(t.X, breadcrumb, comments)
 	}
@@ -80,6 +105,7 @@ func ExtractGoComments(base, path string, commentMap map[string]string) error {
 	}
 
 	for qualifiedName, pkg := range pkgs {
+		rootBreadcrumb := breadcrumb{qualifiedName}
 		for _, file := range pkg.Files {
 			for _, decl := range file.Decls {
 				if d, ok := decl.(*ast.GenDecl); ok {
@@ -89,12 +115,12 @@ func ExtractGoComments(base, path string, commentMap map[string]string) error {
 								continue
 							}
 
-							breadcrumb := fmt.Sprintf("%s.%s", qualifiedName, s.Name.Name)
+							breadcrumb := rootBreadcrumb.With(s.Name.Name)
 							txt := s.Doc.Text()
 							if txt == "" {
 								txt = d.Doc.Text()
 							}
-							commentMap[breadcrumb] = strings.TrimSpace(doc.Synopsis(txt))
+							commentMap[breadcrumb.String()] = strings.TrimSpace(doc.Synopsis(txt))
 							handleType(s.Type, breadcrumb, commentMap)
 						}
 					}

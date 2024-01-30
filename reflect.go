@@ -9,7 +9,6 @@ package jsonschema
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net"
 	"net/url"
 	"reflect"
@@ -177,7 +176,7 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	s := new(Schema)
 	definitions := Definitions{}
 	s.Definitions = definitions
-	bs := r.reflectTypeToSchemaWithID(definitions, t, "")
+	bs := r.reflectTypeToSchemaWithID(definitions, t, breadcrumb{})
 	if r.ExpandedStruct {
 		*s = *definitions[name]
 		delete(definitions, name)
@@ -235,7 +234,7 @@ func (r *Reflector) SetBaseSchemaID(id string) {
 	r.BaseSchemaID = ID(id)
 }
 
-func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.Type, breadcrumb string) *Schema {
+func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.Type, breadcrumb breadcrumb) *Schema {
 	id := r.lookupID(t)
 	if id != EmptyID {
 		return &Schema{
@@ -251,7 +250,7 @@ func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.
 	return r.reflectTypeToSchemaWithID(definitions, t, breadcrumb)
 }
 
-func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type, breadcrumb string) *Schema {
+func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type, breadcrumb breadcrumb) *Schema {
 	s := r.reflectTypeToSchema(defs, t, breadcrumb)
 	if s != nil {
 		if r.Lookup != nil {
@@ -264,7 +263,7 @@ func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type, 
 	return s
 }
 
-func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type, breadcrumb string) *Schema {
+func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type, breadcrumb breadcrumb) *Schema {
 	// only try to reflect non-pointers
 	if t.Kind() == reflect.Ptr {
 		return r.refOrReflectTypeToSchema(definitions, t.Elem(), breadcrumb)
@@ -389,7 +388,7 @@ func (r *Reflector) reflectSchemaExtend(definitions Definitions, t reflect.Type,
 	return s
 }
 
-func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type, st *Schema, breadcrumb string) {
+func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type, st *Schema, breadcrumb breadcrumb) {
 	if t == rawMessageType {
 		return
 	}
@@ -411,11 +410,11 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 		st.ContentEncoding = "base64"
 	} else {
 		st.Type = "array"
-		st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem(), fmt.Sprintf("%s.[]", breadcrumb))
+		st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem(), breadcrumb.SliceElem())
 	}
 }
 
-func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Schema, breadcrumb string) {
+func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Schema, breadcrumb breadcrumb) {
 	r.addDefinition(definitions, t, st)
 
 	st.Type = "object"
@@ -423,7 +422,7 @@ func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Sche
 		st.Description = r.lookupComment(breadcrumb)
 	}
 
-	valueBreadcrumb := fmt.Sprintf("%s.[value]", breadcrumb)
+	valueBreadcrumb := breadcrumb.MapElem()
 	switch t.Key().Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		st.PatternProperties = map[string]*Schema{
@@ -438,7 +437,7 @@ func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Sche
 }
 
 // Reflects a struct to a JSON Schema type.
-func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Schema, breadcrumb string) {
+func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Schema, breadcrumb breadcrumb) {
 	// Handle special types
 	switch t {
 	case timeType: // date-time RFC section 7.3.1
@@ -474,7 +473,7 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 	}
 }
 
-func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t reflect.Type, breadcrumb string) {
+func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t reflect.Type, breadcrumb breadcrumb) {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
@@ -509,7 +508,7 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 			return
 		}
 
-		fieldBreadcrumb := fmt.Sprintf("%s.%s", breadcrumb, f.Name)
+		fieldBreadcrumb := breadcrumb.Field(f.Name)
 		// If a JSONSchemaAlias(prop string) method is defined, attempt to use
 		// the provided object's type instead of the field's type.
 		var property *Schema
@@ -566,12 +565,12 @@ func appendUniqueString(base []string, value string) []string {
 	return append(base, value)
 }
 
-func (r *Reflector) lookupComment(breadcrumb string) string {
+func (r *Reflector) lookupComment(breadcrumb breadcrumb) string {
 	if r.CommentMap == nil {
 		return ""
 	}
 
-	return r.CommentMap[breadcrumb]
+	return r.CommentMap[breadcrumb.String()]
 }
 
 // addDefinition will append the provided schema. If needed, an ID and anchor will also be added.
@@ -1138,8 +1137,8 @@ func splitOnUnescapedCommas(tagString string) []string {
 	return ret
 }
 
-func fullyQualifiedTypeName(t reflect.Type) string {
-	return t.PkgPath() + "." + t.Name()
+func fullyQualifiedTypeName(t reflect.Type) breadcrumb {
+	return breadcrumb{t.PkgPath(), t.Name()}
 }
 
 // AddGoComments will update the reflectors comment map with all the comments
