@@ -869,15 +869,8 @@ func (t *Schema) arrayKeywords(tags []string) {
 			case "uniqueItems":
 				t.UniqueItems = true
 			case "enum":
-				switch t.Items.Type {
-				case "string":
-					t.Items.Enum = append(t.Items.Enum, val)
-				case "integer":
-					i, _ := strconv.Atoi(val)
-					t.Items.Enum = append(t.Items.Enum, i)
-				case "number":
-					f, _ := strconv.ParseFloat(val, 64)
-					t.Items.Enum = append(t.Items.Enum, f)
+				if v, ok := t.Items.parseValue(val); ok {
+					t.Items.Enum = append(t.Items.Enum, v)
 				}
 			case "format":
 				t.Items.Format = val
