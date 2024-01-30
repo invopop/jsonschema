@@ -82,6 +82,21 @@
               }
             ]
           ]
+        },
+        "any_example": {
+          "default": true,
+          "examples": [
+            1234,
+            "string_example",
+            {
+              "test": 42
+            },
+            [
+              1,
+              "str",
+              true
+            ]
+          ]
         }
       },
       "additionalProperties": false,
@@ -92,7 +107,8 @@
         "float_example",
         "int_array_example",
         "map_example",
-        "map_array_example"
+        "map_array_example",
+        "any_example"
       ]
     }
   }

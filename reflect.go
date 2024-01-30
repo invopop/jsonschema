@@ -655,8 +655,15 @@ func (t *Schema) parseValue(val string) (parsed interface{}, ok bool) {
 		}
 		return parsed, true
 
-	case "", "object":
-		obj := make(map[string]interface{})
+	case "object":
+		obj := make(map[string]any)
+		if err := json.Unmarshal([]byte(val), &obj); err != nil {
+			return nil, false
+		}
+		return obj, true
+
+	case "":
+		var obj any
 		if err := json.Unmarshal([]byte(val), &obj); err != nil {
 			return nil, false
 		}

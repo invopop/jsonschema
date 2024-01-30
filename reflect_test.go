@@ -316,6 +316,7 @@ type Examples struct {
 	IntArrayExample []int               `json:"int_array_example" jsonschema:"example=1;2,example=3;4,example=5;6"`
 	MapExample      map[string]string   `json:"map_example" jsonschema:"example={\"key\": \"value\"}"`
 	MapArrayExample []map[string]string `json:"map_array_example" jsonschema:"example={\"a\": \"b\"};{\"c\": \"d\"},example={\"hello\": \"test\"}"`
+	AnyExample      any                 `json:"any_example" jsonschema:"example=1234,example=\"string_example\",example={\"test\": 42},example=[1\\,\"str\"\\,true],default=true"`
 }
 
 type SchemaExtendTestBase struct {
