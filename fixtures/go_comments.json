@@ -144,6 +144,10 @@
           },
           "additionalProperties": false,
           "description": "A mapping from friend IDs to notes"
+        },
+        "metadata": {
+          "type": "string",
+          "description": "The value of the metadata"
         }
       },
       "additionalProperties": false,
@@ -154,7 +158,8 @@
         "pets",
         "named_pets",
         "plants",
-        "additional_data"
+        "additional_data",
+        "metadata"
       ],
       "description": "User is used as a base to provide tests for comments."
     }

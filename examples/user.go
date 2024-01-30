@@ -39,4 +39,6 @@ type User struct {
 		// The note for this friend
 		Note string `json:"note"`
 	} `json:"friend_to_note,omitempty"`
+
+	nested.Metadata[string]
 }

@@ -1138,7 +1138,8 @@ func splitOnUnescapedCommas(tagString string) []string {
 }
 
 func fullyQualifiedTypeName(t reflect.Type) breadcrumb {
-	return breadcrumb{t.PkgPath(), t.Name()}
+	nameWithoutTypeParams := strings.Split(t.Name(), "[")[0]
+	return breadcrumb{t.PkgPath(), nameWithoutTypeParams}
 }
 
 // AddGoComments will update the reflectors comment map with all the comments
