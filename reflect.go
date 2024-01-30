@@ -649,7 +649,7 @@ func (t *Schema) parseValue(val string) (any, bool) {
 
 	case "array":
 		vals := strings.Split(val, ";")
-		parsed := make([]interface{}, len(vals))
+		parsed := make([]any, len(vals))
 		for i, v := range vals {
 			p, ok := t.Items.parseValue(v)
 			if !ok {
