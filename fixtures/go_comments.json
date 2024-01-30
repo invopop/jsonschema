@@ -4,10 +4,8 @@
   "$ref": "#/$defs/User",
   "$defs": {
     "NamedPets": {
-      "patternProperties": {
-        ".*": {
-          "$ref": "#/$defs/Pet"
-        }
+      "additionalProperties": {
+        "$ref": "#/$defs/Pet"
       },
       "type": "object",
       "description": "NamedPets is a map of animal names to pets."
@@ -38,7 +36,13 @@
       "properties": {
         "variant": {
           "type": "string",
-          "title": "Variant"
+          "title": "Variant",
+          "description": "This comment will be used"
+        },
+        "multicellular": {
+          "type": "boolean",
+          "title": "Multicellular",
+          "description": "Multicellular is true if the plant is multicellular"
         }
       },
       "additionalProperties": false,

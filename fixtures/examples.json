@@ -49,10 +49,8 @@
           ]
         },
         "map_example": {
-          "patternProperties": {
-            ".*": {
-              "type": "string"
-            }
+          "additionalProperties": {
+            "type": "string"
           },
           "type": "object",
           "examples": [
@@ -63,10 +61,8 @@
         },
         "map_array_example": {
           "items": {
-            "patternProperties": {
-              ".*": {
-                "type": "string"
-              }
+            "additionalProperties": {
+              "type": "string"
             },
             "type": "object"
           },
