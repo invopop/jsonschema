@@ -57,10 +57,8 @@
       "description": "list of IDs, omitted when empty"
     },
     "tags": {
-      "patternProperties": {
-        ".*": {
-          "type": "string"
-        }
+      "additionalProperties": {
+        "type": "string"
       },
       "type": "object"
     },
@@ -111,9 +109,9 @@
     "age": {
       "type": "integer",
       "maximum": 120,
-      "exclusiveMaximum": true,
+      "exclusiveMaximum": 121,
       "minimum": 18,
-      "exclusiveMinimum": true
+      "exclusiveMinimum": 17
     },
     "email": {
       "type": "string",
@@ -130,6 +128,11 @@
         "bar1"
       ],
       "hello": "world"
+    },
+    "bool_extra": {
+      "type": "string",
+      "isFalse": false,
+      "isTrue": true
     },
     "color": {
       "type": "string",
@@ -150,9 +153,9 @@
     "mult": {
       "type": "number",
       "enum": [
-        1,
+        1.0,
         1.5,
-        2
+        2.0
       ]
     },
     "roles": {
@@ -203,6 +206,8 @@
     "name",
     "password",
     "TestFlag",
+    "photo",
+    "photo2",
     "age",
     "email",
     "uuid",

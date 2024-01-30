@@ -11,50 +11,26 @@ output:
   print-issued-lines: false
 
 linters:
-  enable-all: true
-  disable:
-    - maligned
-    - megacheck
-    - lll
-    - typecheck # `go build` catches this, and it doesn't currently work with Go 1.11 modules
-    - goimports # horrendously slow with go modules :(
-    - dupl # has never been actually useful
-    - gochecknoglobals
-    - gochecknoinits
-    - interfacer # author deprecated it because it provides bad suggestions
-    - funlen
-    - whitespace
-    - godox
-    - wsl
-    - dogsled
-    - gomnd
-    - gocognit
+  enable:
     - gocyclo
-    - scopelint
-    - godot
-    - nestif
-    - testpackage
-    - goerr113
-    - gci
-    - gofumpt
-    - exhaustivestruct
-    - nlreturn
-    - forbidigo
-    - cyclop
-    - paralleltest
-    - ifshort # so annoying
-    - golint
-    - tagliatelle
-    - forcetypeassert
-    - wrapcheck
+    - gocritic
+    - goconst
+    - dupl
+    - unconvert
+    - goimports
+    - unused
+    - vetshadow
+    - nakedret
+    - errcheck
     - revive
-    - structcheck
-    - stylecheck
-    - exhaustive
-    - varnamelen
+    - ineffassign
+    - goconst
+    - vet
+    - unparam
+    - gofmt
 
 linters-settings:
-  govet:
+  vet:
     check-shadowing: true
     use-installed-packages: true
   dupl:
@@ -67,7 +43,12 @@ linters-settings:
   gocritic:
     disabled-checks:
       - ifElseChain
-
+  gofmt:
+    rewrite-rules:
+    - pattern:     'interface{}'
+      replacement: 'any'
+    - pattern:     'a[b:len(a)]'
+      replacement: 'a[b:]'
 
 issues:
   max-per-linter: 0
@@ -75,15 +56,15 @@ issues:
   exclude-use-default: false
   exclude:
     # Captured by errcheck.
-    - '^(G104|G204):'
+    - "^(G104|G204):"
     # Very commonly not checked.
     - 'Error return value of .(.*\.Help|.*\.MarkFlagRequired|(os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*Print(f|ln|)|os\.(Un)?Setenv). is not checked'
     # Weird error only seen on Kochiku...
-    - 'internal error: no range for'
+    - "internal error: no range for"
     - 'exported method `.*\.(MarshalJSON|UnmarshalJSON|URN|Payload|GoString|Close|Provides|Requires|ExcludeFromHash|MarshalText|UnmarshalText|Description|Check|Poll|Severity)` should have comment or be unexported'
-    - 'composite literal uses unkeyed fields'
+    - "composite literal uses unkeyed fields"
     - 'declaration of "err" shadows declaration'
-    - 'by other packages, and that stutters'
-    - 'Potential file inclusion via variable'
-    - 'at least one file in a package should have a package comment'
-    - 'bad syntax for struct tag pair'
+    - "by other packages, and that stutters"
+    - "Potential file inclusion via variable"
+    - "at least one file in a package should have a package comment"
+    - "bad syntax for struct tag pair"

@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/root-one-of",
-  "$ref": "#/$defs/RootOneOf",
+  "$id": "https://github.com/invopop/jsonschema/root-any-of",
+  "$ref": "#/$defs/RootAnyOf",
   "$defs": {
-    "ChildOneOf": {
-      "oneOf": [
+    "ChildAnyOf": {
+      "anyOf": [
         {
           "required": [
             "child1",
@@ -44,8 +44,8 @@
       "additionalProperties": false,
       "type": "object"
     },
-    "RootOneOf": {
-      "oneOf": [
+    "RootAnyOf": {
+      "anyOf": [
         {
           "required": [
             "field1",
@@ -68,7 +68,7 @@
           "type": "string"
         },
         "field3": {
-          "oneOf": [
+          "anyOf": [
             {
               "type": "string"
             },
@@ -81,20 +81,7 @@
           "type": "string"
         },
         "child": {
-          "$ref": "#/$defs/ChildOneOf"
-        },
-        "field6": {
-          "oneOf": [
-            {
-              "$ref": "Outer"
-            },
-            {
-              "$ref": "OuterNamed"
-            },
-            {
-              "$ref": "OuterPtr"
-            }
-          ]
+          "$ref": "#/$defs/ChildAnyOf"
         }
       },
       "additionalProperties": false,

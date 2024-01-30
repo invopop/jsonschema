@@ -16,90 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/iancoleman/orderedmap"
-)
-
-// Version is the JSON Schema version.
-var Version = "https://json-schema.org/draft/2020-12/schema"
-
-// Schema represents a JSON Schema object type.
-// RFC draft-bhutton-json-schema-00 section 4.3
-type Schema struct {
-	// RFC draft-bhutton-json-schema-00
-	Version     string      `json:"$schema,omitempty"`     // section 8.1.1
-	ID          ID          `json:"$id,omitempty"`         // section 8.2.1
-	Anchor      string      `json:"$anchor,omitempty"`     // section 8.2.2
-	Ref         string      `json:"$ref,omitempty"`        // section 8.2.3.1
-	DynamicRef  string      `json:"$dynamicRef,omitempty"` // section 8.2.3.2
-	Definitions Definitions `json:"$defs,omitempty"`       // section 8.2.4
-	Comments    string      `json:"$comment,omitempty"`    // section 8.3
-	// RFC draft-bhutton-json-schema-00 section 10.2.1 (Sub-schemas with logic)
-	AllOf []*Schema `json:"allOf,omitempty"` // section 10.2.1.1
-	AnyOf []*Schema `json:"anyOf,omitempty"` // section 10.2.1.2
-	OneOf []*Schema `json:"oneOf,omitempty"` // section 10.2.1.3
-	Not   *Schema   `json:"not,omitempty"`   // section 10.2.1.4
-	// RFC draft-bhutton-json-schema-00 section 10.2.2 (Apply sub-schemas conditionally)
-	If               *Schema            `json:"if,omitempty"`               // section 10.2.2.1
-	Then             *Schema            `json:"then,omitempty"`             // section 10.2.2.2
-	Else             *Schema            `json:"else,omitempty"`             // section 10.2.2.3
-	DependentSchemas map[string]*Schema `json:"dependentSchemas,omitempty"` // section 10.2.2.4
-	// RFC draft-bhutton-json-schema-00 section 10.3.1 (arrays)
-	PrefixItems []*Schema `json:"prefixItems,omitempty"` // section 10.3.1.1
-	Items       *Schema   `json:"items,omitempty"`       // section 10.3.1.2  (replaces additionalItems)
-	Contains    *Schema   `json:"contains,omitempty"`    // section 10.3.1.3
-	// RFC draft-bhutton-json-schema-00 section 10.3.2 (sub-schemas)
-	Properties           *orderedmap.OrderedMap `json:"properties,omitempty"`           // section 10.3.2.1
-	PatternProperties    map[string]*Schema     `json:"patternProperties,omitempty"`    // section 10.3.2.2
-	AdditionalProperties *Schema                `json:"additionalProperties,omitempty"` // section 10.3.2.3
-	PropertyNames        *Schema                `json:"propertyNames,omitempty"`        // section 10.3.2.4
-	// RFC draft-bhutton-json-schema-validation-00, section 6
-	Type              string              `json:"type,omitempty"`              // section 6.1.1
-	Enum              []interface{}       `json:"enum,omitempty"`              // section 6.1.2
-	Const             interface{}         `json:"const,omitempty"`             // section 6.1.3
-	MultipleOf        int                 `json:"multipleOf,omitempty"`        // section 6.2.1
-	Maximum           int                 `json:"maximum,omitempty"`           // section 6.2.2
-	ExclusiveMaximum  bool                `json:"exclusiveMaximum,omitempty"`  // section 6.2.3
-	Minimum           int                 `json:"minimum,omitempty"`           // section 6.2.4
-	ExclusiveMinimum  bool                `json:"exclusiveMinimum,omitempty"`  // section 6.2.5
-	MaxLength         int                 `json:"maxLength,omitempty"`         // section 6.3.1
-	MinLength         int                 `json:"minLength,omitempty"`         // section 6.3.2
-	Pattern           string              `json:"pattern,omitempty"`           // section 6.3.3
-	MaxItems          int                 `json:"maxItems,omitempty"`          // section 6.4.1
-	MinItems          int                 `json:"minItems,omitempty"`          // section 6.4.2
-	UniqueItems       bool                `json:"uniqueItems,omitempty"`       // section 6.4.3
-	MaxContains       uint                `json:"maxContains,omitempty"`       // section 6.4.4
-	MinContains       uint                `json:"minContains,omitempty"`       // section 6.4.5
-	MaxProperties     int                 `json:"maxProperties,omitempty"`     // section 6.5.1
-	MinProperties     int                 `json:"minProperties,omitempty"`     // section 6.5.2
-	Required          []string            `json:"required,omitempty"`          // section 6.5.3
-	DependentRequired map[string][]string `json:"dependentRequired,omitempty"` // section 6.5.4
-	// RFC draft-bhutton-json-schema-validation-00, section 7
-	Format string `json:"format,omitempty"`
-	// RFC draft-bhutton-json-schema-validation-00, section 8
-	ContentEncoding  string  `json:"contentEncoding,omitempty"`  // section 8.3
-	ContentMediaType string  `json:"contentMediaType,omitempty"` // section 8.4
-	ContentSchema    *Schema `json:"contentSchema,omitempty"`    // section 8.5
-	// RFC draft-bhutton-json-schema-validation-00, section 9
-	Title       string        `json:"title,omitempty"`       // section 9.1
-	Description string        `json:"description,omitempty"` // section 9.1
-	Default     interface{}   `json:"default,omitempty"`     // section 9.2
-	Deprecated  bool          `json:"deprecated,omitempty"`  // section 9.3
-	ReadOnly    bool          `json:"readOnly,omitempty"`    // section 9.4
-	WriteOnly   bool          `json:"writeOnly,omitempty"`   // section 9.4
-	Examples    []interface{} `json:"examples,omitempty"`    // section 9.5
-
-	Extras map[string]interface{} `json:"-"`
-
-	// Special boolean representation of the Schema - section 4.3.2
-	boolean *bool
-}
-
-var (
-	// TrueSchema defines a schema with a true value
-	TrueSchema = &Schema{boolean: &[]bool{true}[0]}
-	// FalseSchema defines a schema with a false value
-	FalseSchema = &Schema{boolean: &[]bool{false}[0]}
 )
 
 // customSchemaImpl is used to detect if the type provides it's own
@@ -109,7 +25,30 @@ type customSchemaImpl interface {
 	JSONSchema() *Schema
 }
 
+// Function to be run after the schema has been generated.
+// this will let you modify a schema afterwards
+type extendSchemaImpl interface {
+	JSONSchemaExtend(*Schema)
+}
+
+// If the object to be reflected defines a `JSONSchemaAlias` method, its type will
+// be used instead of the original type.
+type aliasSchemaImpl interface {
+	JSONSchemaAlias() any
+}
+
+// If an object to be reflected defines a `JSONSchemaPropertyAlias` method,
+// it will be called for each property to determine if another object
+// should be used for the contents.
+type propertyAliasSchemaImpl interface {
+	JSONSchemaProperty(prop string) any
+}
+
+var customAliasSchema = reflect.TypeOf((*aliasSchemaImpl)(nil)).Elem()
+var customPropertyAliasSchema = reflect.TypeOf((*propertyAliasSchemaImpl)(nil)).Elem()
+
 var customType = reflect.TypeOf((*customSchemaImpl)(nil)).Elem()
+var extendType = reflect.TypeOf((*extendSchemaImpl)(nil)).Elem()
 
 // customSchemaGetFieldDocString
 type customSchemaGetFieldDocString interface {
@@ -121,7 +60,7 @@ type customGetFieldDocString func(fieldName string) string
 var customStructGetFieldDocString = reflect.TypeOf((*customSchemaGetFieldDocString)(nil)).Elem()
 
 // Reflect reflects to Schema from a value using the default Reflector
-func Reflect(v interface{}) *Schema {
+func Reflect(v any) *Schema {
 	return ReflectFromType(reflect.TypeOf(v))
 }
 
@@ -177,9 +116,12 @@ type Reflector struct {
 	// root as opposed to a definition with a reference.
 	ExpandedStruct bool
 
+	// FieldNameTag will change the tag used to get field names. json tags are used by default.
+	FieldNameTag string
+
 	// IgnoredTypes defines a slice of types that should be ignored in the schema,
 	// switching to just allowing additional properties instead.
-	IgnoredTypes []interface{}
+	IgnoredTypes []any
 
 	// Lookup allows a function to be defined that will provide a custom mapping of
 	// types to Schema IDs. This allows existing schema documents to be referenced
@@ -220,7 +162,7 @@ type Reflector struct {
 }
 
 // Reflect reflects to Schema from a value.
-func (r *Reflector) Reflect(v interface{}) *Schema {
+func (r *Reflector) Reflect(v any) *Schema {
 	return r.ReflectFromType(reflect.TypeOf(v))
 }
 
@@ -265,11 +207,6 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 
 	return s
 }
-
-// Definitions hold schema definitions.
-// http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.26
-// RFC draft-wright-json-schema-validation-00, section 5.26
-type Definitions map[string]*Schema
 
 // Available Go defined types for JSON Schema Validation.
 // RFC draft-wright-json-schema-validation-00, section 7.3
@@ -331,6 +268,15 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type,
 	// only try to reflect non-pointers
 	if t.Kind() == reflect.Ptr {
 		return r.refOrReflectTypeToSchema(definitions, t.Elem(), breadcrumb)
+	}
+
+	// Check if the there is an alias method that provides an object
+	// that we should use instead of this one.
+	if t.Implements(customAliasSchema) {
+		v := reflect.New(t)
+		o := v.Interface().(aliasSchemaImpl)
+		t = reflect.TypeOf(o.JSONSchemaAlias())
+		return r.refOrReflectTypeToSchema(definitions, t, breadcrumb)
 	}
 
 	// Do any pre-definitions exist?
@@ -401,6 +347,8 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type,
 		panic("unsupported type " + t.String())
 	}
 
+	r.reflectSchemaExtend(definitions, t, st)
+
 	// Always try to reference the definition which may have just been created
 	if def := r.refDefinition(definitions, t); def != nil {
 		return def
@@ -428,6 +376,19 @@ func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type)
 	return nil
 }
 
+func (r *Reflector) reflectSchemaExtend(definitions Definitions, t reflect.Type, s *Schema) *Schema {
+	if t.Implements(extendType) {
+		v := reflect.New(t)
+		o := v.Interface().(extendSchemaImpl)
+		o.JSONSchemaExtend(s)
+		if ref := r.refDefinition(definitions, t); ref != nil {
+			return ref
+		}
+	}
+
+	return s
+}
+
 func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type, st *Schema, breadcrumb string) {
 	if t == rawMessageType {
 		return
@@ -440,8 +401,9 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 	}
 
 	if t.Kind() == reflect.Array {
-		st.MinItems = t.Len()
-		st.MaxItems = st.MinItems
+		l := uint64(t.Len())
+		st.MinItems = &l
+		st.MaxItems = &l
 	}
 	if t.Kind() == reflect.Slice && t.Elem() == byteSliceType.Elem() {
 		st.Type = "string"
@@ -471,9 +433,7 @@ func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Sche
 		return
 	}
 	if t.Elem().Kind() != reflect.Interface {
-		st.PatternProperties = map[string]*Schema{
-			".*": r.refOrReflectTypeToSchema(definitions, t.Elem(), valueBreadcrumb),
-		}
+		st.AdditionalProperties = r.refOrReflectTypeToSchema(definitions, t.Elem(), valueBreadcrumb)
 	}
 }
 
@@ -493,12 +453,12 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 
 	r.addDefinition(definitions, t, s)
 	s.Type = "object"
-	s.Properties = orderedmap.New()
+	s.Properties = NewProperties()
 	s.Description = r.lookupComment(breadcrumb)
 	if r.AssignAnchor {
 		s.Anchor = t.Name()
 	}
-	if !r.AllowAdditionalProperties {
+	if !r.AllowAdditionalProperties && s.AdditionalProperties == nil {
 		s.AdditionalProperties = FalseSchema
 	}
 
@@ -529,6 +489,15 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 		getFieldDocString = o.GetFieldDocString
 	}
 
+	customPropertyMethod := func(string) any {
+		return nil
+	}
+	if t.Implements(customPropertyAliasSchema) {
+		v := reflect.New(t)
+		o := v.Interface().(propertyAliasSchemaImpl)
+		customPropertyMethod = o.JSONSchemaProperty
+	}
+
 	handleField := func(f reflect.StructField) {
 		name, shouldEmbed, required, nullable := r.reflectFieldName(f)
 		// if anonymous and exported type should be processed recursively
@@ -541,7 +510,15 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 		}
 
 		fieldBreadcrumb := fmt.Sprintf("%s.%s", breadcrumb, f.Name)
-		property := r.refOrReflectTypeToSchema(definitions, f.Type, fieldBreadcrumb)
+		// If a JSONSchemaAlias(prop string) method is defined, attempt to use
+		// the provided object's type instead of the field's type.
+		var property *Schema
+		if alias := customPropertyMethod(name); alias != nil {
+			property = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias), fieldBreadcrumb)
+		} else {
+			property = r.refOrReflectTypeToSchema(definitions, f.Type, fieldBreadcrumb)
+		}
+
 		property.structKeywordsFromTags(f, st, name)
 		if property.Description == "" {
 			property.Description = r.lookupComment(fieldBreadcrumb)
@@ -638,15 +615,15 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	t.Description = f.Tag.Get("jsonschema_description")
 
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
-	t.genericKeywords(tags, parent, propertyName)
+	tags = t.genericKeywords(tags, parent, propertyName)
 
 	switch t.Type {
 	case "string":
 		t.stringKeywords(tags)
 	case "number":
-		t.numbericKeywords(tags)
+		t.numericalKeywords(tags)
 	case "integer":
-		t.numbericKeywords(tags)
+		t.numericalKeywords(tags)
 	case "array":
 		t.arrayKeywords(tags)
 	case "boolean":
@@ -656,10 +633,11 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	t.extraKeywords(extras)
 }
 
-// read struct tags for generic keyworks
-func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) {
+// read struct tags for generic keywords
+func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName string) []string { //nolint:gocyclo
+	unprocessed := make([]string, 0, len(tags))
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
@@ -686,6 +664,36 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 					parent.OneOf = append(parent.OneOf, typeFound)
 				}
 				typeFound.Required = append(typeFound.Required, propertyName)
+			case "anyof_required":
+				var typeFound *Schema
+				for i := range parent.AnyOf {
+					if parent.AnyOf[i].Title == nameValue[1] {
+						typeFound = parent.AnyOf[i]
+					}
+				}
+				if typeFound == nil {
+					typeFound = &Schema{
+						Title:    nameValue[1],
+						Required: []string{},
+					}
+					parent.AnyOf = append(parent.AnyOf, typeFound)
+				}
+				typeFound.Required = append(typeFound.Required, propertyName)
+			case "oneof_ref":
+				subSchema := t
+				if t.Items != nil {
+					subSchema = t.Items
+				}
+				if subSchema.OneOf == nil {
+					subSchema.OneOf = make([]*Schema, 0, 1)
+				}
+				subSchema.Ref = ""
+				refs := strings.Split(nameValue[1], ";")
+				for _, r := range refs {
+					subSchema.OneOf = append(subSchema.OneOf, &Schema{
+						Ref: r,
+					})
+				}
 			case "oneof_type":
 				if t.OneOf == nil {
 					t.OneOf = make([]*Schema, 0, 1)
@@ -697,23 +705,41 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 						Type: ty,
 					})
 				}
-			case "enum":
-				switch t.Type {
-				case "string":
-					t.Enum = append(t.Enum, val)
-				case "integer":
-					i, _ := strconv.Atoi(val)
-					t.Enum = append(t.Enum, i)
-				case "number":
-					f, _ := strconv.ParseFloat(val, 64)
-					t.Enum = append(t.Enum, f)
+			case "anyof_ref":
+				subSchema := t
+				if t.Items != nil {
+					subSchema = t.Items
 				}
+				if subSchema.AnyOf == nil {
+					subSchema.AnyOf = make([]*Schema, 0, 1)
+				}
+				subSchema.Ref = ""
+				refs := strings.Split(nameValue[1], ";")
+				for _, r := range refs {
+					subSchema.AnyOf = append(subSchema.AnyOf, &Schema{
+						Ref: r,
+					})
+				}
+			case "anyof_type":
+				if t.AnyOf == nil {
+					t.AnyOf = make([]*Schema, 0, 1)
+				}
+				t.Type = ""
+				types := strings.Split(nameValue[1], ";")
+				for _, ty := range types {
+					t.AnyOf = append(t.AnyOf, &Schema{
+						Type: ty,
+					})
+				}
+			default:
+				unprocessed = append(unprocessed, tag)
 			}
 		}
 	}
+	return unprocessed
 }
 
-// read struct tags for boolean type keyworks
+// read struct tags for boolean type keywords
 func (t *Schema) booleanKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
@@ -731,26 +757,23 @@ func (t *Schema) booleanKeywords(tags []string) {
 	}
 }
 
-// read struct tags for string type keyworks
+// read struct tags for string type keywords
 func (t *Schema) stringKeywords(tags []string) {
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "minLength":
-				i, _ := strconv.Atoi(val)
-				t.MinLength = i
+				t.MinLength = parseUint(val)
 			case "maxLength":
-				i, _ := strconv.Atoi(val)
-				t.MaxLength = i
+				t.MaxLength = parseUint(val)
 			case "pattern":
 				t.Pattern = val
 			case "format":
 				switch val {
 				case "date-time", "email", "hostname", "ipv4", "ipv6", "uri", "uuid":
 					t.Format = val
-					break
 				}
 			case "readOnly":
 				i, _ := strconv.ParseBool(val)
@@ -762,46 +785,48 @@ func (t *Schema) stringKeywords(tags []string) {
 				t.Default = val
 			case "example":
 				t.Examples = append(t.Examples, val)
+			case "enum":
+				t.Enum = append(t.Enum, val)
 			}
 		}
 	}
 }
 
-// read struct tags for numberic type keyworks
-func (t *Schema) numbericKeywords(tags []string) {
+// read struct tags for numerical type keywords
+func (t *Schema) numericalKeywords(tags []string) {
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "multipleOf":
-				i, _ := strconv.Atoi(val)
-				t.MultipleOf = i
+				t.MultipleOf, _ = toJSONNumber(val)
 			case "minimum":
-				i, _ := strconv.Atoi(val)
-				t.Minimum = i
+				t.Minimum, _ = toJSONNumber(val)
 			case "maximum":
-				i, _ := strconv.Atoi(val)
-				t.Maximum = i
+				t.Maximum, _ = toJSONNumber(val)
 			case "exclusiveMaximum":
-				b, _ := strconv.ParseBool(val)
-				t.ExclusiveMaximum = b
+				t.ExclusiveMaximum, _ = toJSONNumber(val)
 			case "exclusiveMinimum":
-				b, _ := strconv.ParseBool(val)
-				t.ExclusiveMinimum = b
+				t.ExclusiveMinimum, _ = toJSONNumber(val)
 			case "default":
-				i, _ := strconv.Atoi(val)
-				t.Default = i
+				if num, ok := toJSONNumber(val); ok {
+					t.Default = num
+				}
 			case "example":
-				if i, err := strconv.Atoi(val); err == nil {
-					t.Examples = append(t.Examples, i)
+				if num, ok := toJSONNumber(val); ok {
+					t.Examples = append(t.Examples, num)
+				}
+			case "enum":
+				if num, ok := toJSONNumber(val); ok {
+					t.Enum = append(t.Enum, num)
 				}
 			}
 		}
 	}
 }
 
-// read struct tags for object type keyworks
+// read struct tags for object type keywords
 // func (t *Type) objectKeywords(tags []string) {
 //     for _, tag := range tags{
 //         nameValue := strings.Split(tag, "=")
@@ -817,48 +842,59 @@ func (t *Schema) numbericKeywords(tags []string) {
 //     }
 // }
 
-// read struct tags for array type keyworks
+// read struct tags for array type keywords
 func (t *Schema) arrayKeywords(tags []string) {
-	var defaultValues []interface{}
+	var defaultValues []any
+
+	unprocessed := make([]string, 0, len(tags))
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
 			case "minItems":
-				i, _ := strconv.Atoi(val)
-				t.MinItems = i
+				t.MinItems = parseUint(val)
 			case "maxItems":
-				i, _ := strconv.Atoi(val)
-				t.MaxItems = i
+				t.MaxItems = parseUint(val)
 			case "uniqueItems":
 				t.UniqueItems = true
 			case "default":
 				defaultValues = append(defaultValues, val)
-			case "enum":
-				switch t.Items.Type {
-				case "string":
-					t.Items.Enum = append(t.Items.Enum, val)
-				case "integer":
-					i, _ := strconv.Atoi(val)
-					t.Items.Enum = append(t.Items.Enum, i)
-				case "number":
-					f, _ := strconv.ParseFloat(val, 64)
-					t.Items.Enum = append(t.Items.Enum, f)
-				}
 			case "format":
 				t.Items.Format = val
+			case "pattern":
+				t.Items.Pattern = val
+			default:
+				unprocessed = append(unprocessed, tag) // left for further processing by underlying type
 			}
 		}
 	}
 	if len(defaultValues) > 0 {
 		t.Default = defaultValues
 	}
+
+	if len(unprocessed) == 0 {
+		// we don't have anything else to process
+		return
+	}
+
+	switch t.Items.Type {
+	case "string":
+		t.Items.stringKeywords(unprocessed)
+	case "number":
+		t.Items.numericalKeywords(unprocessed)
+	case "integer":
+		t.Items.numericalKeywords(unprocessed)
+	case "array":
+		// explicitly don't support traversal for the [][]..., as it's unclear where the array tags belong
+	case "boolean":
+		t.Items.booleanKeywords(unprocessed)
+	}
 }
 
 func (t *Schema) extraKeywords(tags []string) {
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			t.setExtra(nameValue[0], nameValue[1])
 		}
@@ -867,7 +903,7 @@ func (t *Schema) extraKeywords(tags []string) {
 
 func (t *Schema) setExtra(key, val string) {
 	if t.Extras == nil {
-		t.Extras = map[string]interface{}{}
+		t.Extras = map[string]any{}
 	}
 	if existingVal, ok := t.Extras[key]; ok {
 		switch existingVal := existingVal.(type) {
@@ -877,40 +913,50 @@ func (t *Schema) setExtra(key, val string) {
 			t.Extras[key] = append(existingVal, val)
 		case int:
 			t.Extras[key], _ = strconv.Atoi(val)
+		case bool:
+			t.Extras[key] = (val == "true" || val == "t")
 		}
 	} else {
 		switch key {
 		case "minimum":
 			t.Extras[key], _ = strconv.Atoi(val)
 		default:
-			t.Extras[key] = val
+			var x any
+			if val == "true" {
+				x = true
+			} else if val == "false" {
+				x = false
+			} else {
+				x = val
+			}
+			t.Extras[key] = x
 		}
 	}
 }
 
-func requiredFromJSONTags(tags []string) bool {
+func requiredFromJSONTags(tags []string, val *bool) {
 	if ignoredByJSONTags(tags) {
-		return false
+		return
 	}
 
 	for _, tag := range tags[1:] {
 		if tag == "omitempty" {
-			return false
+			*val = false
+			return
 		}
 	}
-	return true
+	*val = true
 }
 
-func requiredFromJSONSchemaTags(tags []string) bool {
+func requiredFromJSONSchemaTags(tags []string, val *bool) {
 	if ignoredByJSONSchemaTags(tags) {
-		return false
+		return
 	}
 	for _, tag := range tags {
 		if tag == "required" {
-			return true
+			*val = true
 		}
 	}
-	return false
 }
 
 func nullableFromJSONSchemaTags(tags []string) bool {
@@ -933,8 +979,36 @@ func ignoredByJSONSchemaTags(tags []string) bool {
 	return tags[0] == "-"
 }
 
+// toJSONNumber converts string to *json.Number.
+// It'll aso return whether the number is valid.
+func toJSONNumber(s string) (json.Number, bool) {
+	num := json.Number(s)
+	if _, err := num.Int64(); err == nil {
+		return num, true
+	}
+	if _, err := num.Float64(); err == nil {
+		return num, true
+	}
+	return json.Number(""), false
+}
+
+func parseUint(num string) *uint64 {
+	val, err := strconv.ParseUint(num, 10, 64)
+	if err != nil {
+		return nil
+	}
+	return &val
+}
+
+func (r *Reflector) fieldNameTag() string {
+	if r.FieldNameTag != "" {
+		return r.FieldNameTag
+	}
+	return "json"
+}
+
 func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool, bool) {
-	jsonTagString, _ := f.Tag.Lookup("json")
+	jsonTagString := f.Tag.Get(r.fieldNameTag())
 	jsonTags := strings.Split(jsonTagString, ",")
 
 	if ignoredByJSONTags(jsonTags) {
@@ -946,16 +1020,22 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 		return "", false, false, false
 	}
 
-	required := requiredFromJSONTags(jsonTags)
-	if r.RequiredFromJSONSchemaTags {
-		required = requiredFromJSONSchemaTags(schemaTags)
+	var required bool
+	if !r.RequiredFromJSONSchemaTags {
+		requiredFromJSONTags(jsonTags, &required)
 	}
+	requiredFromJSONSchemaTags(schemaTags, &required)
 
 	nullable := nullableFromJSONSchemaTags(schemaTags)
 
 	if f.Anonymous && jsonTags[0] == "" {
 		// As per JSON Marshal rules, anonymous structs are inherited
 		if f.Type.Kind() == reflect.Struct {
+			return "", true, false, false
+		}
+
+		// As per JSON Marshal rules, anonymous pointer to structs are inherited
+		if f.Type.Kind() == reflect.Ptr && f.Type.Elem().Kind() == reflect.Struct {
 			return "", true, false, false
 		}
 	}
@@ -984,29 +1064,29 @@ func (t *Schema) UnmarshalJSON(data []byte) error {
 		*t = *FalseSchema
 		return nil
 	}
-	type Schema_ Schema
+	type SchemaAlt Schema
 	aux := &struct {
-		*Schema_
+		*SchemaAlt
 	}{
-		Schema_: (*Schema_)(t),
+		SchemaAlt: (*SchemaAlt)(t),
 	}
 	return json.Unmarshal(data, aux)
 }
 
+// MarshalJSON is used to serialize a schema object or boolean.
 func (t *Schema) MarshalJSON() ([]byte, error) {
 	if t.boolean != nil {
 		if *t.boolean {
 			return []byte("true"), nil
-		} else {
-			return []byte("false"), nil
 		}
+		return []byte("false"), nil
 	}
 	if reflect.DeepEqual(&Schema{}, t) {
 		// Don't bother returning empty schemas
 		return []byte("true"), nil
 	}
-	type Schema_ Schema
-	b, err := json.Marshal((*Schema_)(t))
+	type SchemaAlt Schema
+	b, err := json.Marshal((*SchemaAlt)(t))
 	if err != nil {
 		return nil, err
 	}

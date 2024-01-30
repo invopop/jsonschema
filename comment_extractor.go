@@ -22,7 +22,11 @@ func handleType(expr ast.Expr, breadcrumb string, comments map[string]string) {
 				}
 
 				b := fmt.Sprintf("%s.%s", breadcrumb, name.Name)
-				comments[b] = strings.TrimSpace(field.Doc.Text())
+				txt := field.Doc.Text()
+				if txt == "" {
+					txt = field.Comment.Text()
+				}
+				comments[b] = strings.TrimSpace(txt)
 				handleType(field.Type, b, comments)
 			}
 		}

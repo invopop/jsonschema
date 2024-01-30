@@ -16,6 +16,8 @@ type (
 	// Plant represents the plants the user might have and serves as a test
 	// of structs inside a `type` set.
 	Plant struct {
-		Variant string `json:"variant" jsonschema:"title=Variant"` // This comment will be ignored
+		Variant string `json:"variant" jsonschema:"title=Variant"` // This comment will be used
+		// Multicellular is true if the plant is multicellular
+		Multicellular bool `json:"multicellular,omitempty" jsonschema:"title=Multicellular"` // This comment will be ignored
 	}
 )

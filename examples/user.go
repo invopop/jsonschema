@@ -17,7 +17,7 @@ type User struct {
 		// A note about this friend
 		FriendNote string `json:"friend_note,omitempty"`
 	} `json:"friends,omitempty" jsonschema_description:"list of friends, omitted when empty"`
-	Tags map[string]interface{} `json:"tags,omitempty"`
+	Tags map[string]any `json:"tags,omitempty"`
 
 	// An array of pets the user cares for.
 	Pets nested.Pets `json:"pets"`
