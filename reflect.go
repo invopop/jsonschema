@@ -277,11 +277,7 @@ func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) 
 func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
 	// only try to reflect non-pointers
 	if t.Kind() == reflect.Pointer {
-		result := r.refOrReflectTypeToSchema(definitions, t.Elem())
-		if r.NullableFromType {
-			result = makeNullable(result)
-		}
-		return result
+		return r.refOrReflectTypeToSchema(definitions, t.Elem())
 	}
 
 	// Check if the there is an alias method that provides an object
@@ -441,7 +437,11 @@ func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Sche
 		return
 	default:
 		if t.Elem().Kind() != reflect.Interface {
-			st.AdditionalProperties = r.refOrReflectTypeToSchema(definitions, t.Elem())
+			additionalProperties := r.refOrReflectTypeToSchema(definitions, t.Elem())
+			if r.NullableFromType && isNullable(t.Elem().Kind()) {
+				additionalProperties = makeNullable(additionalProperties)
+			}
+			st.AdditionalProperties = additionalProperties
 		}
 	}
 }
@@ -1051,10 +1051,7 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 
 	var nullable bool
 	if r.NullableFromType {
-		// we might've already added the nullability wrapper in Reflector.reflectTypeToSchema
-		if f.Type.Kind() != reflect.Pointer {
-			nullable = isNullable(f.Type.Kind())
-		}
+		nullable = isNullable(f.Type.Kind())
 	} else {
 		nullable = nullableFromJSONSchemaTags(schemaTags)
 	}
