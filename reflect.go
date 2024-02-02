@@ -277,7 +277,11 @@ func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) 
 func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
 	// only try to reflect non-pointers
 	if t.Kind() == reflect.Pointer {
-		return r.refOrReflectTypeToSchema(definitions, t.Elem())
+		result := r.refOrReflectTypeToSchema(definitions, t.Elem())
+		if r.NullableFromType {
+			result = makeNullable(result)
+		}
+		return result
 	}
 
 	// Check if the there is an alias method that provides an object
@@ -435,9 +439,10 @@ func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Sche
 		}
 		st.AdditionalProperties = FalseSchema
 		return
-	}
-	if t.Elem().Kind() != reflect.Interface {
-		st.AdditionalProperties = r.refOrReflectTypeToSchema(definitions, t.Elem())
+	default:
+		if t.Elem().Kind() != reflect.Interface {
+			st.AdditionalProperties = r.refOrReflectTypeToSchema(definitions, t.Elem())
+		}
 	}
 }
 
@@ -531,14 +536,7 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 		}
 
 		if nullable {
-			property = &Schema{
-				OneOf: []*Schema{
-					property,
-					{
-						Type: "null",
-					},
-				},
-			}
+			property = makeNullable(property)
 		}
 
 		st.Properties.Set(name, property)
@@ -558,6 +556,10 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 			}
 		}
 	}
+}
+
+func makeNullable(s *Schema) *Schema {
+	return &Schema{OneOf: []*Schema{s, {Type: "null"}}}
 }
 
 func appendUniqueString(base []string, value string) []string {
@@ -1049,7 +1051,10 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 
 	var nullable bool
 	if r.NullableFromType {
-		nullable = isNullable(f.Type.Kind())
+		// we might've already added the nullability wrapper in Reflector.reflectTypeToSchema
+		if f.Type.Kind() != reflect.Pointer {
+			nullable = isNullable(f.Type.Kind())
+		}
 	} else {
 		nullable = nullableFromJSONSchemaTags(schemaTags)
 	}
