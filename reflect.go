@@ -24,6 +24,15 @@ type customSchemaImpl interface {
 	JSONSchema() *Schema
 }
 
+// customSchemaHandleImpl is used to detect if the type provides it's own
+// custom Schema Type definition to use instead.
+//
+// This is for use in scenarios where customSchemaImpl references other custom
+// type also need to be custom.
+type customSchemaHandleImpl interface {
+	JSONSchemaHandle(ReflectorHandle) *Schema
+}
+
 // Function to be run after the schema has been generated.
 // this will let you modify a schema afterwards
 type extendSchemaImpl interface {
@@ -43,11 +52,16 @@ type propertyAliasSchemaImpl interface {
 	JSONSchemaProperty(prop string) any
 }
 
-var customAliasSchema = reflect.TypeOf((*aliasSchemaImpl)(nil)).Elem()
-var customPropertyAliasSchema = reflect.TypeOf((*propertyAliasSchemaImpl)(nil)).Elem()
+var (
+	customAliasSchema         = reflect.TypeOf((*aliasSchemaImpl)(nil)).Elem()
+	customPropertyAliasSchema = reflect.TypeOf((*propertyAliasSchemaImpl)(nil)).Elem()
+)
 
-var customType = reflect.TypeOf((*customSchemaImpl)(nil)).Elem()
-var extendType = reflect.TypeOf((*extendSchemaImpl)(nil)).Elem()
+var (
+	customType       = reflect.TypeOf((*customSchemaImpl)(nil)).Elem()
+	customHandleType = reflect.TypeOf((*customSchemaHandleImpl)(nil)).Elem()
+	extendType       = reflect.TypeOf((*extendSchemaImpl)(nil)).Elem()
+)
 
 // customSchemaGetFieldDocString
 type customSchemaGetFieldDocString interface {
@@ -287,6 +301,9 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	if rt := r.reflectCustomSchema(definitions, t); rt != nil {
 		return rt
 	}
+	if rt := r.reflectSchemaWithHandle(definitions, t); rt != nil {
+		return rt
+	}
 
 	// Prepare a base to which details can be added
 	st := new(Schema)
@@ -360,6 +377,45 @@ func (r *Reflector) reflectCustomSchema(definitions Definitions, t reflect.Type)
 		v := reflect.New(t)
 		o := v.Interface().(customSchemaImpl)
 		st := o.JSONSchema()
+		r.addDefinition(definitions, t, st)
+		if ref := r.refDefinition(definitions, t); ref != nil {
+			return ref
+		}
+		return st
+	}
+
+	return nil
+}
+
+// api for reflection with an api handle
+type ReflectorHandle struct {
+	SchemaFor     func(t any) *Schema
+	SchemaForType func(t reflect.Type) *Schema
+}
+
+func (r *Reflector) reflectSchemaWithHandle(definitions Definitions, t reflect.Type) *Schema {
+	if t.Kind() == reflect.Ptr {
+		return r.reflectSchemaWithHandle(definitions, t.Elem())
+	}
+
+	if t.Implements(customHandleType) {
+		v := reflect.New(t)
+		o := v.Interface().(customSchemaHandleImpl)
+		st := o.JSONSchemaHandle(ReflectorHandle{
+			SchemaFor: func(v any) *Schema {
+				t := reflect.TypeOf(v)
+				if v == nil {
+					return nil
+				}
+				return r.refOrReflectTypeToSchema(definitions, t)
+			},
+			SchemaForType: func(t reflect.Type) *Schema {
+				if t == nil {
+					return nil
+				}
+				return r.refOrReflectTypeToSchema(definitions, t)
+			},
+		})
 		r.addDefinition(definitions, t, st)
 		if ref := r.refDefinition(definitions, t); ref != nil {
 			return ref
