@@ -145,6 +145,9 @@ type Reflector struct {
 	// Mapper is a function that can be used to map custom Go types to jsonschema schemas.
 	Mapper func(reflect.Type) *Schema
 
+	// Mapper is a function that can be used to map custom Go types to jsonschema schemas.
+	MapperHandle func(ReflectorHandle, reflect.Type) *Schema
+
 	// Namer allows customizing of type names. The default is to use the type's name
 	// provided by the reflect package.
 	Namer func(reflect.Type) string
@@ -298,6 +301,11 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 			return t
 		}
 	}
+	if r.MapperHandle != nil {
+		if t := r.MapperHandle(r.apiHandle(definitions), t); t != nil {
+			return t
+		}
+	}
 	if rt := r.reflectCustomSchema(definitions, t); rt != nil {
 		return rt
 	}
@@ -393,6 +401,24 @@ type ReflectorHandle struct {
 	SchemaForType func(t reflect.Type) *Schema
 }
 
+func (r *Reflector) apiHandle(definitions Definitions) ReflectorHandle {
+	return ReflectorHandle{
+		SchemaFor: func(v any) *Schema {
+			t := reflect.TypeOf(v)
+			if v == nil {
+				return nil
+			}
+			return r.refOrReflectTypeToSchema(definitions, t)
+		},
+		SchemaForType: func(t reflect.Type) *Schema {
+			if t == nil {
+				return nil
+			}
+			return r.refOrReflectTypeToSchema(definitions, t)
+		},
+	}
+}
+
 func (r *Reflector) reflectSchemaWithHandle(definitions Definitions, t reflect.Type) *Schema {
 	if t.Kind() == reflect.Ptr {
 		return r.reflectSchemaWithHandle(definitions, t.Elem())
@@ -401,21 +427,7 @@ func (r *Reflector) reflectSchemaWithHandle(definitions Definitions, t reflect.T
 	if t.Implements(customHandleType) {
 		v := reflect.New(t)
 		o := v.Interface().(customSchemaHandleImpl)
-		st := o.JSONSchemaHandle(ReflectorHandle{
-			SchemaFor: func(v any) *Schema {
-				t := reflect.TypeOf(v)
-				if v == nil {
-					return nil
-				}
-				return r.refOrReflectTypeToSchema(definitions, t)
-			},
-			SchemaForType: func(t reflect.Type) *Schema {
-				if t == nil {
-					return nil
-				}
-				return r.refOrReflectTypeToSchema(definitions, t)
-			},
-		})
+		st := o.JSONSchemaHandle(r.apiHandle(definitions))
 		r.addDefinition(definitions, t, st)
 		if ref := r.refDefinition(definitions, t); ref != nil {
 			return ref
