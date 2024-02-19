@@ -768,10 +768,7 @@ func (t *Schema) stringKeywords(tags []string) {
 			case "pattern":
 				t.Pattern = val
 			case "format":
-				switch val {
-				case "date-time", "email", "hostname", "ipv4", "ipv6", "uri", "uuid":
-					t.Format = val
-				}
+				t.Format = val
 			case "readOnly":
 				i, _ := strconv.ParseBool(val)
 				t.ReadOnly = i

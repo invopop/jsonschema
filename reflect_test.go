@@ -629,6 +629,18 @@ func TestUnsignedIntHandling(t *testing.T) {
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxItems": 0`)
 }
 
+func TestJSONSchemaFormat(t *testing.T) {
+	type WithCustomFormat struct {
+		Dates []string `json:"dates" jsonschema:"format=date"`
+		Odds  []string `json:"odds" jsonschema:"format=odd"`
+	}
+
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/with_custom_format.json", r, &WithCustomFormat{})
+	fixtureContains(t, "fixtures/with_custom_format.json", `"format": "date"`)
+	fixtureContains(t, "fixtures/with_custom_format.json", `"format": "odd"`)
+}
+
 type AliasObjectA struct {
 	PropA string `json:"prop_a"`
 }
