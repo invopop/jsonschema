@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/invopop/jsonschema/examples"
 
@@ -657,4 +659,25 @@ func TestJSONSchemaAlias(t *testing.T) {
 	r := &Reflector{}
 	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectB{})
 	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
+}
+
+type NullableWithOddFields struct {
+	SimpleMap             map[string]string  `json:"simple_map"`
+	MapWithNullableValues map[string]*string `json:"map_with_nullable_values"`
+
+	IntSlice                            []int   `json:"int_slice"`
+	PointerToIntSlice                   *[]int  `json:"pointer_to_int_slice"`
+	IntSliceWithNullableValues          []*int  `json:"int_slice_with_nullable_values"`
+	PointerToIntSliceWithNullableValues *[]*int `json:"pointer_to_int_slice_with_nullable_values"`
+
+	Chan          chan int       `json:"chan"`
+	UnsafePointer unsafe.Pointer `json:"unsafe_pointer"`
+	Reader        io.Reader      `json:"reader"`
+}
+
+func TestNullableFromType(t *testing.T) {
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/nullable_from_type_disabled.json", r, &NullableWithOddFields{})
+	r.NullableFromType = true
+	compareSchemaOutput(t, "fixtures/nullable_from_type_enabled.json", r, &NullableWithOddFields{})
 }

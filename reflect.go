@@ -338,7 +338,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	case reflect.Map:
 		r.reflectMap(definitions, t, st)
 
-	case reflect.Interface:
+	case reflect.Interface, reflect.Chan, reflect.UnsafePointer:
 		// empty
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,

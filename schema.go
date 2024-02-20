@@ -90,11 +90,14 @@ var (
 
 // MakeNullable will replace the schema that either matches the schema or `null` value:
 // The resulting schema is wrapped via `oneOf` feature.
+// This will be performed if the schema isn't already nullable (as `oneOf` is used).
 //
 //	{"oneOf":[s,{"type":"null"}]}
 func (t *Schema) MakeNullable() {
-	sc := *t
-	*t = Schema{OneOf: []*Schema{&sc, {Type: "null"}}}
+	if !t.IsNullable() {
+		sc := *t
+		*t = Schema{OneOf: []*Schema{&sc, {Type: "null"}}}
+	}
 }
 
 // IsNullable will test if the Schema is nullable in terms of MakeNullable
