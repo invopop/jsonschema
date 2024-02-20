@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/invopop/jsonschema/examples"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -342,6 +341,32 @@ type PatternEqualsTest struct {
 	WithEqualsAndCommas string `jsonschema:"pattern=foo\\,=bar"`
 }
 
+type HandleTest struct {
+}
+type TypeOne struct {
+	Type     string `json:"type" jsonschema:"required,enum=one"`
+	OneField string `json:"oneField"`
+}
+type TypeTwo struct {
+	Type     string `json:"type" jsonschema:"required,enum=two"`
+	TwoField string `json:"twoField"`
+}
+type RecursiveType struct {
+	Type string         `json:"type" jsonschema:"required,enum=recursive"`
+	Self *RecursiveType `json:"self"`
+}
+
+func (HandleTest) JSONSchemaHandle(handle ReflectorHandle) *Schema {
+	schema := &Schema{
+		OneOf: []*Schema{
+			handle.SchemaFor(TypeOne{}),
+			handle.SchemaForType(reflect.TypeOf(TypeTwo{})),
+			handle.SchemaFor(RecursiveType{}),
+		},
+	}
+	return schema
+}
+
 func TestReflector(t *testing.T) {
 	r := new(Reflector)
 	s := "http://example.com/schema"
@@ -476,6 +501,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{SchemaExtendTest{}, &Reflector{}, "fixtures/custom_type_extend.json"},
 		{Expression{}, &Reflector{}, "fixtures/schema_with_expression.json"},
 		{PatternEqualsTest{}, &Reflector{}, "fixtures/equals_in_pattern.json"},
+		{HandleTest{}, &Reflector{}, "fixtures/reflect_with_handle.json"},
 	}
 
 	for _, tt := range tests {
@@ -503,8 +529,6 @@ func TestBaselineUnmarshal(t *testing.T) {
 
 func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj any) {
 	t.Helper()
-	expectedJSON, err := os.ReadFile(f)
-	require.NoError(t, err)
 
 	actualSchema := r.Reflect(obj)
 	actualJSON, _ := json.MarshalIndent(actualSchema, "", "  ") //nolint:errchkjson
@@ -512,6 +536,9 @@ func compareSchemaOutput(t *testing.T, f string, r *Reflector, obj any) {
 	if *updateFixtures {
 		_ = os.WriteFile(f, actualJSON, 0600)
 	}
+
+	expectedJSON, err := os.ReadFile(f)
+	require.NoError(t, err)
 
 	if !assert.JSONEq(t, string(expectedJSON), string(actualJSON)) {
 		if *compareFixtures {

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/handle-test",
+  "$ref": "#/$defs/HandleTest",
+  "$defs": {
+    "HandleTest": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/TypeOne"
+        },
+        {
+          "$ref": "#/$defs/TypeTwo"
+        },
+        {
+          "$ref": "#/$defs/RecursiveType"
+        }
+      ]
+    },
+    "RecursiveType": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "recursive"
+          ]
+        },
+        "self": {
+          "$ref": "#/$defs/RecursiveType"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "self"
+      ]
+    },
+    "TypeOne": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "one"
+          ]
+        },
+        "oneField": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "oneField"
+      ]
+    },
+    "TypeTwo": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "two"
+          ]
+        },
+        "twoField": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "twoField"
+      ]
+    }
+  }
+}
