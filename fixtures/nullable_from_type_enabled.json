@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/nullable-with-odd-fields",
+  "$ref": "#/$defs/NullableWithOddFields",
+  "$defs": {
+    "NullableWithOddFields": {
+      "properties": {
+        "simple_map": {
+          "oneOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "map_with_nullable_values": {
+          "oneOf": [
+            {
+              "additionalProperties": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "int_slice": {
+          "oneOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pointer_to_int_slice": {
+          "oneOf": [
+            {
+              "items": {
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "int_slice_with_nullable_values": {
+          "oneOf": [
+            {
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pointer_to_int_slice_with_nullable_values": {
+          "oneOf": [
+            {
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "integer"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "chan": true,
+        "unsafe_pointer": {
+          "oneOf": [
+            true,
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reader": {
+          "oneOf": [
+            true,
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "simple_map",
+        "map_with_nullable_values",
+        "int_slice",
+        "pointer_to_int_slice",
+        "int_slice_with_nullable_values",
+        "pointer_to_int_slice_with_nullable_values",
+        "chan",
+        "unsafe_pointer",
+        "reader"
+      ]
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/nullable-with-odd-fields",
+  "$ref": "#/$defs/NullableWithOddFields",
+  "$defs": {
+    "NullableWithOddFields": {
+      "properties": {
+        "simple_map": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "map_with_nullable_values": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "int_slice": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "pointer_to_int_slice": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "int_slice_with_nullable_values": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "pointer_to_int_slice_with_nullable_values": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array"
+        },
+        "chan": true,
+        "unsafe_pointer": true,
+        "reader": true
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "simple_map",
+        "map_with_nullable_values",
+        "int_slice",
+        "pointer_to_int_slice",
+        "int_slice_with_nullable_values",
+        "pointer_to_int_slice_with_nullable_values",
+        "chan",
+        "unsafe_pointer",
+        "reader"
+      ]
+    }
+  }
+}
