@@ -7,10 +7,12 @@
       "properties": {
         "int64": {
           "type": "integer",
+          "const": 12,
           "default": 12
         },
         "float32": {
           "type": "number",
+          "const": 12.5,
           "default": 12.5
         }
       },

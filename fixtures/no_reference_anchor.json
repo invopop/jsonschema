@@ -33,6 +33,7 @@
     },
     "name": {
       "type": "string",
+      "const": "alex",
       "maxLength": 20,
       "minLength": 1,
       "pattern": ".*",
@@ -70,10 +71,12 @@
     },
     "TestFlagFalse": {
       "type": "boolean",
+      "const": false,
       "default": false
     },
     "TestFlagTrue": {
       "type": "boolean",
+      "const": true,
       "default": true
     },
     "birth_date": {

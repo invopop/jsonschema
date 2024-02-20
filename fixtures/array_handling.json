@@ -11,6 +11,10 @@
             "minLength": 2
           },
           "type": "array",
+          "const": [
+            "foo",
+            "bar"
+          ],
           "default": [
             "qwerty"
           ]
