@@ -274,7 +274,13 @@ func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) 
 	return s
 }
 
-func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
+func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) (res *Schema) {
+	defer func() {
+		if r.NullableFromType && isNullable(t.Kind()) {
+			res.makeNullable()
+		}
+	}()
+
 	// only try to reflect non-pointers
 	if t.Kind() == reflect.Pointer {
 		return r.refOrReflectTypeToSchema(definitions, t.Elem())
@@ -437,11 +443,7 @@ func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Sche
 		return
 	default:
 		if t.Elem().Kind() != reflect.Interface {
-			additionalProperties := r.refOrReflectTypeToSchema(definitions, t.Elem())
-			if r.NullableFromType && isNullable(t.Elem().Kind()) {
-				additionalProperties = makeNullable(additionalProperties)
-			}
-			st.AdditionalProperties = additionalProperties
+			st.AdditionalProperties = r.refOrReflectTypeToSchema(definitions, t.Elem())
 		}
 	}
 }
@@ -485,7 +487,11 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 
 func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t reflect.Type) {
 	if t.Kind() == reflect.Pointer {
-		t = t.Elem()
+		r.reflectStructFields(st, definitions, t.Elem())
+		if r.NullableFromType {
+			st.makeNullable()
+		}
+		return
 	}
 	if t.Kind() != reflect.Struct {
 		return
@@ -527,16 +533,20 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 			property = r.refOrReflectTypeToSchema(definitions, f.Type)
 		}
 
-		property.structKeywordsFromTags(f, st, name)
-		if property.Description == "" {
-			property.Description = r.lookupComment(t, f.Name)
+		unwrapped := property
+		if r.NullableFromType && unwrapped.isNullable() {
+			unwrapped = unwrapped.unwrapNullable()
+		}
+		unwrapped.structKeywordsFromTags(f, st, name)
+		if unwrapped.Description == "" {
+			unwrapped.Description = r.lookupComment(t, f.Name)
 		}
 		if getFieldDocString != nil {
-			property.Description = getFieldDocString(f.Name)
+			unwrapped.Description = getFieldDocString(f.Name)
 		}
 
-		if nullable {
-			property = makeNullable(property)
+		if nullable && !r.NullableFromType { // we already set the nullability if r.NullableFromType is set
+			property.makeNullable()
 		}
 
 		st.Properties.Set(name, property)
@@ -556,10 +566,6 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 			}
 		}
 	}
-}
-
-func makeNullable(s *Schema) *Schema {
-	return &Schema{OneOf: []*Schema{s, {Type: "null"}}}
 }
 
 func appendUniqueString(base []string, value string) []string {
@@ -619,6 +625,25 @@ func (r *Reflector) lookupID(t reflect.Type) ID {
 
 	}
 	return EmptyID
+}
+
+func (t *Schema) makeNullable() {
+	sc := *t
+	*t = Schema{OneOf: []*Schema{&sc, {Type: "null"}}}
+}
+
+func (t *Schema) isNullable() bool {
+	return t.unwrapNullable() != nil
+}
+
+func (t *Schema) unwrapNullable() *Schema {
+	if t.Type != "" {
+		return nil
+	}
+	if len(t.OneOf) != 2 || t.OneOf[1].Type != "null" {
+		return nil
+	}
+	return t.OneOf[0]
 }
 
 func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, propertyName string) {
