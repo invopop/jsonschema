@@ -88,6 +88,28 @@ var (
 	FalseSchema = &Schema{boolean: &[]bool{false}[0]}
 )
 
+// MakeNullable will replace the schema that either matches the schema or `null` value:
+// The resulting schema is wrapped via `oneOf` feature.
+//
+//	{"oneOf":[s,{"type":"null"}]}
+func (t *Schema) MakeNullable() {
+	sc := *t
+	*t = Schema{OneOf: []*Schema{&sc, {Type: "null"}}}
+}
+
+// IsNullable will test if the Schema is nullable in terms of MakeNullable
+func (t *Schema) IsNullable() bool {
+	return len(t.OneOf) == 2 && t.OneOf[1].Type == "null"
+}
+
+// UnwrapNullable will return the non-nullable schema part if the schema is nullable.
+func (t *Schema) UnwrapNullable() *Schema {
+	if t.IsNullable() {
+		return t.OneOf[0]
+	}
+	return t
+}
+
 // Definitions hold schema definitions.
 // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.26
 // RFC draft-wright-json-schema-validation-00, section 5.26
