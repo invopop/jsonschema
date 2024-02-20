@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/stretchr/testify v1.8.1
 	github.com/wk8/go-ordered-map/v2 v2.1.8
+	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
 )
 
 require (

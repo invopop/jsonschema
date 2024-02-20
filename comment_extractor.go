@@ -2,15 +2,16 @@ package jsonschema
 
 import (
 	"fmt"
+	"go/ast"
+	"go/doc"
+	"go/parser"
+	"go/token"
 	"io/fs"
 	gopath "path"
 	"path/filepath"
 	"strings"
 
-	"go/ast"
-	"go/doc"
-	"go/parser"
-	"go/token"
+	"golang.org/x/exp/maps"
 )
 
 // ExtractGoComments will read all the go files contained in the provided path,
@@ -24,24 +25,33 @@ import (
 //
 // When parsing type comments, we use the `go/doc`'s Synopsis method to extract the first phrase
 // only. Field comments, which tend to be much shorter, will include everything.
-func ExtractGoComments(base, path string, commentMap map[string]string) error {
+func ExtractGoComments(base, rootPath string, commentMap map[string]string) error {
+	root, err := filepath.Abs(rootPath)
+	if err != nil {
+		return err
+	}
+
 	fset := token.NewFileSet()
 	dict := make(map[string][]*ast.Package)
-	err := filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
+	err = filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		if info.IsDir() {
-			d, err := parser.ParseDir(fset, path, nil, parser.ParseComments)
-			if err != nil {
-				return err
-			}
-			for _, v := range d {
-				// paths may have multiple packages, like for tests
-				k := gopath.Join(base, path)
-				dict[k] = append(dict[k], v)
-			}
+		if !info.IsDir() {
+			return nil
 		}
+
+		d, err := parser.ParseDir(fset, path, nil, parser.ParseComments)
+		if err != nil {
+			return err
+		}
+
+		// key should consist of a base path + the path relative to the root
+		// so that we can treat rootPath of "../" properly
+		k := gopath.Join(base, strings.TrimPrefix(path, root))
+		// paths may have multiple packages, like for tests
+		dict[k] = append(dict[k], maps.Values(d)...)
+
 		return nil
 	})
 	if err != nil {
