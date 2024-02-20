@@ -36,9 +36,12 @@ func ExtractGoComments(base, path string, commentMap map[string]string) error {
 			if err != nil {
 				return err
 			}
-			for _, v := range d {
+			for pkg, v := range d {
 				// paths may have multiple packages, like for tests
 				k := gopath.Join(base, path)
+				if pkg == "main" {
+					k = pkg
+				}
 				dict[k] = append(dict[k], v)
 			}
 		}
