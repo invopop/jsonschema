@@ -20,4 +20,10 @@ type (
 		// Multicellular is true if the plant is multicellular
 		Multicellular bool `json:"multicellular,omitempty" jsonschema:"title=Multicellular"` // This comment will be ignored
 	}
+
+	// Metadata is additional arbitrary metadata to embed in a struct.
+	Metadata[T any] struct {
+		// The value of the metadata
+		Data T `json:"metadata"`
+	}
 )

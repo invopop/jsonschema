@@ -73,10 +73,24 @@
         },
         "friends": {
           "items": {
-            "type": "integer"
+            "type": "object",
+            "properties": {
+              "friend_id": {
+                "type": "integer",
+                "description": "The ID of the friend"
+              },
+              "friend_note": {
+                "type": "string",
+                "description": "A note about this friend"
+              }
+            },
+            "additionalProperties": false,
+            "required": [
+              "friend_id"
+            ]
           },
           "type": "array",
-          "description": "list of IDs, omitted when empty"
+          "description": "list of friends, omitted when empty"
         },
         "tags": {
           "type": "object"
@@ -96,6 +110,44 @@
           "type": "array",
           "title": "Plants",
           "description": "Set of plants that the user likes"
+        },
+        "additional_data": {
+          "type": "object",
+          "properties": {
+            "favorite_color": {
+              "type": "string",
+              "description": "This user's favorite color"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Additional data about this user",
+          "required": [
+            "favorite_color"
+          ]
+        },
+        "friend_to_note": {
+          "type": "object",
+          "patternProperties": {
+            "^[0-9]+$": {
+              "type": "object",
+              "properties": {
+                "note": {
+                  "type": "string",
+                  "description": "The note for this friend"
+                }
+              },
+              "additionalProperties": false,
+              "required": [
+                "note"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "description": "A mapping from friend IDs to notes"
+        },
+        "metadata": {
+          "type": "string",
+          "description": "The value of the metadata"
         }
       },
       "additionalProperties": false,
@@ -105,7 +157,9 @@
         "name",
         "pets",
         "named_pets",
-        "plants"
+        "plants",
+        "additional_data",
+        "metadata"
       ],
       "description": "User is used as a base to provide tests for comments."
     }

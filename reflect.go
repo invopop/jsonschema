@@ -176,7 +176,7 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	s := new(Schema)
 	definitions := Definitions{}
 	s.Definitions = definitions
-	bs := r.reflectTypeToSchemaWithID(definitions, t)
+	bs := r.reflectTypeToSchemaWithID(definitions, t, breadcrumb{})
 	if r.ExpandedStruct {
 		*s = *definitions[name]
 		delete(definitions, name)
@@ -234,7 +234,7 @@ func (r *Reflector) SetBaseSchemaID(id string) {
 	r.BaseSchemaID = ID(id)
 }
 
-func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
+func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.Type, breadcrumb breadcrumb) *Schema {
 	id := r.lookupID(t)
 	if id != EmptyID {
 		return &Schema{
@@ -247,11 +247,11 @@ func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.
 		return def
 	}
 
-	return r.reflectTypeToSchemaWithID(definitions, t)
+	return r.reflectTypeToSchemaWithID(definitions, t, breadcrumb)
 }
 
-func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) *Schema {
-	s := r.reflectTypeToSchema(defs, t)
+func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type, breadcrumb breadcrumb) *Schema {
+	s := r.reflectTypeToSchema(defs, t, breadcrumb)
 	if s != nil {
 		if r.Lookup != nil {
 			id := r.Lookup(t)
@@ -263,10 +263,10 @@ func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) 
 	return s
 }
 
-func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
+func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type, breadcrumb breadcrumb) *Schema {
 	// only try to reflect non-pointers
 	if t.Kind() == reflect.Ptr {
-		return r.refOrReflectTypeToSchema(definitions, t.Elem())
+		return r.refOrReflectTypeToSchema(definitions, t.Elem(), breadcrumb)
 	}
 
 	// Check if the there is an alias method that provides an object
@@ -275,7 +275,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		v := reflect.New(t)
 		o := v.Interface().(aliasSchemaImpl)
 		t = reflect.TypeOf(o.JSONSchemaAlias())
-		return r.refOrReflectTypeToSchema(definitions, t)
+		return r.refOrReflectTypeToSchema(definitions, t, breadcrumb)
 	}
 
 	// Do any pre-definitions exist?
@@ -311,15 +311,20 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		return st
 	}
 
+	if t.Name() != "" {
+		// reset breadcrumb for non-anonymous types
+		breadcrumb = fullyQualifiedTypeName(t)
+	}
+
 	switch t.Kind() {
 	case reflect.Struct:
-		r.reflectStruct(definitions, t, st)
+		r.reflectStruct(definitions, t, st, breadcrumb)
 
 	case reflect.Slice, reflect.Array:
-		r.reflectSliceOrArray(definitions, t, st)
+		r.reflectSliceOrArray(definitions, t, st, breadcrumb)
 
 	case reflect.Map:
-		r.reflectMap(definitions, t, st)
+		r.reflectMap(definitions, t, st, breadcrumb)
 
 	case reflect.Interface:
 		// empty
@@ -383,7 +388,7 @@ func (r *Reflector) reflectSchemaExtend(definitions Definitions, t reflect.Type,
 	return s
 }
 
-func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type, st *Schema) {
+func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type, st *Schema, breadcrumb breadcrumb) {
 	if t == rawMessageType {
 		return
 	}
@@ -391,7 +396,7 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 	r.addDefinition(definitions, t, st)
 
 	if st.Description == "" {
-		st.Description = r.lookupComment(t, "")
+		st.Description = r.lookupComment(breadcrumb)
 	}
 
 	if t.Kind() == reflect.Array {
@@ -405,33 +410,34 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 		st.ContentEncoding = "base64"
 	} else {
 		st.Type = "array"
-		st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem())
+		st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem(), breadcrumb.SliceElem())
 	}
 }
 
-func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Schema) {
+func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Schema, breadcrumb breadcrumb) {
 	r.addDefinition(definitions, t, st)
 
 	st.Type = "object"
 	if st.Description == "" {
-		st.Description = r.lookupComment(t, "")
+		st.Description = r.lookupComment(breadcrumb)
 	}
 
+	valueBreadcrumb := breadcrumb.MapElem()
 	switch t.Key().Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		st.PatternProperties = map[string]*Schema{
-			"^[0-9]+$": r.refOrReflectTypeToSchema(definitions, t.Elem()),
+			"^[0-9]+$": r.refOrReflectTypeToSchema(definitions, t.Elem(), valueBreadcrumb),
 		}
 		st.AdditionalProperties = FalseSchema
 		return
 	}
 	if t.Elem().Kind() != reflect.Interface {
-		st.AdditionalProperties = r.refOrReflectTypeToSchema(definitions, t.Elem())
+		st.AdditionalProperties = r.refOrReflectTypeToSchema(definitions, t.Elem(), valueBreadcrumb)
 	}
 }
 
 // Reflects a struct to a JSON Schema type.
-func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Schema) {
+func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Schema, breadcrumb breadcrumb) {
 	// Handle special types
 	switch t {
 	case timeType: // date-time RFC section 7.3.1
@@ -447,7 +453,7 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 	r.addDefinition(definitions, t, s)
 	s.Type = "object"
 	s.Properties = NewProperties()
-	s.Description = r.lookupComment(t, "")
+	s.Description = r.lookupComment(breadcrumb)
 	if r.AssignAnchor {
 		s.Anchor = t.Name()
 	}
@@ -463,11 +469,11 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 		}
 	}
 	if !ignored {
-		r.reflectStructFields(s, definitions, t)
+		r.reflectStructFields(s, definitions, t, breadcrumb)
 	}
 }
 
-func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t reflect.Type) {
+func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t reflect.Type, breadcrumb breadcrumb) {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
@@ -497,23 +503,24 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 		// current type should inherit properties of anonymous one
 		if name == "" {
 			if shouldEmbed {
-				r.reflectStructFields(st, definitions, f.Type)
+				r.reflectStructFields(st, definitions, f.Type, fullyQualifiedTypeName(f.Type))
 			}
 			return
 		}
 
+		fieldBreadcrumb := breadcrumb.Field(f.Name)
 		// If a JSONSchemaAlias(prop string) method is defined, attempt to use
 		// the provided object's type instead of the field's type.
 		var property *Schema
 		if alias := customPropertyMethod(name); alias != nil {
-			property = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias))
+			property = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias), fieldBreadcrumb)
 		} else {
-			property = r.refOrReflectTypeToSchema(definitions, f.Type)
+			property = r.refOrReflectTypeToSchema(definitions, f.Type, fieldBreadcrumb)
 		}
 
 		property.structKeywordsFromTags(f, st, name)
 		if property.Description == "" {
-			property.Description = r.lookupComment(t, f.Name)
+			property.Description = r.lookupComment(fieldBreadcrumb)
 		}
 		if getFieldDocString != nil {
 			property.Description = getFieldDocString(f.Name)
@@ -558,17 +565,12 @@ func appendUniqueString(base []string, value string) []string {
 	return append(base, value)
 }
 
-func (r *Reflector) lookupComment(t reflect.Type, name string) string {
+func (r *Reflector) lookupComment(breadcrumb breadcrumb) string {
 	if r.CommentMap == nil {
 		return ""
 	}
 
-	n := fullyQualifiedTypeName(t)
-	if name != "" {
-		n = n + "." + name
-	}
-
-	return r.CommentMap[n]
+	return r.CommentMap[breadcrumb.String()]
 }
 
 // addDefinition will append the provided schema. If needed, an ID and anchor will also be added.
@@ -1146,8 +1148,9 @@ func splitOnUnescapedCommas(tagString string) []string {
 	return ret
 }
 
-func fullyQualifiedTypeName(t reflect.Type) string {
-	return t.PkgPath() + "." + t.Name()
+func fullyQualifiedTypeName(t reflect.Type) breadcrumb {
+	nameWithoutTypeParams := strings.Split(t.Name(), "[")[0]
+	return breadcrumb{t.PkgPath(), nameWithoutTypeParams}
 }
 
 // AddGoComments will update the reflectors comment map with all the comments
