@@ -675,3 +675,24 @@ func TestJSONSchemaAlias(t *testing.T) {
 	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectB{})
 	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
 }
+
+type InterceptorObjectA struct {
+	PropA string `json:"prop_a"`
+}
+
+type InterceptorObjectB struct {
+	ObjC InterceptorObjectC `json:"obj_c"`
+}
+
+type InterceptorObjectC struct {
+	PropC string `json:"prop_c"`
+}
+
+func (InterceptorObjectA) JSONSchema(reflect func(any) *Schema) *Schema {
+	return reflect(InterceptorObjectB{})
+}
+
+func TestJsonSchemaInterceptor(t *testing.T) {
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/schema_interceptor.json", r, &InterceptorObjectA{})
+}
