@@ -13,6 +13,25 @@ import (
 	"go/token"
 )
 
+// ExtractGoCommentsOption represents an option that can be passed to ExtractGoComments
+// in order to modify its behavior.
+type ExtractGoCommentsOption func(e *extractOptions)
+
+// NoSynopsis prevents ExtractGoComments from calling doc.Synopsis on the comment text.
+// This is used to preserve the full text of the original comment, including newlines.
+//
+// Example usage:
+//   if err := r.AddGoComments("github.com/example/wails", "./schema/", jsonschema.NoSynopsis()); err != nil { ... }
+func NoSynopsis() ExtractGoCommentsOption {
+	return func(e *extractOptions) {
+		e.noSynopsis = true
+	}
+}
+
+type extractOptions struct {
+	noSynopsis bool
+}
+
 // ExtractGoComments will read all the go files contained in the provided path,
 // including sub-directories, in order to generate a dictionary of comments
 // associated with Types and Fields. The results will be added to the `commentsMap`
@@ -24,7 +43,11 @@ import (
 //
 // When parsing type comments, we use the `go/doc`'s Synopsis method to extract the first phrase
 // only. Field comments, which tend to be much shorter, will include everything.
-func ExtractGoComments(base, path string, commentMap map[string]string) error {
+func ExtractGoComments(base, path string, commentMap map[string]string, opts ...ExtractGoCommentsOption) error {
+	eopts := &extractOptions{}
+	for _, opt := range opts {
+		opt(eopts)
+	}
 	fset := token.NewFileSet()
 	dict := make(map[string][]*ast.Package)
 	err := filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
@@ -64,7 +87,9 @@ func ExtractGoComments(base, path string, commentMap map[string]string) error {
 							txt = gtxt
 							gtxt = ""
 						}
-						txt = doc.Synopsis(txt)
+						if !eopts.noSynopsis {
+							txt = doc.Synopsis(txt)
+						}
 						commentMap[fmt.Sprintf("%s.%s", pkg, typ)] = strings.TrimSpace(txt)
 					}
 				case *ast.Field:

@@ -1153,9 +1153,9 @@ func fullyQualifiedTypeName(t reflect.Type) string {
 // AddGoComments will update the reflectors comment map with all the comments
 // found in the provided source directories. See the #ExtractGoComments method
 // for more details.
-func (r *Reflector) AddGoComments(base, path string) error {
+func (r *Reflector) AddGoComments(base, path string, opts ...ExtractGoCommentsOption) error {
 	if r.CommentMap == nil {
 		r.CommentMap = make(map[string]string)
 	}
-	return ExtractGoComments(base, path, r.CommentMap)
+	return ExtractGoComments(base, path, r.CommentMap, opts...)
 }
