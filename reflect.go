@@ -772,10 +772,7 @@ func (t *Schema) stringKeywords(tags []string) {
 			case "pattern":
 				t.Pattern = val
 			case "format":
-				switch val {
-				case "date-time", "email", "hostname", "ipv4", "ipv6", "uri", "uuid":
-					t.Format = val
-				}
+				t.Format = val
 			case "readOnly":
 				i, _ := strconv.ParseBool(val)
 				t.ReadOnly = i
@@ -980,6 +977,15 @@ func ignoredByJSONSchemaTags(tags []string) bool {
 	return tags[0] == "-"
 }
 
+func inlinedByJSONTags(tags []string) bool {
+	for _, tag := range tags[1:] {
+		if tag == "inline" {
+			return true
+		}
+	}
+	return false
+}
+
 // toJSONNumber converts string to *json.Number.
 // It'll aso return whether the number is valid.
 func toJSONNumber(s string) (json.Number, bool) {
@@ -1039,6 +1045,11 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 		if f.Type.Kind() == reflect.Ptr && f.Type.Elem().Kind() == reflect.Struct {
 			return "", true, false, false
 		}
+	}
+
+	// As per JSON Marshal rules, inline nested structs that have `inline` tag.
+	if inlinedByJSONTags(jsonTags) {
+		return "", true, false, false
 	}
 
 	// Try to determine the name from the different combos
