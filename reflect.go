@@ -573,7 +573,10 @@ func (r *Reflector) lookupComment(t reflect.Type, name string) string {
 
 // addDefinition will append the provided schema. If needed, an ID and anchor will also be added.
 func (r *Reflector) addDefinition(definitions Definitions, t reflect.Type, s *Schema) {
-	name := r.typeName(t)
+	// we save both type & pkg info to match against reflected type later
+	s._type = t
+
+	_, name := r.findDef(definitions, t)
 	if name == "" {
 		return
 	}
@@ -585,16 +588,46 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 	if r.DoNotReference {
 		return nil
 	}
-	name := r.typeName(t)
-	if name == "" {
-		return nil
-	}
-	if _, ok := definitions[name]; !ok {
+
+	def, name := r.findDef(definitions, t)
+	if def == nil {
+		// no entry present in definitions
+		// This is also true if name == "" (~ r.typeName() == "")
 		return nil
 	}
 	return &Schema{
 		Ref: "#/$defs/" + name,
 	}
+}
+
+// findDef returns the matching definition for the passed reflect.Type
+// It will add suffix like `_idx` if necessary & return the corresponding key as well.
+// If no applicable entry is available, it will return nil & the key available to use.
+func (r *Reflector) findDef(definitions Definitions, t reflect.Type) (*Schema, string) {
+	name := r.typeName(t)
+	if name == "" {
+		return nil, ""
+	}
+
+	defName := name
+	for idx := 1; ; idx++ {
+		def, ok := definitions[defName]
+		if !ok {
+			return nil, defName
+		}
+		if sameReflectTypes(def._type, t) {
+			return def, defName
+		}
+		defName = name + "-" + strconv.Itoa(idx)
+	}
+}
+
+func sameReflectTypes(a, b reflect.Type) bool {
+	if fullyQualifiedTypeName(a) != fullyQualifiedTypeName(b) {
+		return false
+	}
+
+	return a.AssignableTo(b) && b.AssignableTo(a)
 }
 
 func (r *Reflector) lookupID(t reflect.Type) ID {

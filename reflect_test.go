@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/invopop/jsonschema/examples"
-
+	"github.com/invopop/jsonschema/internal/testdata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -674,4 +674,34 @@ func TestJSONSchemaAlias(t *testing.T) {
 	r := &Reflector{}
 	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectB{})
 	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
+}
+
+func TestClashingTypes(t *testing.T) {
+	type Odd struct {
+		SomeBaseType
+		Internal testdata.Odd `json:"internal"`
+		Link     *Odd         `json:"link"`
+	}
+
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/clashing_types.json", r, &Odd{})
+}
+
+func TestShadowedClashingTypes(t *testing.T) {
+	type (
+		Odd struct {
+			Base GrandfatherType `json:"base"`
+		}
+		GrandfatherTypePtr *GrandfatherType
+	)
+
+	{
+		type GrandfatherType struct {
+			Odd     Odd                `json:"odd"`
+			Link    *GrandfatherType   `json:"link"`
+			PkgLink GrandfatherTypePtr `json:"pkg_link"`
+		}
+		r := &Reflector{}
+		compareSchemaOutput(t, "fixtures/shadowed_clashing_types.json", r, &GrandfatherType{})
+	}
 }
