@@ -728,6 +728,8 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 						Type: ty,
 					})
 				}
+			case "deprecated":
+				t.Deprecated, _ = strconv.ParseBool(val)
 			default:
 				unprocessed = append(unprocessed, tag)
 			}
@@ -858,6 +860,8 @@ func (t *Schema) arrayKeywords(tags []string) {
 				t.Items.Format = val
 			case "pattern":
 				t.Items.Pattern = val
+			case "deprecated":
+				t.Deprecated, _ = strconv.ParseBool(val)
 			default:
 				unprocessed = append(unprocessed, tag) // left for further processing by underlying type
 			}
