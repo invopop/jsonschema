@@ -623,11 +623,59 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 		t.numericalKeywords(tags)
 	case "array":
 		t.arrayKeywords(tags)
-	case "boolean":
-		t.booleanKeywords(tags)
 	}
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
 	t.extraKeywords(extras)
+}
+
+// parseValue parses a string into a value matching the type of this schema.
+// It is used to parse default and example values from a struct tag.
+// If the string could be successfully parsed into the target type,
+// the second return value will be set to true.
+func (t *Schema) parseValue(val string) (any, bool) {
+	switch t.Type {
+	case "number":
+		return toJSONNumber(val)
+
+	case "integer":
+		i, err := strconv.Atoi(val)
+		return i, err == nil
+
+	case "boolean":
+		return val == "true", val == "true" || val == "false"
+
+	case "string":
+		return val, true
+
+	case "array":
+		vals := strings.Split(val, ";")
+		parsed := make([]any, len(vals))
+		for i, v := range vals {
+			p, ok := t.Items.parseValue(v)
+			if !ok {
+				return nil, false
+			}
+			parsed[i] = p
+		}
+		return parsed, true
+
+	case "object":
+		obj := make(map[string]any)
+		if err := json.Unmarshal([]byte(val), &obj); err != nil {
+			return nil, false
+		}
+		return obj, true
+
+	case "":
+		var obj any
+		if err := json.Unmarshal([]byte(val), &obj); err != nil {
+			return nil, false
+		}
+		return obj, true
+
+	default:
+		return nil, false
+	}
 }
 
 // read struct tags for generic keywords
@@ -728,30 +776,20 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 						Type: ty,
 					})
 				}
+			case "default":
+				if v, ok := t.parseValue(val); ok {
+					t.Default = v
+				}
+			case "example":
+				if v, ok := t.parseValue(val); ok {
+					t.Examples = append(t.Examples, v)
+				}
 			default:
 				unprocessed = append(unprocessed, tag)
 			}
 		}
 	}
 	return unprocessed
-}
-
-// read struct tags for boolean type keywords
-func (t *Schema) booleanKeywords(tags []string) {
-	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
-		if len(nameValue) != 2 {
-			continue
-		}
-		name, val := nameValue[0], nameValue[1]
-		if name == "default" {
-			if val == "true" {
-				t.Default = true
-			} else if val == "false" {
-				t.Default = false
-			}
-		}
-	}
 }
 
 // read struct tags for string type keywords
@@ -775,10 +813,6 @@ func (t *Schema) stringKeywords(tags []string) {
 			case "writeOnly":
 				i, _ := strconv.ParseBool(val)
 				t.WriteOnly = i
-			case "default":
-				t.Default = val
-			case "example":
-				t.Examples = append(t.Examples, val)
 			case "enum":
 				t.Enum = append(t.Enum, val)
 			}
@@ -789,7 +823,7 @@ func (t *Schema) stringKeywords(tags []string) {
 // read struct tags for numerical type keywords
 func (t *Schema) numericalKeywords(tags []string) {
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
@@ -803,14 +837,6 @@ func (t *Schema) numericalKeywords(tags []string) {
 				t.ExclusiveMaximum, _ = toJSONNumber(val)
 			case "exclusiveMinimum":
 				t.ExclusiveMinimum, _ = toJSONNumber(val)
-			case "default":
-				if num, ok := toJSONNumber(val); ok {
-					t.Default = num
-				}
-			case "example":
-				if num, ok := toJSONNumber(val); ok {
-					t.Examples = append(t.Examples, num)
-				}
 			case "enum":
 				if num, ok := toJSONNumber(val); ok {
 					t.Enum = append(t.Enum, num)
@@ -823,7 +849,7 @@ func (t *Schema) numericalKeywords(tags []string) {
 // read struct tags for object type keywords
 // func (t *Type) objectKeywords(tags []string) {
 //     for _, tag := range tags{
-//         nameValue := strings.Split(tag, "=")
+//         nameValue := strings.SplitN(tag, "=", 2)
 //         name, val := nameValue[0], nameValue[1]
 //         switch name{
 //             case "dependencies":
@@ -838,11 +864,9 @@ func (t *Schema) numericalKeywords(tags []string) {
 
 // read struct tags for array type keywords
 func (t *Schema) arrayKeywords(tags []string) {
-	var defaultValues []any
-
 	unprocessed := make([]string, 0, len(tags))
 	for _, tag := range tags {
-		nameValue := strings.Split(tag, "=")
+		nameValue := strings.SplitN(tag, "=", 2)
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
@@ -852,8 +876,10 @@ func (t *Schema) arrayKeywords(tags []string) {
 				t.MaxItems = parseUint(val)
 			case "uniqueItems":
 				t.UniqueItems = true
-			case "default":
-				defaultValues = append(defaultValues, val)
+			case "enum":
+				if v, ok := t.Items.parseValue(val); ok {
+					t.Items.Enum = append(t.Items.Enum, v)
+				}
 			case "format":
 				t.Items.Format = val
 			case "pattern":
@@ -862,9 +888,6 @@ func (t *Schema) arrayKeywords(tags []string) {
 				unprocessed = append(unprocessed, tag) // left for further processing by underlying type
 			}
 		}
-	}
-	if len(defaultValues) > 0 {
-		t.Default = defaultValues
 	}
 
 	if len(unprocessed) == 0 {
@@ -881,8 +904,6 @@ func (t *Schema) arrayKeywords(tags []string) {
 		t.Items.numericalKeywords(unprocessed)
 	case "array":
 		// explicitly don't support traversal for the [][]..., as it's unclear where the array tags belong
-	case "boolean":
-		t.Items.booleanKeywords(unprocessed)
 	}
 }
 

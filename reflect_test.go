@@ -314,6 +314,16 @@ type KeyNamed struct {
 	RenamedByComputation int `jsonschema_description:"Description was preserved"`
 }
 
+type Examples struct {
+	StringExample   string              `json:"string_example" jsonschema:"example=hi,example=test"`
+	IntExample      int                 `json:"int_example" jsonschema:"example=1,example=10,example=42"`
+	FloatExample    float64             `json:"float_example" jsonschema:"example=2.0,example=3.14,example=13.37"`
+	IntArrayExample []int               `json:"int_array_example" jsonschema:"example=1;2,example=3;4,example=5;6"`
+	MapExample      map[string]string   `json:"map_example" jsonschema:"example={\"key\": \"value\"}"`
+	MapArrayExample []map[string]string `json:"map_array_example" jsonschema:"example={\"a\": \"b\"};{\"c\": \"d\"},example={\"hello\": \"test\"}"`
+	AnyExample      any                 `json:"any_example" jsonschema:"example=1234,example=\"string_example\",example={\"test\": 42},example=[1\\,\"str\"\\,true],default=true"`
+}
+
 type SchemaExtendTestBase struct {
 	FirstName  string `json:"FirstName"`
 	LastName   string `json:"LastName"`
@@ -473,6 +483,7 @@ func TestSchemaGeneration(t *testing.T) {
 		}, "fixtures/keynamed.json"},
 		{MapType{}, &Reflector{}, "fixtures/map_type.json"},
 		{ArrayType{}, &Reflector{}, "fixtures/array_type.json"},
+		{Examples{}, &Reflector{}, "fixtures/examples.json"},
 		{SchemaExtendTest{}, &Reflector{}, "fixtures/custom_type_extend.json"},
 		{Expression{}, &Reflector{}, "fixtures/schema_with_expression.json"},
 		{PatternEqualsTest{}, &Reflector{}, "fixtures/equals_in_pattern.json"},
