@@ -675,3 +675,24 @@ func TestJSONSchemaAlias(t *testing.T) {
 	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectB{})
 	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
 }
+
+type WithExtendDescription string
+
+func (WithExtendDescription) JSONSchemaExtend(base *Schema) {
+	base.Description = "extend description"
+}
+
+type ExtendDescriptionObject struct {
+	Extend WithExtendDescription `json:"extend"`
+
+	Tag       WithExtendDescription `json:"tag" jsonschema_description:"tag description"`
+	TagExtend WithExtendDescription `json:"tag_extend" jsonschema_description:"tag description"`
+
+	GenericTag       WithExtendDescription `json:"generic_tag" jsonschema:"description=generic description"`
+	GenericTagExtend WithExtendDescription `json:"generic_tag_extend" jsonschema:"description=generic description"`
+}
+
+func TestJsonSchemaExtendDescription(t *testing.T) {
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/schema_extend_description.json", r, &ExtendDescriptionObject{})
+}
