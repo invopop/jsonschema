@@ -176,6 +176,11 @@ type OuterNamed struct {
 	Inner `json:"inner"`
 }
 
+type OuterInlined struct {
+	Text  `json:"text,omitempty"`
+	Inner `json:",inline"`
+}
+
 type OuterPtr struct {
 	*Inner
 	Text `json:",omitempty"`
@@ -419,6 +424,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&Outer{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_inheritance.json"},
 		{&OuterNamed{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_embedded.json"},
 		{&OuterNamed{}, &Reflector{ExpandedStruct: true, AssignAnchor: true}, "fixtures/inlining_embedded_anchored.json"},
+		{&OuterInlined{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_tag.json"},
 		{&OuterPtr{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_ptr.json"},
 		{&MinValue{}, &Reflector{}, "fixtures/schema_with_minimum.json"},
 		{&TestNullable{}, &Reflector{}, "fixtures/nullable.json"},
@@ -621,6 +627,18 @@ func TestUnsignedIntHandling(t *testing.T) {
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxLength": 0`)
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"minItems": 0`)
 	fixtureContains(t, "fixtures/unsigned_int_handling.json", `"maxItems": 0`)
+}
+
+func TestJSONSchemaFormat(t *testing.T) {
+	type WithCustomFormat struct {
+		Dates []string `json:"dates" jsonschema:"format=date"`
+		Odds  []string `json:"odds" jsonschema:"format=odd"`
+	}
+
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/with_custom_format.json", r, &WithCustomFormat{})
+	fixtureContains(t, "fixtures/with_custom_format.json", `"format": "date"`)
+	fixtureContains(t, "fixtures/with_custom_format.json", `"format": "odd"`)
 }
 
 type AliasObjectA struct {
