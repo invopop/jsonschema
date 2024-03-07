@@ -675,3 +675,15 @@ func TestJSONSchemaAlias(t *testing.T) {
 	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectB{})
 	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
 }
+
+func TestOriginalPropertiesMapping(t *testing.T) {
+	type TestStruct struct {
+		OriginalName string `json:"altered_name"`
+	}
+
+	r := &Reflector{}
+
+	s := r.Reflect(&TestStruct{})
+	subschema := s.Definitions["TestStruct"]
+	assert.EqualValues(t, "altered_name", subschema.OriginalPropertiesMapping["OriginalName"])
+}

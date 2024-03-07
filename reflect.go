@@ -447,6 +447,7 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 	r.addDefinition(definitions, t, s)
 	s.Type = "object"
 	s.Properties = NewProperties()
+	s.OriginalPropertiesMapping = make(map[string]string)
 	s.Description = r.lookupComment(t, "")
 	if r.AssignAnchor {
 		s.Anchor = t.Name()
@@ -492,7 +493,7 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 	}
 
 	handleField := func(f reflect.StructField) {
-		name, shouldEmbed, required, nullable := r.reflectFieldName(f)
+		name, originalName, shouldEmbed, required, nullable := r.reflectFieldName(f)
 		// if anonymous and exported type should be processed recursively
 		// current type should inherit properties of anonymous one
 		if name == "" {
@@ -531,6 +532,7 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 		}
 
 		st.Properties.Set(name, property)
+		st.OriginalPropertiesMapping[originalName] = name
 		if required {
 			st.Required = appendUniqueString(st.Required, name)
 		}
@@ -1010,17 +1012,17 @@ func (r *Reflector) fieldNameTag() string {
 	return "json"
 }
 
-func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool, bool) {
+func (r *Reflector) reflectFieldName(f reflect.StructField) (string, string, bool, bool, bool) {
 	jsonTagString := f.Tag.Get(r.fieldNameTag())
 	jsonTags := strings.Split(jsonTagString, ",")
 
 	if ignoredByJSONTags(jsonTags) {
-		return "", false, false, false
+		return "", "", false, false, false
 	}
 
 	schemaTags := strings.Split(f.Tag.Get("jsonschema"), ",")
 	if ignoredByJSONSchemaTags(schemaTags) {
-		return "", false, false, false
+		return "", "", false, false, false
 	}
 
 	var required bool
@@ -1034,22 +1036,23 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 	if f.Anonymous && jsonTags[0] == "" {
 		// As per JSON Marshal rules, anonymous structs are inherited
 		if f.Type.Kind() == reflect.Struct {
-			return "", true, false, false
+			return "", "", true, false, false
 		}
 
 		// As per JSON Marshal rules, anonymous pointer to structs are inherited
 		if f.Type.Kind() == reflect.Ptr && f.Type.Elem().Kind() == reflect.Struct {
-			return "", true, false, false
+			return "", "", true, false, false
 		}
 	}
 
 	// As per JSON Marshal rules, inline nested structs that have `inline` tag.
 	if inlinedByJSONTags(jsonTags) {
-		return "", true, false, false
+		return "", "", true, false, false
 	}
 
 	// Try to determine the name from the different combos
 	name := f.Name
+	originalName := f.Name
 	if jsonTags[0] != "" {
 		name = jsonTags[0]
 	}
@@ -1060,7 +1063,7 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 		name = r.KeyNamer(name)
 	}
 
-	return name, false, required, nullable
+	return name, originalName, false, required, nullable
 }
 
 // UnmarshalJSON is used to parse a schema object or boolean.
