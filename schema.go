@@ -40,7 +40,7 @@ type Schema struct {
 	AdditionalProperties *Schema                                 `json:"additionalProperties,omitempty"` // section 10.3.2.3
 	PropertyNames        *Schema                                 `json:"propertyNames,omitempty"`        // section 10.3.2.4
 	// RFC draft-bhutton-json-schema-validation-00, section 6
-	Type              string              `json:"type,omitempty"`              // section 6.1.1
+	Type              *Type               `json:"type,omitempty"`              // section 6.1.1
 	Enum              []any               `json:"enum,omitempty"`              // section 6.1.2
 	Const             any                 `json:"const,omitempty"`             // section 6.1.3
 	MultipleOf        json.Number         `json:"multipleOf,omitempty"`        // section 6.2.1
@@ -92,3 +92,7 @@ var (
 // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.26
 // RFC draft-wright-json-schema-validation-00, section 5.26
 type Definitions map[string]*Schema
+
+type Type struct {
+	Types []string
+}
