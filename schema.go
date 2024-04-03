@@ -93,6 +93,7 @@ var (
 // RFC draft-wright-json-schema-validation-00, section 5.26
 type Definitions map[string]*Schema
 
+// Type implements section 6.1.1
 type Type struct {
 	Types []string
 }

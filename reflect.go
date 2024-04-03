@@ -1125,6 +1125,7 @@ func (t *Schema) MarshalJSON() ([]byte, error) {
 	return append(b, m[1:]...), nil
 }
 
+// MarshalJSON implements json.Marshaler
 func (tp *Type) MarshalJSON() ([]byte, error) {
 	switch len(tp.Types) {
 	case 0:
@@ -1136,6 +1137,7 @@ func (tp *Type) MarshalJSON() ([]byte, error) {
 	}
 }
 
+// UnmarshalJSON implements json.Unm\arshaler
 func (tp *Type) UnmarshalJSON(data []byte) error {
 	err := json.Unmarshal(data, &tp.Types)
 	if err == nil {
