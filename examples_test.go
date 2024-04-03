@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/invopop/jsonschema"
+	"github.com/kubeark/jsonschema"
 )
 
 type SampleUser struct {
@@ -29,7 +29,7 @@ func ExampleReflect() {
 	// Output:
 	// {
 	//   "$schema": "https://json-schema.org/draft/2020-12/schema",
-	//   "$id": "https://github.com/invopop/jsonschema_test/sample-user",
+	//   "$id": "https://github.com/kubeark/jsonschema_test/sample-user",
 	//   "$ref": "#/$defs/SampleUser",
 	//   "$defs": {
 	//     "SampleUser": {

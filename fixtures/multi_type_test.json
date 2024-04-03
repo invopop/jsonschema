@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/multi-type-test",
+  "$id": "https://github.com/kubeark/jsonschema/multi-type-test",
   "$ref": "#/$defs/MultiTypeTest",
   "$defs": {
     "MultiTypeTest": {

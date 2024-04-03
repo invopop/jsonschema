@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/with-custom-format",
+  "$id": "https://github.com/kubeark/jsonschema/with-custom-format",
   "$ref": "#/$defs/WithCustomFormat",
   "$defs": {
     "WithCustomFormat": {

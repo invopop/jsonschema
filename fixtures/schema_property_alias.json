@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/alias-property-object-base",
+  "$id": "https://github.com/kubeark/jsonschema/alias-property-object-base",
   "$ref": "#/$defs/AliasPropertyObjectBase",
   "$defs": {
     "AliasObjectA": {

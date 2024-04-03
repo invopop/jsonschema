@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/invopop/jsonschema/number-handler",
+  "$id": "https://github.com/kubeark/jsonschema/number-handler",
   "$ref": "#/$defs/NumberHandler",
   "$defs": {
     "NumberHandler": {
