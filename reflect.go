@@ -9,6 +9,7 @@ package jsonschema
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/url"
 	"reflect"
@@ -295,8 +296,8 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	// It will unmarshal either.
 	if t.Implements(protoEnumType) {
 		st.OneOf = []*Schema{
-			{Type: "string"},
-			{Type: "integer"},
+			{Type: &Type{Types: []string{"string"}}},
+			{Type: &Type{Types: []string{"integer"}}},
 		}
 		return st
 	}
@@ -306,7 +307,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	// TODO email RFC section 7.3.2, hostname RFC section 7.3.3, uriref RFC section 7.3.7
 	if t == ipType {
 		// TODO differentiate ipv4 and ipv6 RFC section 7.3.4, 7.3.5
-		st.Type = "string"
+		st.Type = &Type{Types: []string{"string"}}
 		st.Format = "ipv4"
 		return st
 	}
@@ -326,16 +327,16 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		st.Type = "integer"
+		st.Type = &Type{Types: []string{"integer"}}
 
 	case reflect.Float32, reflect.Float64:
-		st.Type = "number"
+		st.Type = &Type{Types: []string{"number"}}
 
 	case reflect.Bool:
-		st.Type = "boolean"
+		st.Type = &Type{Types: []string{"boolean"}}
 
 	case reflect.String:
-		st.Type = "string"
+		st.Type = &Type{Types: []string{"string"}}
 
 	default:
 		panic("unsupported type " + t.String())
@@ -400,11 +401,11 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 		st.MaxItems = &l
 	}
 	if t.Kind() == reflect.Slice && t.Elem() == byteSliceType.Elem() {
-		st.Type = "string"
+		st.Type = &Type{Types: []string{"string"}}
 		// NOTE: ContentMediaType is not set here
 		st.ContentEncoding = "base64"
 	} else {
-		st.Type = "array"
+		st.Type = &Type{Types: []string{"array"}}
 		st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem())
 	}
 }
@@ -412,7 +413,7 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Schema) {
 	r.addDefinition(definitions, t, st)
 
-	st.Type = "object"
+	st.Type = &Type{Types: []string{"object"}}
 	if st.Description == "" {
 		st.Description = r.lookupComment(t, "")
 	}
@@ -435,17 +436,17 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 	// Handle special types
 	switch t {
 	case timeType: // date-time RFC section 7.3.1
-		s.Type = "string"
+		s.Type = &Type{Types: []string{"string"}}
 		s.Format = "date-time"
 		return
 	case uriType: // uri RFC section 7.3.6
-		s.Type = "string"
+		s.Type = &Type{Types: []string{"string"}}
 		s.Format = "uri"
 		return
 	}
 
 	r.addDefinition(definitions, t, s)
-	s.Type = "object"
+	s.Type = &Type{Types: []string{"object"}}
 	s.Properties = NewProperties()
 	s.Description = r.lookupComment(t, "")
 	if r.AssignAnchor {
@@ -524,7 +525,7 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 				OneOf: []*Schema{
 					property,
 					{
-						Type: "null",
+						Type: &Type{Types: []string{"null"}},
 					},
 				},
 			}
@@ -614,18 +615,23 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
 	tags = t.genericKeywords(tags, parent, propertyName)
 
-	switch t.Type {
-	case "string":
-		t.stringKeywords(tags)
-	case "number":
-		t.numericalKeywords(tags)
-	case "integer":
-		t.numericalKeywords(tags)
-	case "array":
-		t.arrayKeywords(tags)
-	case "boolean":
-		t.booleanKeywords(tags)
+	if t.Type != nil {
+		for _, currType := range t.Type.Types {
+			switch currType {
+			case "string":
+				t.stringKeywords(tags)
+			case "number":
+				t.numericalKeywords(tags)
+			case "integer":
+				t.numericalKeywords(tags)
+			case "array":
+				t.arrayKeywords(tags)
+			case "boolean":
+				t.booleanKeywords(tags)
+			}
+		}
 	}
+
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
 	t.extraKeywords(extras)
 }
@@ -643,7 +649,8 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 			case "description":
 				t.Description = val
 			case "type":
-				t.Type = val
+				types := strings.Split(val, ";")
+				t.Type = &Type{Types: types}
 			case "anchor":
 				t.Anchor = val
 			case "oneof_required":
@@ -695,11 +702,11 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 				if t.OneOf == nil {
 					t.OneOf = make([]*Schema, 0, 1)
 				}
-				t.Type = ""
+				t.Type = nil
 				types := strings.Split(nameValue[1], ";")
 				for _, ty := range types {
 					t.OneOf = append(t.OneOf, &Schema{
-						Type: ty,
+						Type: &Type{Types: []string{ty}},
 					})
 				}
 			case "anyof_ref":
@@ -721,11 +728,11 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 				if t.AnyOf == nil {
 					t.AnyOf = make([]*Schema, 0, 1)
 				}
-				t.Type = ""
+				t.Type = nil
 				types := strings.Split(nameValue[1], ";")
 				for _, ty := range types {
 					t.AnyOf = append(t.AnyOf, &Schema{
-						Type: ty,
+						Type: &Type{Types: []string{ty}},
 					})
 				}
 			default:
@@ -872,17 +879,23 @@ func (t *Schema) arrayKeywords(tags []string) {
 		return
 	}
 
-	switch t.Items.Type {
-	case "string":
-		t.Items.stringKeywords(unprocessed)
-	case "number":
-		t.Items.numericalKeywords(unprocessed)
-	case "integer":
-		t.Items.numericalKeywords(unprocessed)
-	case "array":
-		// explicitly don't support traversal for the [][]..., as it's unclear where the array tags belong
-	case "boolean":
-		t.Items.booleanKeywords(unprocessed)
+	if t.Items.Type == nil {
+		return
+	}
+
+	for _, currType := range t.Items.Type.Types {
+		switch currType {
+		case "string":
+			t.Items.stringKeywords(unprocessed)
+		case "number":
+			t.Items.numericalKeywords(unprocessed)
+		case "integer":
+			t.Items.numericalKeywords(unprocessed)
+		case "array":
+			// explicitly don't support traversal for the [][]..., as it's unclear where the array tags belong
+		case "boolean":
+			t.Items.booleanKeywords(unprocessed)
+		}
 	}
 }
 
@@ -1110,6 +1123,33 @@ func (t *Schema) MarshalJSON() ([]byte, error) {
 	}
 	b[len(b)-1] = ','
 	return append(b, m[1:]...), nil
+}
+
+// MarshalJSON implements json.Marshaler
+func (tp *Type) MarshalJSON() ([]byte, error) {
+	switch len(tp.Types) {
+	case 0:
+		return []byte("[]"), nil
+	case 1:
+		return json.Marshal(tp.Types[0])
+	default:
+		return json.Marshal(tp.Types)
+	}
+}
+
+// UnmarshalJSON implements json.Unm\arshaler
+func (tp *Type) UnmarshalJSON(data []byte) error {
+	err := json.Unmarshal(data, &tp.Types)
+	if err == nil {
+		return nil
+	}
+	var v string
+	err2 := json.Unmarshal(data, &v)
+	if err2 != nil {
+		return fmt.Errorf("could not read type into slice: %v, nor into string: %w", err.Error(), err2)
+	}
+	tp.Types = []string{v}
+	return nil
 }
 
 func (r *Reflector) typeName(t reflect.Type) string {
