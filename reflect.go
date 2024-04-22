@@ -751,7 +751,7 @@ func (t *Schema) booleanKeywords(tags []string) {
 			continue
 		}
 		name, val := nameValue[0], nameValue[1]
-		if name == "default" {
+		if name == "default" && t.Default == nil {
 			if val == "true" {
 				t.Default = true
 			} else if val == "false" {
@@ -783,7 +783,9 @@ func (t *Schema) stringKeywords(tags []string) {
 				i, _ := strconv.ParseBool(val)
 				t.WriteOnly = i
 			case "default":
-				t.Default = val
+				if t.Default == nil {
+					t.Default = val
+				}
 			case "example":
 				t.Examples = append(t.Examples, val)
 			case "enum":
@@ -811,7 +813,7 @@ func (t *Schema) numericalKeywords(tags []string) {
 			case "exclusiveMinimum":
 				t.ExclusiveMinimum, _ = toJSONNumber(val)
 			case "default":
-				if num, ok := toJSONNumber(val); ok {
+				if num, ok := toJSONNumber(val); ok && t.Default == nil {
 					t.Default = num
 				}
 			case "example":
@@ -870,7 +872,7 @@ func (t *Schema) arrayKeywords(tags []string) {
 			}
 		}
 	}
-	if len(defaultValues) > 0 {
+	if len(defaultValues) > 0 && t.Default == nil {
 		t.Default = defaultValues
 	}
 
