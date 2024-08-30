@@ -122,6 +122,9 @@ type Reflector struct {
 	// switching to just allowing additional properties instead.
 	IgnoredTypes []any
 
+	// Ignore specific struct field, enable dynamic generate different schemas from on struct.
+	Ignore func(reflect.StructField) bool
+
 	// Lookup allows a function to be defined that will provide a custom mapping of
 	// types to Schema IDs. This allows existing schema documents to be referenced
 	// by their ID instead of being embedded into the current schema definitions.
@@ -492,6 +495,10 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 	}
 
 	handleField := func(f reflect.StructField) {
+		if !f.Anonymous && r.Ignore != nil && r.Ignore(f) {
+			return
+		}
+
 		name, shouldEmbed, required, nullable := r.reflectFieldName(f)
 		// if anonymous and exported type should be processed recursively
 		// current type should inherit properties of anonymous one
