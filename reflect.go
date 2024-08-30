@@ -1081,6 +1081,11 @@ func (t *Schema) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, aux)
 }
 
+// If true, marshal json with linebreak and indent.
+var MarshalWithIndent = false
+var MarshalPrefix = ""
+var MarshalIndent = "\t"
+
 // MarshalJSON is used to serialize a schema object or boolean.
 func (t *Schema) MarshalJSON() ([]byte, error) {
 	if t.boolean != nil {
@@ -1094,14 +1099,25 @@ func (t *Schema) MarshalJSON() ([]byte, error) {
 		return []byte("true"), nil
 	}
 	type SchemaAlt Schema
-	b, err := json.Marshal((*SchemaAlt)(t))
+	var b []byte
+	var err error
+	if MarshalWithIndent {
+		b, err = json.MarshalIndent((*SchemaAlt)(t), MarshalPrefix, MarshalIndent)
+	} else {
+		b, err = json.Marshal((*SchemaAlt)(t))
+	}
 	if err != nil {
 		return nil, err
 	}
 	if t.Extras == nil || len(t.Extras) == 0 {
 		return b, nil
 	}
-	m, err := json.Marshal(t.Extras)
+	var m []byte
+	if MarshalWithIndent {
+		m, err = json.MarshalIndent(t.Extras, MarshalPrefix, MarshalIndent)
+	} else {
+		m, err = json.Marshal(t.Extras)
+	}
 	if err != nil {
 		return nil, err
 	}
