@@ -1126,6 +1126,9 @@ func (r *Reflector) typeName(t reflect.Type) string {
 func splitOnUnescapedCommas(tagString string) []string {
 	ret := make([]string, 0)
 	separated := strings.Split(tagString, ",")
+	for i := range separated {
+		separated[i] = strings.TrimSpace(separated[i])
+	}
 	ret = append(ret, separated[0])
 	i := 0
 	for _, nextTag := range separated[1:] {

@@ -675,3 +675,12 @@ func TestJSONSchemaAlias(t *testing.T) {
 	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectB{})
 	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
 }
+
+func TestEnumWithSpace(t *testing.T) {
+	type WithSpaceInEnum struct {
+		Family string `json:"family,omitempty" jsonschema:"enum=kid, enum=mother, enum=father"`
+	}
+
+	r := &Reflector{}
+	compareSchemaOutput(t, "fixtures/with_space_in_enum.json", r, &WithSpaceInEnum{})
+}
