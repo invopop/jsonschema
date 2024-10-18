@@ -112,6 +112,10 @@ type Reflector struct {
 	// list of type definitions (`$defs`) will not be included.
 	DoNotReference bool
 
+	// ReferencePrefix is a string that will be prefixed to the reference ID.
+	// This is useful when you want to use a different reference prefix than the default "#".
+	ReferencePrefix string
+
 	// ExpandedStruct when true will include the reflected type's definition in the
 	// root as opposed to a definition with a reference.
 	ExpandedStruct bool
@@ -593,8 +597,15 @@ func (r *Reflector) refDefinition(definitions Definitions, t reflect.Type) *Sche
 	if _, ok := definitions[name]; !ok {
 		return nil
 	}
+
+	prefix := "#"
+
+	if r.ReferencePrefix != "" {
+		prefix = r.ReferencePrefix
+	}
+
 	return &Schema{
-		Ref: "#/$defs/" + name,
+		Ref: prefix + "/$defs/" + name,
 	}
 }
 
