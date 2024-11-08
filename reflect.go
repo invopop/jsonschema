@@ -407,20 +407,23 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 		st.MinItems = &l
 		st.MaxItems = &l
 	}
-	if t.Kind() == reflect.Slice && t.Elem() == byteSliceType.Elem() {
-		st.Type = []string{"string"}
-		// NOTE: ContentMediaType is not set here
-		st.ContentEncoding = "base64"
-	} else {
-		st.Type = []string{"array"}
-		st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem())
+	if len(st.Type) == 0 {
+		if t.Kind() == reflect.Slice && t.Elem() == byteSliceType.Elem() {
+			st.Type = []string{"string"}
+			// NOTE: ContentMediaType is not set here
+			st.ContentEncoding = "base64"
+		} else {
+			st.Type = []string{"array"}
+			st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem())
+		}
 	}
 }
 
 func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Schema) {
 	r.addDefinition(definitions, t, st)
-
-	st.Type = []string{"object"}
+	if len(st.Type) == 0 {
+		st.Type = []string{"object"}
+	}
 	if st.Description == "" {
 		st.Description = r.lookupComment(t, "")
 	}
@@ -512,20 +515,31 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 
 		// If a JSONSchemaAlias(prop string) method is defined, attempt to use
 		// the provided object's type instead of the field's type.
-		var property *Schema
+		/*var property *Schema
 		if alias := customPropertyMethod(name); alias != nil {
 			property = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias))
 		} else {
 			property = r.refOrReflectTypeToSchema(definitions, f.Type)
 		}
 
+		property.structKeywordsFromTags(f, st, name)*/
+		property := new(Schema)
 		property.structKeywordsFromTags(f, st, name)
+		var reflectedProperty *Schema
+		if alias := customPropertyMethod(name); alias != nil {
+			property = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias))
+			reflectedProperty = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias))
+		} else {
+			reflectedProperty = r.refOrReflectTypeToSchema(definitions, f.Type)
+		}
+
 		if property.Description == "" {
 			property.Description = r.lookupComment(t, f.Name)
 		}
 		if getFieldDocString != nil {
 			property.Description = getFieldDocString(f.Name)
 		}
+		mergeSchemas(property, reflectedProperty)
 
 		if nullable {
 			property = &Schema{
@@ -555,6 +569,28 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 			}
 		}
 	}
+}
+
+func mergeSchemas(dst, src *Schema) {
+	if len(dst.Type) == 0 {
+		dst.Type = src.Type
+	}
+	if dst.Format == "" {
+		dst.Format = src.Format
+	}
+	if dst.Pattern == "" {
+		dst.Pattern = src.Pattern
+	}
+	if dst.Items == nil {
+		dst.Items = src.Items
+	}
+	if dst.Properties == nil {
+		dst.Properties = src.Properties
+	}
+	if dst.AdditionalProperties == nil {
+		dst.AdditionalProperties = src.AdditionalProperties
+	}
+	// TODO: Merge other fields as needed
 }
 
 func appendUniqueString(base []string, value string) []string {
@@ -621,18 +657,19 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
 	tags = t.genericKeywords(tags, parent, propertyName)
-
-	switch t.Type[0] {
-	case "string":
-		t.stringKeywords(tags)
-	case "number":
-		t.numericalKeywords(tags)
-	case "integer":
-		t.numericalKeywords(tags)
-	case "array":
-		t.arrayKeywords(tags)
-	case "boolean":
-		t.booleanKeywords(tags)
+	for _, typ := range t.Type {
+		switch typ {
+		case "string":
+			t.stringKeywords(tags)
+		case "number":
+			t.numericalKeywords(tags)
+		case "integer":
+			t.numericalKeywords(tags)
+		case "array":
+			t.arrayKeywords(tags)
+		case "boolean":
+			t.booleanKeywords(tags)
+		}
 	}
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
 	t.extraKeywords(extras)
