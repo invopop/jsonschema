@@ -125,7 +125,7 @@ type CustomTypeFieldWithInterface struct {
 
 func (CustomTimeWithInterface) JSONSchema() *Schema {
 	return &Schema{
-		Type:   "string",
+		Type:   []string{"string"},
 		Format: "date-time",
 	}
 }
@@ -210,7 +210,7 @@ type UserWithAnchor struct {
 
 func (CompactDate) JSONSchema() *Schema {
 	return &Schema{
-		Type:        "string",
+		Type:        []string{"string"},
 		Title:       "Compact Date",
 		Description: "Short date that only includes year and month",
 		Pattern:     "^[0-9]{4}-[0-1][0-9]$",
@@ -258,11 +258,11 @@ type CustomSliceType []string
 func (CustomSliceType) JSONSchema() *Schema {
 	return &Schema{
 		OneOf: []*Schema{{
-			Type: "string",
+			Type: []string{"string"},
 		}, {
-			Type: "array",
+			Type: []string{"array"},
 			Items: &Schema{
-				Type: "string",
+				Type: []string{"string"},
 			},
 		}},
 	}
@@ -273,15 +273,15 @@ type CustomMapType map[string]string
 func (CustomMapType) JSONSchema() *Schema {
 	properties := NewProperties()
 	properties.Set("key", &Schema{
-		Type: "string",
+		Type: []string{"string"},
 	})
 	properties.Set("value", &Schema{
-		Type: "string",
+		Type: []string{"string"},
 	})
 	return &Schema{
-		Type: "array",
+		Type: []string{"array"},
 		Items: &Schema{
-			Type:       "object",
+			Type:       []string{"object"},
 			Properties: properties,
 			Required:   []string{"key", "value"},
 		},
@@ -388,7 +388,7 @@ func TestSchemaGeneration(t *testing.T) {
 			Mapper: func(i reflect.Type) *Schema {
 				if i == reflect.TypeOf(CustomTime{}) {
 					return &Schema{
-						Type:   "string",
+						Type:   []string{"string"},
 						Format: "date-time",
 					}
 				}
