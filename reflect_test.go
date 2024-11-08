@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/invopop/jsonschema/examples"
+	"github.com/alonsopf/jsonschema/examples"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
