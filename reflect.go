@@ -326,16 +326,24 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		st.Type = []string{"integer"}
+		if len(st.Type) == 0 {
+			st.Type = []string{"integer"}
+		}
 
 	case reflect.Float32, reflect.Float64:
-		st.Type = []string{"number"}
+		if len(st.Type) == 0 {
+			st.Type = []string{"number"}
+		}
 
 	case reflect.Bool:
-		st.Type = []string{"boolean"}
+		if len(st.Type) == 0 {
+			st.Type = []string{"boolean"}
+		}
 
 	case reflect.String:
-		st.Type = []string{"string"}
+		if len(st.Type) == 0 {
+			st.Type = []string{"string"}
+		}
 
 	default:
 		panic("unsupported type " + t.String())
