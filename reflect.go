@@ -689,6 +689,8 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 				t.Description = val
 			case "type":
 				t.Type = append(t.Type, strings.Split(val, ",")...)
+			case "types":
+				t.Type = append(t.Type, strings.Split(val, ",")...)
 			case "anchor":
 				t.Anchor = val
 			case "oneof_required":
