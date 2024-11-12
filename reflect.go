@@ -9,6 +9,7 @@ package jsonschema
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/url"
 	"reflect"
@@ -1119,13 +1120,41 @@ func (t *Schema) UnmarshalJSON(data []byte) error {
 		*t = *FalseSchema
 		return nil
 	}
+
 	type SchemaAlt Schema
 	aux := &struct {
+		Type interface{} `json:"type,omitempty"`
 		*SchemaAlt
 	}{
 		SchemaAlt: (*SchemaAlt)(t),
 	}
-	return json.Unmarshal(data, aux)
+
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+
+	// Handle the 'type' field
+	switch v := aux.Type.(type) {
+	case string:
+		t.Type = []string{v}
+	case []interface{}:
+		var types []string
+		for _, item := range v {
+			if s, ok := item.(string); ok {
+				types = append(types, s)
+			} else {
+				return fmt.Errorf("invalid type value: must be a string")
+			}
+		}
+		t.Type = types
+	case nil:
+		// Type is omitted or null, set to nil
+		t.Type = nil
+	default:
+		return fmt.Errorf("invalid type value")
+	}
+
+	return nil
 }
 
 // MarshalJSON is used to serialize a schema object or boolean.
