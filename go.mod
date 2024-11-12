@@ -1,4 +1,4 @@
-module github.com/alonsopf/jsonschema
+module github.com/invopop/jsonschema
 
 go 1.18
 
