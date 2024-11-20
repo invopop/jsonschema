@@ -516,14 +516,6 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 
 		// If a JSONSchemaAlias(prop string) method is defined, attempt to use
 		// the provided object's type instead of the field's type.
-		/*var property *Schema
-		if alias := customPropertyMethod(name); alias != nil {
-			property = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias))
-		} else {
-			property = r.refOrReflectTypeToSchema(definitions, f.Type)
-		}
-
-		property.structKeywordsFromTags(f, st, name)*/
 		property := new(Schema)
 		property.structKeywordsFromTags(f, st, name)
 		var reflectedProperty *Schema
