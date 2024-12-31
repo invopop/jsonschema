@@ -40,8 +40,9 @@ func WithFullComment() CommentOption {
 // parameter, the URL used to import that package, is thus required to be able to match
 // reflected types.
 //
-// When parsing type comments, we use the `go/doc`'s Synopsis method to extract the first
-// phrase only. Field comments, which tend to be much shorter, will include everything.
+// When parsing type comments, by default we use the `go/doc`'s Synopsis method to extract
+// the first phrase only. Field comments, which tend to be much shorter, will include everything.
+// This behavior can be changed by using the `WithFullComment` option.
 func (r *Reflector) AddGoComments(base, path string, opts ...CommentOption) error {
 	if r.CommentMap == nil {
 		r.CommentMap = make(map[string]string)
