@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	gopath "path"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"go/ast"
@@ -123,4 +124,23 @@ func (r *Reflector) extractGoComments(base, path string, commentMap map[string]s
 	}
 
 	return nil
+}
+
+func (r *Reflector) lookupComment(t reflect.Type, name string) string {
+	if r.LookupComment != nil {
+		if comment := r.LookupComment(t, name); comment != "" {
+			return comment
+		}
+	}
+
+	if r.CommentMap == nil {
+		return ""
+	}
+
+	n := fullyQualifiedTypeName(t)
+	if name != "" {
+		n = n + "." + name
+	}
+
+	return r.CommentMap[n]
 }
