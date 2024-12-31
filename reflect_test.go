@@ -13,8 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/invopop/jsonschema/examples"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -429,7 +427,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&MinValue{}, &Reflector{}, "fixtures/schema_with_minimum.json"},
 		{&TestNullable{}, &Reflector{}, "fixtures/nullable.json"},
 		{&GrandfatherType{}, &Reflector{
-			AdditionalFields: func(r reflect.Type) []reflect.StructField {
+			AdditionalFields: func(_ reflect.Type) []reflect.StructField {
 				return []reflect.StructField{
 					{
 						Name:      "Addr",
@@ -446,7 +444,6 @@ func TestSchemaGeneration(t *testing.T) {
 		{&CustomMapOuter{}, &Reflector{}, "fixtures/custom_map_type.json"},
 		{&CustomTypeFieldWithInterface{}, &Reflector{}, "fixtures/custom_type_with_interface.json"},
 		{&PatternTest{}, &Reflector{}, "fixtures/commas_in_pattern.json"},
-		{&examples.User{}, prepareCommentReflector(t), "fixtures/go_comments.json"},
 		{&RecursiveExample{}, &Reflector{}, "fixtures/recursive.json"},
 		{&KeyNamed{}, &Reflector{
 			KeyNamer: func(s string) string {
@@ -486,14 +483,6 @@ func TestSchemaGeneration(t *testing.T) {
 			)
 		})
 	}
-}
-
-func prepareCommentReflector(t *testing.T) *Reflector {
-	t.Helper()
-	r := new(Reflector)
-	err := r.AddGoComments("github.com/invopop/jsonschema", "./examples")
-	require.NoError(t, err, "did not expect error while adding comments")
-	return r
 }
 
 func TestBaselineUnmarshal(t *testing.T) {

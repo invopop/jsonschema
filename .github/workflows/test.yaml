@@ -1,19 +1,18 @@
 name: Test Go
-on: [push, pull_request]
+on: [push]
 jobs:
-  lint-test-build:
-    name: Lint, Test
+  test:
+    name: Test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Go
-        uses: actions/setup-go@v1
-        with:
-          go-version: "1.18"
-        id: go
-
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: "go.mod"
 
       - name: Install Dependencies
         env:
@@ -21,4 +20,9 @@ jobs:
         run: go mod download
 
       - name: Test
-        run: go test -tags unit -race ./...
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
