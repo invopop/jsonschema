@@ -1,5 +1,5 @@
 name: Test Go
-on: [push, pull_request]
+on: [push]
 jobs:
   test:
     name: Test

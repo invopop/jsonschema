@@ -1098,7 +1098,7 @@ func (t *Schema) MarshalJSON() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if t.Extras == nil || len(t.Extras) == 0 {
+	if len(t.Extras) == 0 {
 		return b, nil
 	}
 	m, err := json.Marshal(t.Extras)

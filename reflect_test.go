@@ -429,7 +429,7 @@ func TestSchemaGeneration(t *testing.T) {
 		{&MinValue{}, &Reflector{}, "fixtures/schema_with_minimum.json"},
 		{&TestNullable{}, &Reflector{}, "fixtures/nullable.json"},
 		{&GrandfatherType{}, &Reflector{
-			AdditionalFields: func(r reflect.Type) []reflect.StructField {
+			AdditionalFields: func(_ reflect.Type) []reflect.StructField {
 				return []reflect.StructField{
 					{
 						Name:      "Addr",
