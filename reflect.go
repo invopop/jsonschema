@@ -143,6 +143,16 @@ type Reflector struct {
 	// AdditionalFields allows adding structfields for a given type
 	AdditionalFields func(reflect.Type) []reflect.StructField
 
+	// LookupComment allows customizing comment lookup. Given a reflect.Type and optionally
+	// a field name, it should return the comment string associated with this type or field.
+	//
+	// If the field name is empty, it should return the type's comment; otherwise, the field's
+	// comment should be returned. If no comment is found, an empty string should be returned.
+	//
+	// When set, this function is called before the below CommentMap lookup mechanism. However,
+	// if it returns an empty string, the CommentMap is still consulted.
+	LookupComment func(reflect.Type, string) string
+
 	// CommentMap is a dictionary of fully qualified go types and fields to comment
 	// strings that will be used if a description has not already been provided in
 	// the tags. Types and fields are added to the package path using "." as a
@@ -156,7 +166,7 @@ type Reflector struct {
 	//
 	//   map[string]string{"github.com/invopop/jsonschema.Reflector.DoNotReference": "Do not reference definitions."}
 	//
-	// See also: AddGoComments
+	// See also: AddGoComments, LookupComment
 	CommentMap map[string]string
 }
 
@@ -556,19 +566,6 @@ func appendUniqueString(base []string, value string) []string {
 		}
 	}
 	return append(base, value)
-}
-
-func (r *Reflector) lookupComment(t reflect.Type, name string) string {
-	if r.CommentMap == nil {
-		return ""
-	}
-
-	n := fullyQualifiedTypeName(t)
-	if name != "" {
-		n = n + "." + name
-	}
-
-	return r.CommentMap[n]
 }
 
 // addDefinition will append the provided schema. If needed, an ID and anchor will also be added.
