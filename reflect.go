@@ -9,6 +9,7 @@ package jsonschema
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/url"
 	"reflect"
@@ -305,8 +306,8 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	// It will unmarshal either.
 	if t.Implements(protoEnumType) {
 		st.OneOf = []*Schema{
-			{Type: "string"},
-			{Type: "integer"},
+			{Type: []string{"string"}},
+			{Type: []string{"integer"}},
 		}
 		return st
 	}
@@ -316,7 +317,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	// TODO email RFC section 7.3.2, hostname RFC section 7.3.3, uriref RFC section 7.3.7
 	if t == ipType {
 		// TODO differentiate ipv4 and ipv6 RFC section 7.3.4, 7.3.5
-		st.Type = "string"
+		st.Type = []string{"string"}
 		st.Format = "ipv4"
 		return st
 	}
@@ -336,16 +337,24 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		st.Type = "integer"
+		if len(st.Type) == 0 {
+			st.Type = []string{"integer"}
+		}
 
 	case reflect.Float32, reflect.Float64:
-		st.Type = "number"
+		if len(st.Type) == 0 {
+			st.Type = []string{"number"}
+		}
 
 	case reflect.Bool:
-		st.Type = "boolean"
+		if len(st.Type) == 0 {
+			st.Type = []string{"boolean"}
+		}
 
 	case reflect.String:
-		st.Type = "string"
+		if len(st.Type) == 0 {
+			st.Type = []string{"string"}
+		}
 
 	default:
 		panic("unsupported type " + t.String())
@@ -409,20 +418,23 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 		st.MinItems = &l
 		st.MaxItems = &l
 	}
-	if t.Kind() == reflect.Slice && t.Elem() == byteSliceType.Elem() {
-		st.Type = "string"
-		// NOTE: ContentMediaType is not set here
-		st.ContentEncoding = "base64"
-	} else {
-		st.Type = "array"
-		st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem())
+	if len(st.Type) == 0 {
+		if t.Kind() == reflect.Slice && t.Elem() == byteSliceType.Elem() {
+			st.Type = []string{"string"}
+			// NOTE: ContentMediaType is not set here
+			st.ContentEncoding = "base64"
+		} else {
+			st.Type = []string{"array"}
+			st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem())
+		}
 	}
 }
 
 func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Schema) {
 	r.addDefinition(definitions, t, st)
-
-	st.Type = "object"
+	if len(st.Type) == 0 {
+		st.Type = []string{"object"}
+	}
 	if st.Description == "" {
 		st.Description = r.lookupComment(t, "")
 	}
@@ -445,17 +457,17 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 	// Handle special types
 	switch t {
 	case timeType: // date-time RFC section 7.3.1
-		s.Type = "string"
+		s.Type = []string{"string"}
 		s.Format = "date-time"
 		return
 	case uriType: // uri RFC section 7.3.6
-		s.Type = "string"
+		s.Type = []string{"string"}
 		s.Format = "uri"
 		return
 	}
 
 	r.addDefinition(definitions, t, s)
-	s.Type = "object"
+	s.Type = []string{"object"}
 	s.Properties = NewProperties()
 	s.Description = r.lookupComment(t, "")
 	if r.AssignAnchor {
@@ -514,27 +526,30 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 
 		// If a JSONSchemaAlias(prop string) method is defined, attempt to use
 		// the provided object's type instead of the field's type.
-		var property *Schema
+		property := new(Schema)
+		property.structKeywordsFromTags(f, st, name)
+		var reflectedProperty *Schema
 		if alias := customPropertyMethod(name); alias != nil {
 			property = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias))
+			reflectedProperty = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias))
 		} else {
-			property = r.refOrReflectTypeToSchema(definitions, f.Type)
+			reflectedProperty = r.refOrReflectTypeToSchema(definitions, f.Type)
 		}
 
-		property.structKeywordsFromTags(f, st, name)
 		if property.Description == "" {
 			property.Description = r.lookupComment(t, f.Name)
 		}
 		if getFieldDocString != nil {
 			property.Description = getFieldDocString(f.Name)
 		}
+		mergeSchemas(property, reflectedProperty)
 
 		if nullable {
 			property = &Schema{
 				OneOf: []*Schema{
 					property,
 					{
-						Type: "null",
+						Type: []string{"null"},
 					},
 				},
 			}
@@ -557,6 +572,28 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 			}
 		}
 	}
+}
+
+func mergeSchemas(dst, src *Schema) {
+	if len(dst.Type) == 0 {
+		dst.Type = src.Type
+	}
+	if dst.Format == "" {
+		dst.Format = src.Format
+	}
+	if dst.Pattern == "" {
+		dst.Pattern = src.Pattern
+	}
+	if dst.Items == nil {
+		dst.Items = src.Items
+	}
+	if dst.Properties == nil {
+		dst.Properties = src.Properties
+	}
+	if dst.AdditionalProperties == nil {
+		dst.AdditionalProperties = src.AdditionalProperties
+	}
+	// TODO: Merge other fields as needed
 }
 
 func appendUniqueString(base []string, value string) []string {
@@ -610,18 +647,19 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
 	tags = t.genericKeywords(tags, parent, propertyName)
-
-	switch t.Type {
-	case "string":
-		t.stringKeywords(tags)
-	case "number":
-		t.numericalKeywords(tags)
-	case "integer":
-		t.numericalKeywords(tags)
-	case "array":
-		t.arrayKeywords(tags)
-	case "boolean":
-		t.booleanKeywords(tags)
+	for _, typ := range t.Type {
+		switch typ {
+		case "string":
+			t.stringKeywords(tags)
+		case "number":
+			t.numericalKeywords(tags)
+		case "integer":
+			t.numericalKeywords(tags)
+		case "array":
+			t.arrayKeywords(tags)
+		case "boolean":
+			t.booleanKeywords(tags)
+		}
 	}
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
 	t.extraKeywords(extras)
@@ -640,7 +678,9 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 			case "description":
 				t.Description = val
 			case "type":
-				t.Type = val
+				t.Type = append(t.Type, strings.Split(val, ";")...)
+			case "types":
+				t.Type = append(t.Type, strings.Split(val, ";")...)
 			case "anchor":
 				t.Anchor = val
 			case "oneof_required":
@@ -692,11 +732,11 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 				if t.OneOf == nil {
 					t.OneOf = make([]*Schema, 0, 1)
 				}
-				t.Type = ""
+				t.Type = []string{""}
 				types := strings.Split(nameValue[1], ";")
 				for _, ty := range types {
 					t.OneOf = append(t.OneOf, &Schema{
-						Type: ty,
+						Type: []string{ty},
 					})
 				}
 			case "anyof_ref":
@@ -718,11 +758,11 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 				if t.AnyOf == nil {
 					t.AnyOf = make([]*Schema, 0, 1)
 				}
-				t.Type = ""
+				t.Type = []string{""}
 				types := strings.Split(nameValue[1], ";")
 				for _, ty := range types {
 					t.AnyOf = append(t.AnyOf, &Schema{
-						Type: ty,
+						Type: []string{ty},
 					})
 				}
 			default:
@@ -869,7 +909,7 @@ func (t *Schema) arrayKeywords(tags []string) {
 		return
 	}
 
-	switch t.Items.Type {
+	switch t.Items.Type[0] {
 	case "string":
 		t.Items.stringKeywords(unprocessed)
 	case "number":
@@ -1069,13 +1109,41 @@ func (t *Schema) UnmarshalJSON(data []byte) error {
 		*t = *FalseSchema
 		return nil
 	}
+
 	type SchemaAlt Schema
 	aux := &struct {
+		Type interface{} `json:"type,omitempty"`
 		*SchemaAlt
 	}{
 		SchemaAlt: (*SchemaAlt)(t),
 	}
-	return json.Unmarshal(data, aux)
+
+	if err := json.Unmarshal(data, aux); err != nil {
+		return err
+	}
+
+	// Handle the 'type' field
+	switch v := aux.Type.(type) {
+	case string:
+		t.Type = []string{v}
+	case []interface{}:
+		var types []string
+		for _, item := range v {
+			if s, ok := item.(string); ok {
+				types = append(types, s)
+			} else {
+				return fmt.Errorf("invalid type value: must be a string")
+			}
+		}
+		t.Type = types
+	case nil:
+		// Type is omitted or null, set to nil
+		t.Type = nil
+	default:
+		return fmt.Errorf("invalid type value")
+	}
+
+	return nil
 }
 
 // MarshalJSON is used to serialize a schema object or boolean.
@@ -1090,8 +1158,25 @@ func (t *Schema) MarshalJSON() ([]byte, error) {
 		// Don't bother returning empty schemas
 		return []byte("true"), nil
 	}
+	// Prepare the Type field for marshalling
+	var typeField interface{}
+	switch len(t.Type) {
+	case 0:
+		typeField = nil // Omit the "type" field
+	case 1:
+		typeField = t.Type[0] // Use a single string
+	default:
+		typeField = t.Type // Use the slice as-is
+	}
 	type SchemaAlt Schema
-	b, err := json.Marshal((*SchemaAlt)(t))
+	tempSchema := &struct {
+		*SchemaAlt
+		Type interface{} `json:"type,omitempty"`
+	}{
+		SchemaAlt: (*SchemaAlt)(t),
+		Type:      typeField,
+	}
+	b, err := json.Marshal(tempSchema)
 	if err != nil {
 		return nil, err
 	}
