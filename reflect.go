@@ -122,6 +122,9 @@ type Reflector struct {
 	// switching to just allowing additional properties instead.
 	IgnoredTypes []any
 
+	// Ignore specific struct field, enable dynamic generate different schemas from on struct.
+	Ignore func(reflect.StructField) bool
+
 	// Lookup allows a function to be defined that will provide a custom mapping of
 	// types to Schema IDs. This allows existing schema documents to be referenced
 	// by their ID instead of being embedded into the current schema definitions.
@@ -502,6 +505,10 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 	}
 
 	handleField := func(f reflect.StructField) {
+		if !f.Anonymous && r.Ignore != nil && r.Ignore(f) {
+			return
+		}
+
 		name, shouldEmbed, required, nullable := r.reflectFieldName(f)
 		// if anonymous and exported type should be processed recursively
 		// current type should inherit properties of anonymous one
@@ -1078,6 +1085,11 @@ func (t *Schema) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, aux)
 }
 
+// If true, marshal json with linebreak and indent.
+var MarshalWithIndent = false
+var MarshalPrefix = ""
+var MarshalIndent = "\t"
+
 // MarshalJSON is used to serialize a schema object or boolean.
 func (t *Schema) MarshalJSON() ([]byte, error) {
 	if t.boolean != nil {
@@ -1091,14 +1103,25 @@ func (t *Schema) MarshalJSON() ([]byte, error) {
 		return []byte("true"), nil
 	}
 	type SchemaAlt Schema
-	b, err := json.Marshal((*SchemaAlt)(t))
+	var b []byte
+	var err error
+	if MarshalWithIndent {
+		b, err = json.MarshalIndent((*SchemaAlt)(t), MarshalPrefix, MarshalIndent)
+	} else {
+		b, err = json.Marshal((*SchemaAlt)(t))
+	}
 	if err != nil {
 		return nil, err
 	}
 	if len(t.Extras) == 0 {
 		return b, nil
 	}
-	m, err := json.Marshal(t.Extras)
+	var m []byte
+	if MarshalWithIndent {
+		m, err = json.MarshalIndent(t.Extras, MarshalPrefix, MarshalIndent)
+	} else {
+		m, err = json.Marshal(t.Extras)
+	}
 	if err != nil {
 		return nil, err
 	}
