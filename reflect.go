@@ -741,12 +741,15 @@ func (t *Schema) booleanKeywords(tags []string) {
 			continue
 		}
 		name, val := nameValue[0], nameValue[1]
-		if name == "default" {
-			if val == "true" {
-				t.Default = true
-			} else if val == "false" {
-				t.Default = false
-			}
+		b, err := strconv.ParseBool(val)
+		if err != nil {
+			continue
+		}
+		switch name {
+		case "default":
+			t.Default = b
+		case "const":
+			t.Const = b
 		}
 	}
 }
@@ -774,6 +777,8 @@ func (t *Schema) stringKeywords(tags []string) {
 				t.WriteOnly = i
 			case "default":
 				t.Default = val
+			case "const":
+				t.Const = val
 			case "example":
 				t.Examples = append(t.Examples, val)
 			case "enum":
@@ -803,6 +808,10 @@ func (t *Schema) numericalKeywords(tags []string) {
 			case "default":
 				if num, ok := toJSONNumber(val); ok {
 					t.Default = num
+				}
+			case "const":
+				if num, ok := toJSONNumber(val); ok {
+					t.Const = num
 				}
 			case "example":
 				if num, ok := toJSONNumber(val); ok {
@@ -836,6 +845,7 @@ func (t *Schema) numericalKeywords(tags []string) {
 // read struct tags for array type keywords
 func (t *Schema) arrayKeywords(tags []string) {
 	var defaultValues []any
+	var constValues []any
 
 	unprocessed := make([]string, 0, len(tags))
 	for _, tag := range tags {
@@ -851,6 +861,8 @@ func (t *Schema) arrayKeywords(tags []string) {
 				t.UniqueItems = true
 			case "default":
 				defaultValues = append(defaultValues, val)
+			case "const":
+				constValues = append(constValues, val)
 			case "format":
 				t.Items.Format = val
 			case "pattern":
@@ -862,6 +874,9 @@ func (t *Schema) arrayKeywords(tags []string) {
 	}
 	if len(defaultValues) > 0 {
 		t.Default = defaultValues
+	}
+	if len(constValues) > 0 {
+		t.Const = constValues
 	}
 
 	if len(unprocessed) == 0 {
