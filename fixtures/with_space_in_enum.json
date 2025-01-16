@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/with-space-in-enum",
+  "$ref": "#/$defs/WithSpaceInEnum",
+  "$defs": {
+    "WithSpaceInEnum": {
+      "properties": {
+        "family": {
+          "type": "string",
+          "enum": [
+            "kid",
+            "mother",
+            "father"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    }
+  }
+}
