@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/multi-type-test",
+  "$ref": "#/$defs/MultiTypeTest",
+  "$defs": {
+    "MultiTypeTest": {
+      "properties": {
+        "Value": {
+          "type": [
+            "number",
+            "object"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "Value"
+      ]
+    }
+  }
+}
