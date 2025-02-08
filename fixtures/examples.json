@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/examples",
+  "$ref": "#/$defs/Examples",
+  "$defs": {
+    "Examples": {
+      "properties": {
+        "string_example": {
+          "type": "string",
+          "examples": [
+            "hi",
+            "test"
+          ]
+        },
+        "int_example": {
+          "type": "integer",
+          "examples": [
+            1,
+            10,
+            42
+          ]
+        },
+        "float_example": {
+          "type": "number",
+          "examples": [
+            2,
+            3.14,
+            13.37
+          ]
+        },
+        "int_array_example": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array",
+          "examples": [
+            [
+              1,
+              2
+            ],
+            [
+              3,
+              4
+            ],
+            [
+              5,
+              6
+            ]
+          ]
+        },
+        "map_example": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object",
+          "examples": [
+            {
+              "key": "value"
+            }
+          ]
+        },
+        "map_array_example": {
+          "items": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "type": "array",
+          "examples": [
+            [
+              {
+               "a": "b"
+              },
+              {
+                "c": "d"
+              }
+            ],
+            [
+              {
+                "hello": "test"
+              }
+            ]
+          ]
+        },
+        "any_example": {
+          "default": true,
+          "examples": [
+            1234,
+            "string_example",
+            {
+              "test": 42
+            },
+            [
+              1,
+              "str",
+              true
+            ]
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "string_example",
+        "int_example",
+        "float_example",
+        "int_array_example",
+        "map_example",
+        "map_array_example",
+        "any_example"
+      ]
+    }
+  }
+}
