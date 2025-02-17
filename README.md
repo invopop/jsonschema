@@ -1,5 +1,103 @@
 # Go JSON Schema Reflection
 
+## My Fork Changes:
+* Commit `c7e4988` support manual require:
+```go
+package main
+
+import (
+	"fmt"
+	"reflect"
+
+	"github.com/funte/jsonschema"
+)
+
+type Base struct {
+	BA int    `json:"ba" jsonschema:"required"`
+	BB string `json:"bb" jsonschema:"required"`
+}
+
+type Child struct {
+	*Base
+
+	CA bool `json:"ca" jsonschema:"required"`
+}
+
+func main() {
+	// Enable pretty marshal.
+	jsonschema.MarshalWithIndent = true
+	jsonschema.MarshalIndent = "  "
+
+	r := jsonschema.Reflector{}
+	r.ExpandedStruct = true
+	r.RequiredFromJSONSchemaTags = true
+
+	// Test Reflector.Require.
+	r.Require = func(f reflect.StructField) bool {
+		return f.Name == "CA"
+	}
+	if s, err := r.Reflect(Child{}).MarshalJSON(); err != nil {
+		fmt.Println("failed to marshal Child json schema, err=", err)
+	} else {
+		// Output should only quired "ca".
+		fmt.Println(string(s))
+	}
+}
+
+
+```
+* Commit `bfefafd` support manual ignore:
+```go
+package main
+
+import (
+	"fmt"
+	"reflect"
+
+	"github.com/funte/jsonschema"
+)
+
+type Base struct {
+	BA int    `json:"ba" jsonschema:"required"`
+	BB string `json:"bb" jsonschema:"required"`
+}
+
+type Child struct {
+	*Base
+
+	CA bool `json:"ca" jsonschema:"required"`
+}
+
+func main() {
+	// Enable pretty marshal.
+	jsonschema.MarshalWithIndent = true
+	jsonschema.MarshalIndent = "  "
+
+	r := jsonschema.Reflector{}
+	r.ExpandedStruct = true
+	r.RequiredFromJSONSchemaTags = true
+
+	// Test Reflector.Ignore.
+	r.Ignore = func(f reflect.StructField) bool {
+		return f.Name != "CA"
+	}
+	if s, err := r.Reflect(Child{}).MarshalJSON(); err != nil {
+		fmt.Println("failed to marshal Child json schema, err=", err)
+	} else {
+		// Output should only has field "ca".
+		fmt.Println(string(s))
+	}
+}
+
+```
+* Commit `7f1f647` support pretty marshal:
+```go
+jsonschema.MarshalWithIndent = true
+jsonschema.MarshalIndent = "  "
+```
+
+## introduction
+
 [![Lint](https://github.com/invopop/jsonschema/actions/workflows/lint.yaml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/lint.yaml)
 [![Test Go](https://github.com/invopop/jsonschema/actions/workflows/test.yaml/badge.svg)](https://github.com/invopop/jsonschema/actions/workflows/test.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/invopop/jsonschema)](https://goreportcard.com/report/github.com/invopop/jsonschema)

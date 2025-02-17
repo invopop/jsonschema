@@ -106,6 +106,9 @@ type Reflector struct {
 	// default of requiring any key *not* tagged with `json:,omitempty`.
 	RequiredFromJSONSchemaTags bool
 
+	// Manual require specific struct required.
+	Require func(reflect.StructField) bool
+
 	// Do not reference definitions. This will remove the top-level $defs map and
 	// instead cause the entire structure of types to be output in one tree. The
 	// list of type definitions (`$defs`) will not be included.
@@ -121,6 +124,9 @@ type Reflector struct {
 	// IgnoredTypes defines a slice of types that should be ignored in the schema,
 	// switching to just allowing additional properties instead.
 	IgnoredTypes []any
+
+	// Ignore specific struct field, enable dynamic generate different schemas from on struct.
+	Ignore func(reflect.StructField) bool
 
 	// Lookup allows a function to be defined that will provide a custom mapping of
 	// types to Schema IDs. This allows existing schema documents to be referenced
@@ -502,6 +508,10 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 	}
 
 	handleField := func(f reflect.StructField) {
+		if !f.Anonymous && r.Ignore != nil && r.Ignore(f) {
+			return
+		}
+
 		name, shouldEmbed, required, nullable := r.reflectFieldName(f)
 		// if anonymous and exported type should be processed recursively
 		// current type should inherit properties of anonymous one
@@ -1021,10 +1031,15 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 	}
 
 	var required bool
-	if !r.RequiredFromJSONSchemaTags {
-		requiredFromJSONTags(jsonTags, &required)
+	if r.Require != nil {
+		// Manual require.
+		required = r.Require(f)
+	} else {
+		if !r.RequiredFromJSONSchemaTags {
+			requiredFromJSONTags(jsonTags, &required)
+		}
+		requiredFromJSONSchemaTags(schemaTags, &required)
 	}
-	requiredFromJSONSchemaTags(schemaTags, &required)
 
 	nullable := nullableFromJSONSchemaTags(schemaTags)
 
@@ -1078,6 +1093,11 @@ func (t *Schema) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, aux)
 }
 
+// If true, marshal json with linebreak and indent.
+var MarshalWithIndent = false
+var MarshalPrefix = ""
+var MarshalIndent = "\t"
+
 // MarshalJSON is used to serialize a schema object or boolean.
 func (t *Schema) MarshalJSON() ([]byte, error) {
 	if t.boolean != nil {
@@ -1091,14 +1111,25 @@ func (t *Schema) MarshalJSON() ([]byte, error) {
 		return []byte("true"), nil
 	}
 	type SchemaAlt Schema
-	b, err := json.Marshal((*SchemaAlt)(t))
+	var b []byte
+	var err error
+	if MarshalWithIndent {
+		b, err = json.MarshalIndent((*SchemaAlt)(t), MarshalPrefix, MarshalIndent)
+	} else {
+		b, err = json.Marshal((*SchemaAlt)(t))
+	}
 	if err != nil {
 		return nil, err
 	}
 	if len(t.Extras) == 0 {
 		return b, nil
 	}
-	m, err := json.Marshal(t.Extras)
+	var m []byte
+	if MarshalWithIndent {
+		m, err = json.MarshalIndent(t.Extras, MarshalPrefix, MarshalIndent)
+	} else {
+		m, err = json.Marshal(t.Extras)
+	}
 	if err != nil {
 		return nil, err
 	}
