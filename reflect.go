@@ -140,6 +140,12 @@ type Reflector struct {
 	// If a json tag is present, KeyNamer will receive the tag's name as an argument, not the original key name.
 	KeyNamer func(string) string
 
+	// KeyNamerWithOriginalFieldName allows customizing of key names.
+	// This is like KeyNamer, except it passes in the name it potentially extracted from the json tag as well as
+	// the original field's name. Has no effect if KeyNamer set.
+	// First argument is the original go field name, second is the one extracted from the json tag
+	KeyNamerWithOriginalFieldName func(string, string) string
+
 	// AdditionalFields allows adding structfields for a given type
 	AdditionalFields func(reflect.Type) []reflect.StructField
 
@@ -1055,6 +1061,8 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 		name = ""
 	} else if r.KeyNamer != nil {
 		name = r.KeyNamer(name)
+	} else if r.KeyNamerWithOriginalFieldName != nil {
+		name = r.KeyNamerWithOriginalFieldName(f.Name, jsonTags[0])
 	}
 
 	return name, false, required, nullable
