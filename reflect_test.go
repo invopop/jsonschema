@@ -312,6 +312,12 @@ type KeyNamed struct {
 	RenamedByComputation int `jsonschema_description:"Description was preserved"`
 }
 
+type KeyNamerWithOriginalFieldNamed struct {
+	ThisWasLeftAsIs string
+	ComesFromJSON   bool   `json:"coming_from_json"`
+	A               string `json:"bbb"`
+}
+
 type SchemaExtendTestBase struct {
 	FirstName  string `json:"FirstName"`
 	LastName   string `json:"LastName"`
@@ -468,6 +474,24 @@ func TestSchemaGeneration(t *testing.T) {
 				return "unknown case"
 			},
 		}, "fixtures/keynamed.json"},
+		{&KeyNamerWithOriginalFieldNamed{}, &Reflector{
+			KeyNamerWithOriginalFieldName: func(fieldName string, tagName string) string {
+				key := fieldName + ":" + tagName
+				switch key {
+				case "ThisWasLeftAsIs:":
+					return fieldName
+				case "ComesFromJSON:coming_from_json":
+					return tagName
+				case "A:bbb":
+					b := strings.Builder{}
+					for i := 0; i < len(tagName); i++ {
+						b.WriteString(fieldName)
+					}
+					return b.String()
+				}
+				return "unknown case"
+			},
+		}, "fixtures/keynamed_with_original_names.json"},
 		{MapType{}, &Reflector{}, "fixtures/map_type.json"},
 		{ArrayType{}, &Reflector{}, "fixtures/array_type.json"},
 		{SchemaExtendTest{}, &Reflector{}, "fixtures/custom_type_extend.json"},

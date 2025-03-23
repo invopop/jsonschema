@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/key-namer-with-original-field-named",
+  "$ref": "#/$defs/KeyNamerWithOriginalFieldNamed",
+  "$defs": {
+    "KeyNamerWithOriginalFieldNamed": {
+      "properties": {
+        "ThisWasLeftAsIs": {
+          "type": "string"
+        },
+        "coming_from_json": {
+          "type": "boolean"
+        },
+        "AAA": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "ThisWasLeftAsIs",
+        "coming_from_json",
+        "AAA"
+      ]
+    }
+  }
+}
