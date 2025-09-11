@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/stoewer/go-strcase"
 )
 
 // customSchemaImpl is used to detect if the type provides it's own
@@ -87,7 +89,7 @@ type Reflector struct {
 
 	// AssignAnchor when true will use the original struct's name as an anchor inside
 	// every definition, including the root schema. These can be useful for having a
-	// reference to the original struct's name in CamelCase instead of the snake-case used
+	// reference to the original struct's name in CamelCase instead of the kebab-case used
 	// by default for URI compatibility.
 	//
 	// Anchors do not appear to be widely used out in the wild, so at this time the
@@ -209,7 +211,7 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 			}
 		}
 		if baseSchemaID != EmptyID {
-			s.ID = baseSchemaID.Add(ToSnakeCase(name))
+			s.ID = baseSchemaID.Add(strcase.KebabCase(name))
 		}
 	}
 
