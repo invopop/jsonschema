@@ -135,9 +135,16 @@ type Reflector struct {
 	// provided by the reflect package.
 	Namer func(reflect.Type) string
 
+	// KeyNamerWithAncestry allows customizing of key names based on the field ancestry.
+	// This allows to access the field's struct tags as well as the parent and grandparent types.
+	// If a json tag is present, KeyNamerWithAncestry will receive the tag's name as an argument, not the original key name.
+	// This takes precedence over KeyNamer if both are set.
+	KeyNamerWithAncestry func(FieldAncestry, string) string
+
 	// KeyNamer allows customizing of key names.
 	// The default is to use the key's name as is, or the json tag if present.
 	// If a json tag is present, KeyNamer will receive the tag's name as an argument, not the original key name.
+	// This is ignored if KeyNamerWithAncestry is set.
 	KeyNamer func(string) string
 
 	// AdditionalFields allows adding structfields for a given type
@@ -186,7 +193,7 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	s := new(Schema)
 	definitions := Definitions{}
 	s.Definitions = definitions
-	bs := r.reflectTypeToSchemaWithID(definitions, t)
+	bs := r.reflectTypeToSchemaWithID(definitions, newFieldAncestry(t), t)
 	if r.ExpandedStruct {
 		if def := definitions[name]; def != nil {
 			*s = *def
@@ -248,7 +255,7 @@ func (r *Reflector) SetBaseSchemaID(id string) {
 	r.BaseSchemaID = ID(id)
 }
 
-func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
+func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, a FieldAncestry, t reflect.Type) *Schema {
 	id := r.lookupID(t)
 	if id != EmptyID {
 		return &Schema{
@@ -261,11 +268,11 @@ func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.
 		return def
 	}
 
-	return r.reflectTypeToSchemaWithID(definitions, t)
+	return r.reflectTypeToSchemaWithID(definitions, a, t)
 }
 
-func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) *Schema {
-	s := r.reflectTypeToSchema(defs, t)
+func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, a FieldAncestry, t reflect.Type) *Schema {
+	s := r.reflectTypeToSchema(defs, a, t)
 	if s != nil {
 		if r.Lookup != nil {
 			id := r.Lookup(t)
@@ -277,10 +284,10 @@ func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) 
 	return s
 }
 
-func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
+func (r *Reflector) reflectTypeToSchema(definitions Definitions, a FieldAncestry, t reflect.Type) *Schema {
 	// only try to reflect non-pointers
 	if t.Kind() == reflect.Ptr {
-		return r.refOrReflectTypeToSchema(definitions, t.Elem())
+		return r.refOrReflectTypeToSchema(definitions, a, t.Elem())
 	}
 
 	// Check if the there is an alias method that provides an object
@@ -289,7 +296,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		v := reflect.New(t)
 		o := v.Interface().(aliasSchemaImpl)
 		t = reflect.TypeOf(o.JSONSchemaAlias())
-		return r.refOrReflectTypeToSchema(definitions, t)
+		return r.refOrReflectTypeToSchema(definitions, a, t)
 	}
 
 	// Do any pre-definitions exist?
@@ -327,13 +334,13 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 
 	switch t.Kind() {
 	case reflect.Struct:
-		r.reflectStruct(definitions, t, st)
+		r.reflectStruct(definitions, a, t, st)
 
 	case reflect.Slice, reflect.Array:
-		r.reflectSliceOrArray(definitions, t, st)
+		r.reflectSliceOrArray(definitions, a, t, st)
 
 	case reflect.Map:
-		r.reflectMap(definitions, t, st)
+		r.reflectMap(definitions, a, t, st)
 
 	case reflect.Interface:
 		// empty
@@ -397,7 +404,7 @@ func (r *Reflector) reflectSchemaExtend(definitions Definitions, t reflect.Type,
 	return s
 }
 
-func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type, st *Schema) {
+func (r *Reflector) reflectSliceOrArray(definitions Definitions, a FieldAncestry, t reflect.Type, st *Schema) {
 	if t == rawMessageType {
 		return
 	}
@@ -419,11 +426,11 @@ func (r *Reflector) reflectSliceOrArray(definitions Definitions, t reflect.Type,
 		st.ContentEncoding = "base64"
 	} else {
 		st.Type = "array"
-		st.Items = r.refOrReflectTypeToSchema(definitions, t.Elem())
+		st.Items = r.refOrReflectTypeToSchema(definitions, a, t.Elem())
 	}
 }
 
-func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Schema) {
+func (r *Reflector) reflectMap(definitions Definitions, a FieldAncestry, t reflect.Type, st *Schema) {
 	r.addDefinition(definitions, t, st)
 
 	st.Type = "object"
@@ -431,21 +438,23 @@ func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Sche
 		st.Description = r.lookupComment(t, "")
 	}
 
+	a = a.addChild(t, reflect.StructField{})
+
 	switch t.Key().Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		st.PatternProperties = map[string]*Schema{
-			"^[0-9]+$": r.refOrReflectTypeToSchema(definitions, t.Elem()),
+			"^[0-9]+$": r.refOrReflectTypeToSchema(definitions, a, t.Elem()),
 		}
 		st.AdditionalProperties = FalseSchema
 		return
 	}
 	if t.Elem().Kind() != reflect.Interface {
-		st.AdditionalProperties = r.refOrReflectTypeToSchema(definitions, t.Elem())
+		st.AdditionalProperties = r.refOrReflectTypeToSchema(definitions, a, t.Elem())
 	}
 }
 
 // Reflects a struct to a JSON Schema type.
-func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Schema) {
+func (r *Reflector) reflectStruct(definitions Definitions, a FieldAncestry, t reflect.Type, s *Schema) {
 	// Handle special types
 	switch t {
 	case timeType: // date-time RFC section 7.3.1
@@ -477,11 +486,11 @@ func (r *Reflector) reflectStruct(definitions Definitions, t reflect.Type, s *Sc
 		}
 	}
 	if !ignored {
-		r.reflectStructFields(s, definitions, t)
+		r.reflectStructFields(s, definitions, a, t)
 	}
 }
 
-func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t reflect.Type) {
+func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, a FieldAncestry, t reflect.Type) {
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
 	}
@@ -505,13 +514,13 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 		customPropertyMethod = o.JSONSchemaProperty
 	}
 
-	handleField := func(f reflect.StructField) {
-		name, shouldEmbed, required, nullable := r.reflectFieldName(f)
+	handleField := func(a FieldAncestry, f reflect.StructField) {
+		name, shouldEmbed, required, nullable := r.reflectFieldName(a, f)
 		// if anonymous and exported type should be processed recursively
 		// current type should inherit properties of anonymous one
 		if name == "" {
 			if shouldEmbed {
-				r.reflectStructFields(st, definitions, f.Type)
+				r.reflectStructFields(st, definitions, a, f.Type)
 			}
 			return
 		}
@@ -520,9 +529,9 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 		// the provided object's type instead of the field's type.
 		var property *Schema
 		if alias := customPropertyMethod(name); alias != nil {
-			property = r.refOrReflectTypeToSchema(definitions, reflect.TypeOf(alias))
+			property = r.refOrReflectTypeToSchema(definitions, a, reflect.TypeOf(alias))
 		} else {
-			property = r.refOrReflectTypeToSchema(definitions, f.Type)
+			property = r.refOrReflectTypeToSchema(definitions, a, f.Type)
 		}
 
 		property.structKeywordsFromTags(f, st, name)
@@ -552,12 +561,12 @@ func (r *Reflector) reflectStructFields(st *Schema, definitions Definitions, t r
 
 	for i := 0; i < t.NumField(); i++ {
 		f := t.Field(i)
-		handleField(f)
+		handleField(a.addChild(t, f), f)
 	}
 	if r.AdditionalFields != nil {
 		if af := r.AdditionalFields(t); af != nil {
 			for _, sf := range af {
-				handleField(sf)
+				handleField(a.addChild(t, sf), sf)
 			}
 		}
 	}
@@ -1037,7 +1046,7 @@ func (r *Reflector) fieldNameTag() string {
 	return "json"
 }
 
-func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool, bool) {
+func (r *Reflector) reflectFieldName(a FieldAncestry, f reflect.StructField) (string, bool, bool, bool) {
 	jsonTagString := f.Tag.Get(r.fieldNameTag())
 	jsonTags := strings.Split(jsonTagString, ",")
 
@@ -1083,11 +1092,36 @@ func (r *Reflector) reflectFieldName(f reflect.StructField) (string, bool, bool,
 	if !f.Anonymous && f.PkgPath != "" {
 		// field not anonymous and not export has no export name
 		name = ""
+	} else if r.KeyNamerWithAncestry != nil {
+		name = r.KeyNamerWithAncestry(a, name)
 	} else if r.KeyNamer != nil {
 		name = r.KeyNamer(name)
 	}
 
 	return name, false, required, nullable
+}
+
+// FieldAncestry represents the ancestry of a field within nested structs.
+// It is used to provide context when determining field names and other
+// attributes based on the full path to a field.
+type FieldAncestry struct {
+	Parent *FieldAncestry      // Parent ancestry, or nil if root
+	Type   reflect.Type        // The type containing the field
+	Field  reflect.StructField // The field itself
+}
+
+func newFieldAncestry(t reflect.Type) FieldAncestry {
+	return FieldAncestry{
+		Type: t,
+	}
+}
+
+func (fa FieldAncestry) addChild(t reflect.Type, f reflect.StructField) FieldAncestry {
+	return FieldAncestry{
+		Parent: &fa,
+		Type:   t,
+		Field:  f,
+	}
 }
 
 // UnmarshalJSON is used to parse a schema object or boolean.
