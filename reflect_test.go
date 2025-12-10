@@ -664,3 +664,25 @@ func TestJSONSchemaAlias(t *testing.T) {
 	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectB{})
 	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
 }
+
+func TestIntegerWithJSONStringTag(t *testing.T) {
+	type S struct {
+		A int `json:"a,string"`
+		B int `json:"b"`
+	}
+
+	r := &Reflector{}
+	schema := r.Reflect(&S{})
+	d := schema.Definitions["S"]
+	require.NotNil(t, d)
+	props := d.Properties
+	require.NotNil(t, props)
+
+	pa, found := props.Get("a")
+	require.True(t, found)
+	require.Equal(t, "string", pa.Type)
+
+	pb, found := props.Get("b")
+	require.True(t, found)
+	require.Equal(t, "integer", pb.Type)
+}

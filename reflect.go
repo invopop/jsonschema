@@ -623,6 +623,14 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	case "boolean":
 		t.booleanKeywords(tags)
 	}
+
+	// If the json tag has the "string" option, and the type is an integer,
+	// then we should override the type to be a string.
+	jsonTag := f.Tag.Get("json")
+	if strings.Contains(jsonTag, ",string") && t.Type == "integer" {
+		t.Type = "string"
+	}
+
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
 	t.extraKeywords(extras)
 }
