@@ -419,6 +419,18 @@ func TestSchemaGeneration(t *testing.T) {
 				return EmptyID
 			},
 		}, "fixtures/lookup_expanded.json"},
+		{LookupUser{}, &Reflector{
+			BundleLookupRefs: true,
+			Lookup: func(i reflect.Type) ID {
+				switch i {
+				case reflect.TypeOf(LookupUser{}):
+					return ID("https://example.com/schemas/lookup-user")
+				case reflect.TypeOf(LookupName{}):
+					return ID("https://example.com/schemas/lookup-name")
+				}
+				return EmptyID
+			},
+		}, "fixtures/lookup_bundled.json"},
 		{&Outer{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_inheritance.json"},
 		{&OuterNamed{}, &Reflector{ExpandedStruct: true}, "fixtures/inlining_embedded.json"},
 		{&OuterNamed{}, &Reflector{ExpandedStruct: true, AssignAnchor: true}, "fixtures/inlining_embedded_anchored.json"},

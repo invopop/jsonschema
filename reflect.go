@@ -115,6 +115,12 @@ type Reflector struct {
 	// root as opposed to a definition with a reference.
 	ExpandedStruct bool
 
+	// BundleLookupRefs, when true and Lookup is set, causes types resolved
+	// by Lookup to also be fully reflected and added to $defs with their
+	// external $id. The $ref URL is unchanged. This produces self-contained
+	// "bundled" schemas per JSON Schema 2020-12.
+	BundleLookupRefs bool
+
 	// FieldNameTag will change the tag used to get field names. json tags are used by default.
 	FieldNameTag string
 
@@ -247,6 +253,9 @@ func (r *Reflector) SetBaseSchemaID(id string) {
 func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
 	id := r.lookupID(t)
 	if id != EmptyID {
+		if r.BundleLookupRefs {
+			r.bundleLookupRef(definitions, t, id)
+		}
 		return &Schema{
 			Ref: id.String(),
 		}
@@ -258,6 +267,30 @@ func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.
 	}
 
 	return r.reflectTypeToSchemaWithID(definitions, t)
+}
+
+// bundleLookupRef reflects a lookup type into $defs so the schema is
+// self-contained. The type's external $id is set on the definition.
+func (r *Reflector) bundleLookupRef(definitions Definitions, t reflect.Type, id ID) {
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	name := r.typeName(t)
+	if _, exists := definitions[name]; exists {
+		return
+	}
+	// Add placeholder to break circular references.
+	placeholder := &Schema{}
+	definitions[name] = placeholder
+	r.reflectTypeToSchema(definitions, t)
+	// For struct/slice/map types, reflectTypeToSchema calls addDefinition
+	// which replaces the placeholder with the real schema. For other types,
+	// remove the placeholder and re-reflect cleanly.
+	if definitions[name] == placeholder {
+		delete(definitions, name)
+		definitions[name] = r.reflectTypeToSchema(definitions, t)
+	}
+	definitions[name].ID = id
 }
 
 func (r *Reflector) reflectTypeToSchemaWithID(defs Definitions, t reflect.Type) *Schema {
