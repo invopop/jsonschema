@@ -115,10 +115,15 @@ type Reflector struct {
 	// root as opposed to a definition with a reference.
 	ExpandedStruct bool
 
-	// BundleLookupRefs, when true and Lookup is set, causes types resolved
-	// by Lookup to also be fully reflected and added to $defs with their
-	// external $id. The $ref URL is unchanged. This produces self-contained
-	// "bundled" schemas per JSON Schema 2020-12.
+	// BundleLookupRefs, when true and Lookup is set, causes types
+	// referenced via Lookup to also be fully reflected and added to
+	// the root schema's $defs with their external $id. The $ref URLs
+	// are unchanged. This produces self-contained "bundled" schemas
+	// per JSON Schema 2020-12.
+	//
+	// Note: the root type reflected by ReflectFromType already receives
+	// its $id at the top level; this option affects the transitive
+	// dependencies that would otherwise only appear as external $ref URLs.
 	BundleLookupRefs bool
 
 	// FieldNameTag will change the tag used to get field names. json tags are used by default.
@@ -276,6 +281,9 @@ func (r *Reflector) bundleLookupRef(definitions Definitions, t reflect.Type, id 
 		t = t.Elem()
 	}
 	name := r.typeName(t)
+	if name == "" {
+		return
+	}
 	if _, exists := definitions[name]; exists {
 		return
 	}

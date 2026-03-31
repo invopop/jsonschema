@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/lookup-user",
+  "$defs": {
+    "LookupName": {
+      "$id": "https://example.com/schemas/lookup-name",
+      "properties": {
+        "first": {
+          "type": "string"
+        },
+        "surname": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "first",
+        "surname"
+      ]
+    }
+  },
+  "properties": {
+    "name": {
+      "$ref": "https://example.com/schemas/lookup-name"
+    },
+    "alias": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "required": [
+    "name"
+  ]
+}
