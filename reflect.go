@@ -611,6 +611,14 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
 	tags = t.genericKeywords(tags, parent, propertyName)
 
+	// If the json tag has the "string" option, and the type is an integer,
+	// then we should treat the field as a string before applying type-specific
+	// keyword parsing.
+	jsonTags := strings.Split(f.Tag.Get("json"), ",")
+	if t.Type == "integer" && tagOptionExists(jsonTags, "string") {
+		t.Type = "string"
+	}
+
 	switch t.Type {
 	case "string":
 		t.stringKeywords(tags)
@@ -622,13 +630,6 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 		t.arrayKeywords(tags)
 	case "boolean":
 		t.booleanKeywords(tags)
-	}
-
-	// If the json tag has the "string" option, and the type is an integer,
-	// then we should override the type to be a string.
-	jsonTag := f.Tag.Get("json")
-	if strings.Contains(jsonTag, ",string") && t.Type == "integer" {
-		t.Type = "string"
 	}
 
 	extras := strings.Split(f.Tag.Get("jsonschema_extras"), ",")
@@ -981,6 +982,15 @@ func ignoredByJSONSchemaTags(tags []string) bool {
 func inlinedByJSONTags(tags []string) bool {
 	for _, tag := range tags[1:] {
 		if tag == "inline" {
+			return true
+		}
+	}
+	return false
+}
+
+func tagOptionExists(tags []string, option string) bool {
+	for _, tag := range tags[1:] {
+		if tag == option {
 			return true
 		}
 	}

@@ -686,3 +686,48 @@ func TestIntegerWithJSONStringTag(t *testing.T) {
 	require.True(t, found)
 	require.Equal(t, "integer", pb.Type)
 }
+
+func TestIntegerWithJSONStringTagUsesStringKeywords(t *testing.T) {
+	type S struct {
+		A int `json:"a,string" jsonschema:"minLength=2,maxLength=4,pattern=^[0-9]+$,default=12,enum=12,enum=34"`
+	}
+
+	r := &Reflector{}
+	schema := r.Reflect(&S{})
+	d := schema.Definitions["S"]
+	require.NotNil(t, d)
+	props := d.Properties
+	require.NotNil(t, props)
+
+	pa, found := props.Get("a")
+	require.True(t, found)
+	require.Equal(t, "string", pa.Type)
+	require.NotNil(t, pa.MinLength)
+	require.NotNil(t, pa.MaxLength)
+	require.EqualValues(t, 2, *pa.MinLength)
+	require.EqualValues(t, 4, *pa.MaxLength)
+	require.Equal(t, "^[0-9]+$", pa.Pattern)
+	require.Equal(t, "12", pa.Default)
+	require.Equal(t, []any{"12", "34"}, pa.Enum)
+	require.Empty(t, pa.Minimum)
+	require.Empty(t, pa.Maximum)
+}
+
+func TestIntegerWithJSONStringTagRequiresExactOptionMatch(t *testing.T) {
+	type S struct {
+		A int `json:"a,stringly" jsonschema:"minLength=2,minimum=3"`
+	}
+
+	r := &Reflector{}
+	schema := r.Reflect(&S{})
+	d := schema.Definitions["S"]
+	require.NotNil(t, d)
+	props := d.Properties
+	require.NotNil(t, props)
+
+	pa, found := props.Get("a")
+	require.True(t, found)
+	require.Equal(t, "integer", pa.Type)
+	require.Nil(t, pa.MinLength)
+	require.Equal(t, json.Number("3"), pa.Minimum)
+}
