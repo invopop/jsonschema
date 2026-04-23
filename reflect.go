@@ -611,6 +611,18 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
 	tags = t.genericKeywords(tags, parent, propertyName)
 
+	// The encoding/json ",string" option causes integer, float and boolean
+	// fields to be encoded as JSON strings. Override the reflected type
+	// accordingly before running type-specific keyword parsing so the
+	// generated schema matches the on-the-wire representation.
+	jsonTags := strings.Split(f.Tag.Get("json"), ",")
+	switch t.Type {
+	case "integer", "number", "boolean":
+		if jsonTagHasOption(jsonTags, "string") {
+			t.Type = "string"
+		}
+	}
+
 	switch t.Type {
 	case "string":
 		t.stringKeywords(tags)
@@ -975,6 +987,18 @@ func ignoredByJSONSchemaTags(tags []string) bool {
 func inlinedByJSONTags(tags []string) bool {
 	for _, tag := range tags[1:] {
 		if tag == "inline" {
+			return true
+		}
+	}
+	return false
+}
+
+// jsonTagHasOption reports whether the parsed json struct tag contains the
+// given option. The first element of tags is assumed to be the field name, as
+// produced by strings.Split on a raw json tag value, and is skipped.
+func jsonTagHasOption(tags []string, option string) bool {
+	for _, tag := range tags[1:] {
+		if tag == option {
 			return true
 		}
 	}
