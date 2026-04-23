@@ -666,6 +666,36 @@ func TestJSONSchemaAlias(t *testing.T) {
 	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
 }
 
+// Regression: ReflectFromType previously panicked with a nil pointer
+// dereference when ExpandedStruct=true was combined with a non-struct
+// reflect.Type (slice, map, interface, enum-tagged struct), because only
+// struct types register themselves in the local definitions map.
+func TestReflectFromTypeExpandedStructNonStruct(t *testing.T) {
+	type enumTagged struct {
+		Tags string `jsonschema:"enum=a,enum=b,enum=c"`
+	}
+
+	cases := []struct {
+		name string
+		typ  reflect.Type
+	}{
+		{"slice", reflect.TypeOf([]string{})},
+		{"map", reflect.TypeOf(map[string]any{})},
+		{"interface", reflect.TypeOf((*any)(nil)).Elem()},
+		{"enum_tagged_struct_field", reflect.TypeOf(enumTagged{}.Tags)},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := &Reflector{ExpandedStruct: true}
+			require.NotPanics(t, func() {
+				s := r.ReflectFromType(tc.typ)
+				require.NotNil(t, s)
+			})
+		})
+	}
+}
+
 func TestJSONStringTag(t *testing.T) {
 	type Ints struct {
 		A int `json:"a,string"`

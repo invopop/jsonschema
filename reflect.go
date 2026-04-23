@@ -188,8 +188,12 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	s.Definitions = definitions
 	bs := r.reflectTypeToSchemaWithID(definitions, t)
 	if r.ExpandedStruct {
-		*s = *definitions[name]
-		delete(definitions, name)
+		if def := definitions[name]; def != nil {
+			*s = *def
+			delete(definitions, name)
+		} else {
+			*s = *bs
+		}
 	} else {
 		*s = *bs
 	}
