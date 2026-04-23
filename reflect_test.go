@@ -75,7 +75,7 @@ type TestUser struct {
 	IgnoredCounter int  `json:"-"`
 
 	// Tests for RFC draft-wright-json-schema-validation-00, section 7.3
-	BirthDate time.Time `json:"birth_date,omitempty"`
+	BirthDate time.Time `json:"birth_date,omitzero"`
 	Website   url.URL   `json:"website,omitempty"`
 	IPAddress net.IP    `json:"network_address,omitempty"`
 
