@@ -742,9 +742,10 @@ func (t *Schema) booleanKeywords(tags []string) {
 		}
 		name, val := nameValue[0], nameValue[1]
 		if name == "default" {
-			if val == "true" {
+			switch val {
+			case "true":
 				t.Default = true
-			} else if val == "false" {
+			case "false":
 				t.Default = false
 			}
 		}
@@ -913,11 +914,12 @@ func (t *Schema) setExtra(key, val string) {
 			t.Extras[key], _ = strconv.Atoi(val)
 		default:
 			var x any
-			if val == "true" {
+			switch val {
+			case "true":
 				x = true
-			} else if val == "false" {
+			case "false":
 				x = false
-			} else {
+			default:
 				x = val
 			}
 			t.Extras[key] = x
