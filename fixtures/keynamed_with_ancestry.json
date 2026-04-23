@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/key-named-with-ancestry",
+  "$ref": "#/$defs/KeyNamedWithAncestry",
+  "$defs": {
+    "KeyNamedWithAncestry": {
+      "properties": {
+        "root.Sub": {
+          "$ref": "#/$defs/KeyNamedWithAncestrySub"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "root.Sub"
+      ]
+    },
+    "KeyNamedWithAncestrySub": {
+      "properties": {
+        "child-of-KeyNamedWithAncestry.RenamedByParent": {
+          "type": "string"
+        },
+        "child-of-KeyNamedWithAncestry.Nested": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/KeyNamedWithAncestryNested"
+          }
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "child-of-KeyNamedWithAncestry.RenamedByParent",
+        "child-of-KeyNamedWithAncestry.Nested"
+      ]
+    },
+    "KeyNamedWithAncestryNested": {
+      "properties": {
+        "child-of-struct-in-map.RenamedByParent": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "child-of-struct-in-map.RenamedByParent"
+      ]
+    }
+  }
+}

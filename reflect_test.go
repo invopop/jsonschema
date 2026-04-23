@@ -313,6 +313,19 @@ type KeyNamed struct {
 	RenamedByComputation int `jsonschema_description:"Description was preserved"`
 }
 
+type KeyNamedWithAncestry struct {
+	Sub KeyNamedWithAncestrySub
+}
+
+type KeyNamedWithAncestrySub struct {
+	RenamedByParent string
+	Nested          map[string]KeyNamedWithAncestryNested
+}
+
+type KeyNamedWithAncestryNested struct {
+	RenamedByParent string `jsonschema:"required"`
+}
+
 type SchemaExtendTestBase struct {
 	FirstName  string `json:"FirstName"`
 	LastName   string `json:"LastName"`
@@ -469,6 +482,29 @@ func TestSchemaGeneration(t *testing.T) {
 				return "unknown case"
 			},
 		}, "fixtures/keynamed.json"},
+		{&KeyNamedWithAncestry{}, &Reflector{
+			KeyNamerWithAncestry: func(fa FieldAncestry, s string) string {
+				if fa.Parent == nil {
+					return s
+				}
+
+				if fa.Parent.Parent == nil {
+					return "root." + s
+				}
+
+				if fa.Parent != nil && fa.Parent.Type.Kind() == reflect.Struct {
+					return "child-of-" + fa.Parent.Type.Name() + "." + s
+				}
+
+				if fa.Type != nil && fa.Type.Kind() == reflect.Struct {
+					if fa.Parent.Type.Kind() == reflect.Map {
+						return "child-of-struct-in-map." + s
+					}
+				}
+
+				return s
+			},
+		}, "fixtures/keynamed_with_ancestry.json"},
 		{MapType{}, &Reflector{}, "fixtures/map_type.json"},
 		{ArrayType{}, &Reflector{}, "fixtures/array_type.json"},
 		{SchemaExtendTest{}, &Reflector{}, "fixtures/custom_type_extend.json"},
