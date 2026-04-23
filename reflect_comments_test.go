@@ -2,6 +2,7 @@ package jsonschema
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -38,6 +39,36 @@ func prepareCommentReflector(t *testing.T, opts ...CommentOption) *Reflector {
 	err := r.AddGoComments("github.com/invopop/jsonschema", "./examples", opts...)
 	require.NoError(t, err, "did not expect error while adding comments")
 	return r
+}
+
+func TestAddGoCommentsSkipsUnexportedTypes(t *testing.T) {
+	dir := t.TempDir()
+	src := `package sample
+
+// exportedDoc documents the Exported type.
+type Exported struct {
+	// Field is a field comment.
+	Field string
+}
+
+// unexportedDoc documents the unexported type.
+type unexported struct {
+	Field string
+}
+`
+	require.NoError(t, os.WriteFile(filepath.Join(dir, "sample.go"), []byte(src), 0o600))
+
+	r := new(Reflector)
+	require.NoError(t, r.AddGoComments("example.com/sample", dir))
+
+	var exportedFound bool
+	for k := range r.CommentMap {
+		require.NotContains(t, k, "unexported", "unexported type must not appear in comment map")
+		if strings.HasSuffix(k, ".Exported") {
+			exportedFound = true
+		}
+	}
+	require.True(t, exportedFound, "exported type should have been picked up")
 }
 
 func prepareCustomCommentReflector(t *testing.T) *Reflector {
