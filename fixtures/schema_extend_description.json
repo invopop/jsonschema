@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/invopop/jsonschema/extend-description-object",
+  "$ref": "#/$defs/ExtendDescriptionObject",
+  "$defs": {
+    "ExtendDescriptionObject": {
+      "properties": {
+        "extend": {
+          "type": "string",
+	  "description": "extend description"
+        },
+        "tag": {
+          "type": "string",
+	  "description": "tag description"
+        },
+        "tag_extend": {
+          "type": "string",
+	  "description": "tag description"
+        },
+        "generic_tag": {
+          "type": "string",
+	  "description": "generic description"
+        },
+        "generic_tag_extend": {
+          "type": "string",
+	  "description": "generic description"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "extend",
+        "tag",
+        "tag_extend",
+        "generic_tag",
+        "generic_tag_extend"
+      ]
+    }
+  }
+}
