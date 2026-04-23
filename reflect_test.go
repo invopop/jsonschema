@@ -665,29 +665,51 @@ func TestJSONSchemaAlias(t *testing.T) {
 	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
 }
 
-func TestIntegerWithJSONStringTag(t *testing.T) {
-	type S struct {
+func TestJSONStringTag(t *testing.T) {
+	type Ints struct {
 		A int `json:"a,string"`
 		B int `json:"b"`
 	}
+	type Floats struct {
+		A float64 `json:"a,string"`
+		B float32 `json:"b,string"`
+		C float64 `json:"c"`
+	}
+	type Bools struct {
+		A bool `json:"a,string"`
+		B bool `json:"b"`
+	}
+
+	cases := []struct {
+		name     string
+		target   any
+		typeName string
+		property string
+		expected string
+	}{
+		{"int with ,string", &Ints{}, "Ints", "a", "string"},
+		{"int plain", &Ints{}, "Ints", "b", "integer"},
+		{"float64 with ,string", &Floats{}, "Floats", "a", "string"},
+		{"float32 with ,string", &Floats{}, "Floats", "b", "string"},
+		{"float64 plain", &Floats{}, "Floats", "c", "number"},
+		{"bool with ,string", &Bools{}, "Bools", "a", "string"},
+		{"bool plain", &Bools{}, "Bools", "b", "boolean"},
+	}
 
 	r := &Reflector{}
-	schema := r.Reflect(&S{})
-	d := schema.Definitions["S"]
-	require.NotNil(t, d)
-	props := d.Properties
-	require.NotNil(t, props)
-
-	pa, found := props.Get("a")
-	require.True(t, found)
-	require.Equal(t, "string", pa.Type)
-
-	pb, found := props.Get("b")
-	require.True(t, found)
-	require.Equal(t, "integer", pb.Type)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			schema := r.Reflect(c.target)
+			d := schema.Definitions[c.typeName]
+			require.NotNil(t, d)
+			p, found := d.Properties.Get(c.property)
+			require.True(t, found)
+			require.Equal(t, c.expected, p.Type)
+		})
+	}
 }
 
-func TestIntegerWithJSONStringTagUsesStringKeywords(t *testing.T) {
+func TestJSONStringTagUsesStringKeywords(t *testing.T) {
 	type S struct {
 		A int `json:"a,string" jsonschema:"minLength=2,maxLength=4,pattern=^[0-9]+$,default=12,enum=12,enum=34"`
 	}
@@ -713,9 +735,9 @@ func TestIntegerWithJSONStringTagUsesStringKeywords(t *testing.T) {
 	require.Empty(t, pa.Maximum)
 }
 
-func TestIntegerWithJSONStringTagRequiresExactOptionMatch(t *testing.T) {
+func TestJSONStringTagRequiresExactOptionMatch(t *testing.T) {
 	type S struct {
-		A int `json:"a,stringly" jsonschema:"minLength=2,minimum=3"`
+		A int `json:"a,stringly" jsonschema:"minLength=2,minimum=3"` //nolint:staticcheck // intentional unknown json option
 	}
 
 	r := &Reflector{}
