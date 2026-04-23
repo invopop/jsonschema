@@ -28,3 +28,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_BRANCHES: release
           WITH_V: true
+
+      - name: Create GitHub Release
+        if: steps.bump.outputs.new_tag
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "${{ steps.bump.outputs.new_tag }}" --generate-notes
