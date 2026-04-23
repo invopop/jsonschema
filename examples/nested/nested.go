@@ -1,3 +1,4 @@
+// Package nested contains sample nested types used to exercise schema generation.
 package nested
 
 // Pet defines the user's fury friend.
