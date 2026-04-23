@@ -1,3 +1,4 @@
+// Package examples contains sample types used to exercise schema generation.
 package examples
 
 import (

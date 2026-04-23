@@ -75,7 +75,7 @@ type TestUser struct {
 	IgnoredCounter int  `json:"-"`
 
 	// Tests for RFC draft-wright-json-schema-validation-00, section 7.3
-	BirthDate time.Time `json:"birth_date,omitempty"`
+	BirthDate time.Time `json:"birth_date,omitzero"`
 	Website   url.URL   `json:"website,omitempty"`
 	IPAddress net.IP    `json:"network_address,omitempty"`
 
@@ -693,4 +693,93 @@ func TestReflectFromTypeExpandedStructNonStruct(t *testing.T) {
 			})
 		})
 	}
+}
+
+func TestJSONStringTag(t *testing.T) {
+	type Ints struct {
+		A int `json:"a,string"`
+		B int `json:"b"`
+	}
+	type Floats struct {
+		A float64 `json:"a,string"`
+		B float32 `json:"b,string"`
+		C float64 `json:"c"`
+	}
+	type Bools struct {
+		A bool `json:"a,string"`
+		B bool `json:"b"`
+	}
+
+	cases := []struct {
+		name     string
+		target   any
+		typeName string
+		property string
+		expected string
+	}{
+		{"int with ,string", &Ints{}, "Ints", "a", "string"},
+		{"int plain", &Ints{}, "Ints", "b", "integer"},
+		{"float64 with ,string", &Floats{}, "Floats", "a", "string"},
+		{"float32 with ,string", &Floats{}, "Floats", "b", "string"},
+		{"float64 plain", &Floats{}, "Floats", "c", "number"},
+		{"bool with ,string", &Bools{}, "Bools", "a", "string"},
+		{"bool plain", &Bools{}, "Bools", "b", "boolean"},
+	}
+
+	r := &Reflector{}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			schema := r.Reflect(c.target)
+			d := schema.Definitions[c.typeName]
+			require.NotNil(t, d)
+			p, found := d.Properties.Get(c.property)
+			require.True(t, found)
+			require.Equal(t, c.expected, p.Type)
+		})
+	}
+}
+
+func TestJSONStringTagUsesStringKeywords(t *testing.T) {
+	type S struct {
+		A int `json:"a,string" jsonschema:"minLength=2,maxLength=4,pattern=^[0-9]+$,default=12,enum=12,enum=34"`
+	}
+
+	r := &Reflector{}
+	schema := r.Reflect(&S{})
+	d := schema.Definitions["S"]
+	require.NotNil(t, d)
+	props := d.Properties
+	require.NotNil(t, props)
+
+	pa, found := props.Get("a")
+	require.True(t, found)
+	require.Equal(t, "string", pa.Type)
+	require.NotNil(t, pa.MinLength)
+	require.NotNil(t, pa.MaxLength)
+	require.EqualValues(t, 2, *pa.MinLength)
+	require.EqualValues(t, 4, *pa.MaxLength)
+	require.Equal(t, "^[0-9]+$", pa.Pattern)
+	require.Equal(t, "12", pa.Default)
+	require.Equal(t, []any{"12", "34"}, pa.Enum)
+	require.Empty(t, pa.Minimum)
+	require.Empty(t, pa.Maximum)
+}
+
+func TestJSONStringTagRequiresExactOptionMatch(t *testing.T) {
+	type S struct {
+		A int `json:"a,stringly" jsonschema:"minLength=2,minimum=3"` //nolint:staticcheck // intentional unknown json option
+	}
+
+	r := &Reflector{}
+	schema := r.Reflect(&S{})
+	d := schema.Definitions["S"]
+	require.NotNil(t, d)
+	props := d.Properties
+	require.NotNil(t, props)
+
+	pa, found := props.Get("a")
+	require.True(t, found)
+	require.Equal(t, "integer", pa.Type)
+	require.Nil(t, pa.MinLength)
+	require.Equal(t, json.Number("3"), pa.Minimum)
 }
