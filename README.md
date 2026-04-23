@@ -25,7 +25,7 @@ This repository is a fork of the original [jsonschema](https://github.com/alecth
 
 This project is still under v0 scheme, as per Go convention, breaking changes are likely. Please pin go modules to version tags or branches, and reach out if you think something can be improved.
 
-Go version >= 1.18 is required as generics are now being used.
+Go version >= 1.24 is now required. We aim for one below the last supported Go version.
 
 ## Example
 
