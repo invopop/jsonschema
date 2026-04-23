@@ -93,7 +93,7 @@ type TestUser struct {
 	// Test for "extras" support
 	Baz             string `jsonschema_extras:"foo=bar,hello=world,foo=bar1"`
 	BoolExtra       string `json:"bool_extra,omitempty" jsonschema_extras:"isTrue=true,isFalse=false"`
-	ExtraWithComman string `json:"extra_with_commas,omitempty" jsonschema_extras:"foo=bar\\, and also baz,quux=qux"`
+	ExtraWithCommas string `json:"extra_with_commas,omitempty" jsonschema_extras:"foo=bar\\, and also baz,quux=qux"`
 
 	// Tests for simple enum tags
 	Color      string  `json:"color" jsonschema:"enum=red,enum=green,enum=blue"`
