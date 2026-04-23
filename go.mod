@@ -4,6 +4,7 @@ go 1.24
 
 require (
 	github.com/pb33f/ordered-map/v2 v2.3.1
+	github.com/stoewer/go-strcase v1.3.1
 	github.com/stretchr/testify v1.11.1
 )
 
