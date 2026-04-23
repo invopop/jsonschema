@@ -699,3 +699,36 @@ func TestJSONSchemaAlias(t *testing.T) {
 	compareSchemaOutput(t, "fixtures/schema_alias.json", r, &AliasObjectB{})
 	compareSchemaOutput(t, "fixtures/schema_alias_2.json", r, &AliasObjectC{})
 }
+
+func TestReflectAll(t *testing.T) {
+	r := &Reflector{
+		Lookup: func(i reflect.Type) ID {
+			switch i {
+			case reflect.TypeOf(LookupUser{}):
+				return ID("https://example.com/schemas/lookup-user")
+			case reflect.TypeOf(LookupName{}):
+				return ID("https://example.com/schemas/lookup-name")
+			}
+			return EmptyID
+		},
+	}
+
+	s := r.ReflectAll(
+		reflect.TypeOf(LookupUser{}),
+		reflect.TypeOf(LookupName{}),
+	)
+
+	actualJSON, err := json.MarshalIndent(s, "", "  ")
+	require.NoError(t, err)
+
+	expectedJSON, err := os.ReadFile("fixtures/reflect_all.json")
+	require.NoError(t, err)
+
+	if *updateFixtures {
+		_ = os.WriteFile("fixtures/reflect_all.json", actualJSON, 0600)
+	}
+
+	if !assert.JSONEq(t, string(expectedJSON), string(actualJSON)) {
+		t.Log("actual:", string(actualJSON))
+	}
+}

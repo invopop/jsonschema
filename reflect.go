@@ -179,6 +179,11 @@ type Reflector struct {
 	//
 	// See also: AddGoComments, LookupComment
 	CommentMap map[string]string
+
+	// bundleAll is an internal flag set by ReflectAll to cause all Lookup
+	// types to be reflected into the shared $defs and referenced via
+	// internal #/$defs/ refs instead of external URLs.
+	bundleAll bool
 }
 
 // Reflect reflects to Schema from a value.
@@ -228,6 +233,48 @@ func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
 	return s
 }
 
+// ReflectAll reflects multiple types into a single schema with a shared
+// $defs map. Each type that has a Lookup ID will have its $id set on the
+// definition. All cross-references between types use internal #/$defs/
+// references instead of external URLs. The returned schema is a $defs
+// container with no root $ref.
+//
+// This is useful for generating a single bundled schema file that contains
+// all type definitions.
+func (r *Reflector) ReflectAll(types ...reflect.Type) *Schema {
+	r.bundleAll = true
+	defer func() { r.bundleAll = false }()
+
+	s := &Schema{
+		Version: Version,
+	}
+	definitions := Definitions{}
+
+	for _, t := range types {
+		if t.Kind() == reflect.Ptr {
+			t = t.Elem()
+		}
+		name := r.typeName(t)
+		if name == "" {
+			continue
+		}
+		if _, exists := definitions[name]; exists {
+			continue
+		}
+		// Use bundleLookupRef for types with a Lookup ID to handle
+		// circular references and set $id.
+		if id := r.lookupID(t); id != EmptyID {
+			r.bundleLookupRef(definitions, t, id)
+			continue
+		}
+		// For types without a Lookup ID, reflect directly.
+		r.reflectTypeToSchema(definitions, t)
+	}
+
+	s.Definitions = definitions
+	return s
+}
+
 // Available Go defined types for JSON Schema Validation.
 // RFC draft-wright-json-schema-validation-00, section 7.3
 var (
@@ -258,6 +305,14 @@ func (r *Reflector) SetBaseSchemaID(id string) {
 func (r *Reflector) refOrReflectTypeToSchema(definitions Definitions, t reflect.Type) *Schema {
 	id := r.lookupID(t)
 	if id != EmptyID {
+		if r.bundleAll {
+			r.bundleLookupRef(definitions, t, id)
+			dt := t
+			if dt.Kind() == reflect.Ptr {
+				dt = dt.Elem()
+			}
+			return r.refDefinition(definitions, dt)
+		}
 		if r.BundleLookupRefs {
 			r.bundleLookupRef(definitions, t, id)
 		}

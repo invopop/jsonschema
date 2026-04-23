@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "LookupName": {
+      "$id": "https://example.com/schemas/lookup-name",
+      "properties": {
+        "first": {
+          "type": "string"
+        },
+        "surname": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "first",
+        "surname"
+      ]
+    },
+    "LookupUser": {
+      "$id": "https://example.com/schemas/lookup-user",
+      "properties": {
+        "name": {
+          "$ref": "#/$defs/LookupName"
+        },
+        "alias": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name"
+      ]
+    }
+  }
+}
