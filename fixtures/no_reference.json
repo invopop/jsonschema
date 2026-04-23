@@ -115,6 +115,11 @@
       "type": "string",
       "format": "email"
     },
+    "extra_with_commas": {
+      "type": "string",
+      "foo":  "bar, and also baz",
+      "quux": "qux"
+    },
     "uuid": {
       "type": "string",
       "format": "uuid"
