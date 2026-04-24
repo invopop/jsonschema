@@ -1,0 +1,17 @@
+{
+  "properties": {
+    "other": {
+      "type": "string"
+    },
+    "withdrawals": {
+      "type": [
+        "array",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "withdrawals"
+  ],
+  "description": "test of Schema with multivalued property Type"
+}

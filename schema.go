@@ -2,6 +2,7 @@ package jsonschema
 
 import (
 	"encoding/json"
+	"strings"
 
 	orderedmap "github.com/pb33f/ordered-map/v2"
 )
@@ -40,7 +41,7 @@ type Schema struct {
 	AdditionalProperties *Schema                                 `json:"additionalProperties,omitempty"` // section 10.3.2.3
 	PropertyNames        *Schema                                 `json:"propertyNames,omitempty"`        // section 10.3.2.4
 	// RFC draft-bhutton-json-schema-validation-00, section 6
-	Type              string              `json:"type,omitempty"`              // section 6.1.1
+	Type              Type                `json:"type,omitempty"`              // section 6.1.1
 	Enum              []any               `json:"enum,omitempty"`              // section 6.1.2
 	Const             any                 `json:"const,omitempty"`             // section 6.1.3
 	MultipleOf        json.Number         `json:"multipleOf,omitempty"`        // section 6.2.1
@@ -92,3 +93,73 @@ var (
 // http://json-schema.org/latest/json-schema-validation.html#rfc.section.5.26
 // RFC draft-wright-json-schema-validation-00, section 5.26
 type Definitions map[string]*Schema
+
+// Type represents the property types allowed by the JSONSchema specification,s
+// [instance data model].
+//
+// Constants are provided for each of the types supported by this library's
+// vocabulary.  Types that can be one of several values are supported by
+// concatenating the constant values below with a comma separator.  The
+// MarshalJSON and UnmarshalJSON functions handle the multivalued Type
+// fields properly but care must be taken when treating a Type as a string.
+//
+// [instance data model]: https://json-schema.org/draft/2020-12/json-schema-core#name-instance-data-model
+type Type string
+
+// The Type constants below represent the six standard JSON types as well as
+// TypeInteger which is part of this library's extended vocabulary.
+const (
+	typeUndefined Type = ""
+	TypeString    Type = "string"
+	TypeInteger   Type = "integer"
+	TypeNumber    Type = "number"
+	TypeBoolean   Type = "boolean"
+	TypeArray     Type = "array"
+	TypeObject    Type = "object"
+	TypeNull      Type = "null"
+)
+
+// NewMultivaluedType creates a Type that allows any of the provided types.
+func NewMultivaluedType(types ...Type) Type {
+	var s []string
+	for _, t := range types {
+		s = append(s, string(t))
+	}
+
+	return Type(strings.Join(s, ","))
+}
+
+// IsMultivalued returns a boolean indicating whether the Type contains
+// multiple underlying types.
+func (t *Type) IsMultivalued() bool {
+	return strings.Contains(string(*t), ",")
+}
+
+// MarshalJSON implements json.Marshaler.
+func (t *Type) MarshalJSON() ([]byte, error) {
+	if t.IsMultivalued() {
+		return json.Marshal(strings.Split(string(*t), ","))
+	}
+
+	return json.Marshal(string(*t))
+}
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (t *Type) UnmarshalJSON(data []byte) error {
+	var s string
+	err := json.Unmarshal(data, &s)
+	if err == nil {
+		*t = Type(s)
+
+		return nil
+	}
+
+	var a []string
+	if err := json.Unmarshal(data, &a); err != nil {
+		return err
+	}
+
+	*t = Type(strings.Join(a, ","))
+
+	return nil
+}
