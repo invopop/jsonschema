@@ -638,6 +638,8 @@ func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, p
 		t.arrayKeywords(tags)
 	case "boolean":
 		t.booleanKeywords(tags)
+	default:
+		t.nonDefaultTypeKeywords(tags)
 	}
 	extras := splitOnUnescapedCommas(f.Tag.Get("jsonschema_extras"))
 	t.extraKeywords(extras)
@@ -897,6 +899,21 @@ func (t *Schema) arrayKeywords(tags []string) {
 		// explicitly don't support traversal for the [][]..., as it's unclear where the array tags belong
 	case "boolean":
 		t.Items.booleanKeywords(unprocessed)
+	}
+}
+
+func (t *Schema) nonDefaultTypeKeywords(tags []string) {
+	for _, tag := range tags {
+		nameValue := strings.SplitN(tag, "=", 2)
+		if len(nameValue) == 2 {
+			name, val := nameValue[0], nameValue[1]
+			switch name {
+			case "default":
+				t.Default = val
+			case "example":
+				t.Examples = append(t.Examples, val)
+			}
+		}
 	}
 }
 
