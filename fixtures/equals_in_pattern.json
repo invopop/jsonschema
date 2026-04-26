@@ -12,13 +12,21 @@
         "WithEqualsAndCommas": {
           "type": "string",
           "pattern": "foo,=bar"
+        },
+        "WithEqualsArray": {
+          "items": {
+            "type": "string",
+            "pattern": "foo=bar"
+          },
+          "type": "array"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
         "WithEquals",
-        "WithEqualsAndCommas"
+        "WithEqualsAndCommas",
+        "WithEqualsArray"
       ]
     }
   }
