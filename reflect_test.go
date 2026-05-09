@@ -527,12 +527,64 @@ func TestSplitOnUnescapedCommas(t *testing.T) {
 		{`string without commas`, []string{`string without commas`}},
 		{`ünicode,𐂄,Ж\,П,ᠳ`, []string{`ünicode`, `𐂄`, `Ж,П`, `ᠳ`}},
 		{`empty,,tag`, []string{`empty`, ``, `tag`}},
+		// Commas inside {m,n} quantifiers must not split the tag value.
+		// See https://github.com/invopop/jsonschema/issues/181
+		{`minLength=1,pattern=^\[A-Z\]{0,2}$,maxLength=50`, []string{`minLength=1`, `pattern=^\[A-Z\]{0,2}$`, `maxLength=50`}},
+		{`pattern={1,10},title=qty`, []string{`pattern={1,10}`, `title=qty`}},
+		// Nested braces (e.g. {1,{2,3}}) are treated as depth-aware.
+		{`pattern={1,{2,3}},title=x`, []string{`pattern={1,{2,3}}`, `title=x`}},
 	}
 
 	for _, test := range tests {
 		actual := splitOnUnescapedCommas(test.strToSplit)
 		require.Equal(t, test.expected, actual)
 	}
+}
+
+// TestDescriptionPreservedFromJSONSchemaExtend verifies that a description set
+// via JSONSchemaExtend on a property's type is not silently cleared by
+// structKeywordsFromTags when the field has no jsonschema_description tag.
+// See https://github.com/invopop/jsonschema/issues/169
+func TestDescriptionPreservedFromJSONSchemaExtend(t *testing.T) {
+	// SchemaExtendTest.JSONSchemaExtend sets LastName.Description = "some extra words".
+	// LastName has no jsonschema_description tag, so the description must survive.
+	r := new(Reflector)
+	schema := r.Reflect(&SchemaExtendTest{})
+	require.NotNil(t, schema)
+
+	def, ok := schema.Definitions["SchemaExtendTest"]
+	require.True(t, ok, "SchemaExtendTest definition not found")
+
+	prop, found := def.Properties.Get("LastName")
+	require.True(t, found, "LastName property not found")
+	require.Equal(t, "some extra words", prop.Description,
+		"description set by JSONSchemaExtend must not be overwritten by empty jsonschema_description tag")
+}
+
+// TestPatternWithQuantifierComma verifies that a regex quantifier containing a
+// comma (e.g. {0,2}) inside a pattern= tag value is not split at the comma,
+// so the full pattern reaches the generated schema.
+// See https://github.com/invopop/jsonschema/issues/181
+func TestPatternWithQuantifierComma(t *testing.T) {
+	type QuantifierTest struct {
+		Code string `json:"code" jsonschema:"minLength=1,pattern=^[A-Z]{0,3}$,maxLength=10"`
+	}
+
+	r := new(Reflector)
+	schema := r.Reflect(&QuantifierTest{})
+	require.NotNil(t, schema)
+
+	def, ok := schema.Definitions["QuantifierTest"]
+	require.True(t, ok, "QuantifierTest definition not found")
+
+	prop, found := def.Properties.Get("code")
+	require.True(t, found, "code property not found")
+	require.Equal(t, "^[A-Z]{0,3}$", prop.Pattern,
+		"pattern containing {m,n} quantifier must not be truncated at the comma")
+	require.NotNil(t, prop.MinLength)
+	require.Equal(t, uint64(1), *prop.MinLength, "minLength must be parsed correctly alongside pattern")
+	require.NotNil(t, prop.MaxLength)
+	require.Equal(t, uint64(10), *prop.MaxLength, "maxLength must be parsed correctly alongside pattern")
 }
 
 func TestArrayExtraTags(t *testing.T) {

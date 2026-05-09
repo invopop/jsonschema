@@ -610,7 +610,12 @@ func (r *Reflector) lookupID(t reflect.Type) ID {
 }
 
 func (t *Schema) structKeywordsFromTags(f reflect.StructField, parent *Schema, propertyName string) {
-	t.Description = f.Tag.Get("jsonschema_description")
+	// Only override the description when the tag is explicitly provided.
+	// Unconditionally assigning (even an empty string) would erase descriptions
+	// set by JSONSchemaExtend on the reflected type.
+	if desc := f.Tag.Get("jsonschema_description"); desc != "" {
+		t.Description = desc
+	}
 
 	tags := splitOnUnescapedCommas(f.Tag.Get("jsonschema"))
 	tags = t.genericKeywords(tags, parent, propertyName)
@@ -1148,28 +1153,55 @@ func (r *Reflector) typeName(t reflect.Type) string {
 	return t.Name()
 }
 
-// Split on commas that are not preceded by `\`.
-// This way, we prevent splitting regexes
+// splitOnUnescapedCommas splits a jsonschema tag string on commas that are
+// neither backslash-escaped (\,) nor inside curly-brace quantifiers ({m,n}).
+//
+// Backslash-escaping lets callers include literal commas in simple values.
+// Brace-aware splitting lets callers include regex quantifiers such as {0,2}
+// inside a pattern= value without truncation.  See issues #169 and #181.
 func splitOnUnescapedCommas(tagString string) []string {
-	ret := make([]string, 0)
-	separated := strings.Split(tagString, ",")
-	ret = append(ret, separated[0])
-	i := 0
-	for _, nextTag := range separated[1:] {
-		if len(ret[i]) == 0 {
-			ret = append(ret, nextTag)
-			i++
-			continue
-		}
+	var (
+		ret        []string
+		cur        strings.Builder
+		depth      int  // brace nesting depth
+		prevIsBackslash bool
+	)
 
-		if ret[i][len(ret[i])-1] == '\\' {
-			ret[i] = ret[i][:len(ret[i])-1] + "," + nextTag
-		} else {
-			ret = append(ret, nextTag)
-			i++
+	for _, ch := range tagString {
+		switch {
+		case ch == '{':
+			depth++
+			cur.WriteRune(ch)
+			prevIsBackslash = false
+		case ch == '}':
+			if depth > 0 {
+				depth--
+			}
+			cur.WriteRune(ch)
+			prevIsBackslash = false
+		case ch == ',' && (depth > 0 || prevIsBackslash):
+			// Comma inside {…} or preceded by backslash: keep as literal.
+			if prevIsBackslash {
+				// Strip the escape character that was already written.
+				s := cur.String()
+				cur.Reset()
+				cur.WriteString(s[:len(s)-1])
+			}
+			cur.WriteRune(ch)
+			prevIsBackslash = false
+		case ch == ',':
+			ret = append(ret, cur.String())
+			cur.Reset()
+			prevIsBackslash = false
+		case ch == '\\':
+			cur.WriteRune(ch)
+			prevIsBackslash = true
+		default:
+			cur.WriteRune(ch)
+			prevIsBackslash = false
 		}
 	}
-
+	ret = append(ret, cur.String())
 	return ret
 }
 
