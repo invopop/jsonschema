@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"net"
 	"net/url"
+	"path"
 	"reflect"
 	"strconv"
 	"strings"
@@ -134,6 +135,13 @@ type Reflector struct {
 	// Namer allows customizing of type names. The default is to use the type's name
 	// provided by the reflect package.
 	Namer func(reflect.Type) string
+
+	// AddPackageNamespaces will prefix the generated name of a type with its package
+	// name (the last element of its import path) when set to true, e.g. "http.Config"
+	// instead of "Config". This helps disambiguate identically-named types declared in
+	// different packages, which would otherwise collide on the same $ref/$defs entry.
+	// It has no effect on types for which Namer returns a non-empty name.
+	AddPackageNamespaces bool
 
 	// KeyNamer allows customizing of key names.
 	// The default is to use the key's name as is, or the json tag if present.
@@ -1145,7 +1153,13 @@ func (r *Reflector) typeName(t reflect.Type) string {
 			return name
 		}
 	}
-	return t.Name()
+	name := t.Name()
+	if r.AddPackageNamespaces {
+		if pkg := path.Base(t.PkgPath()); pkg != "" && pkg != "." {
+			name = pkg + "." + name
+		}
+	}
+	return name
 }
 
 // Split on commas that are not preceded by `\`.
