@@ -15,6 +15,9 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/invopop/jsonschema/internal/nsfixture/httpconf"
+	"github.com/invopop/jsonschema/internal/nsfixture/tcpconf"
 )
 
 var updateFixtures = flag.Bool("update", false, "set to update fixtures")
@@ -364,6 +367,40 @@ func TestReflectFromType(t *testing.T) {
 	typ = reflect.TypeOf(x)
 	s = r.Reflect(typ)
 	assert.Empty(t, s.ID)
+}
+
+func TestAddPackageNamespacesDisambiguatesSameNameStructs(t *testing.T) {
+	type AllConfig struct {
+		TCP  tcpconf.Config  `json:"tcp"`
+		HTTP httpconf.Config `json:"http"`
+	}
+
+	r := &Reflector{AddPackageNamespaces: true}
+	s := r.Reflect(&AllConfig{})
+
+	tcpRef, ok := s.Definitions["jsonschema.AllConfig"].Properties.Get("tcp")
+	require.True(t, ok)
+	httpRef, ok := s.Definitions["jsonschema.AllConfig"].Properties.Get("http")
+	require.True(t, ok)
+
+	assert.Equal(t, "#/$defs/tcpconf.Config", tcpRef.Ref)
+	assert.Equal(t, "#/$defs/httpconf.Config", httpRef.Ref)
+	assert.NotEqual(t, tcpRef.Ref, httpRef.Ref)
+
+	_, hasTCPConfig := s.Definitions["tcpconf.Config"]
+	_, hasHTTPConfig := s.Definitions["httpconf.Config"]
+	assert.True(t, hasTCPConfig)
+	assert.True(t, hasHTTPConfig)
+
+	// Without AddPackageNamespaces, both structs collide on the same "Config" $ref.
+	rDefault := new(Reflector)
+	sDefault := rDefault.Reflect(&AllConfig{})
+	tcpRefDefault, ok := sDefault.Definitions["AllConfig"].Properties.Get("tcp")
+	require.True(t, ok)
+	httpRefDefault, ok := sDefault.Definitions["AllConfig"].Properties.Get("http")
+	require.True(t, ok)
+	assert.Equal(t, "#/$defs/Config", tcpRefDefault.Ref)
+	assert.Equal(t, "#/$defs/Config", httpRefDefault.Ref)
 }
 
 func TestSchemaGeneration(t *testing.T) {

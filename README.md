@@ -18,7 +18,7 @@ This repository is a fork of the original [jsonschema](https://github.com/alecth
 
 - The original was stuck on the draft-04 version of JSON Schema, we've now moved to the latest JSON Schema Draft 2020-12.
 - Schema IDs are added automatically from the current Go package's URL in order to be unique, and can be disabled with the `Anonymous` option.
-- Support for the `FullyQualifyTypeName` option has been removed. If you have conflicts, you should use multiple schema files with different IDs, set the `DoNotReference` option to true to hide definitions completely, or add your own naming strategy using the `Namer` property.
+- Support for the `FullyQualifyTypeName` option has been removed. If you have conflicts, you should use multiple schema files with different IDs, set the `DoNotReference` option to true to hide definitions completely, add your own naming strategy using the `Namer` property, or use the `AddPackageNamespaces` option described in [Type Naming and Conflicts](#type-naming-and-conflicts).
 - Support for `yaml` tags and related options has been dropped for the sake of simplification. There were a [few inconsistencies](https://github.com/invopop/jsonschema/pull/21) around this that have now been fixed.
 
 ## Versions
@@ -244,6 +244,22 @@ Expect the results to be similar to:
     }
   }
 }
+```
+
+### Type Naming and Conflicts
+
+By default, definitions are named after the Go type's name (`t.Name()`). If two different packages define a type with the same name (e.g. two unrelated `Config` structs) and both end up referenced in the same schema, they will collide on the same `$defs` entry.
+
+You have a few ways to resolve this:
+
+- Set `Reflector.AddPackageNamespaces` to `true` to prefix every generated type name with its package name, e.g. `httpconf.Config` and `tcpconf.Config` instead of two conflicting `Config` entries.
+- Provide your own `Reflector.Namer` function for full control over naming, including selectively qualifying only the types that actually conflict.
+- Set `Reflector.DoNotReference` to `true` to avoid `$defs`/`$ref` altogether and inline every type in place.
+
+```go
+r := new(Reflector)
+r.AddPackageNamespaces = true
+schema := r.Reflect(&AllConfig{})
 ```
 
 ### Custom Key Naming
