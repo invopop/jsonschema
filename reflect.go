@@ -283,7 +283,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		return r.refOrReflectTypeToSchema(definitions, t.Elem())
 	}
 
-	// Check if the there is an alias method that provides an object
+	// Check if there is an alias method that provides an object
 	// that we should use instead of this one.
 	if t.Implements(customAliasSchema) {
 		v := reflect.New(t)
