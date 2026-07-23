@@ -172,11 +172,17 @@ type Reflector struct {
 
 // Reflect reflects to Schema from a value.
 func (r *Reflector) Reflect(v any) *Schema {
+	if r == nil {
+		r = &Reflector{}
+	}
 	return r.ReflectFromType(reflect.TypeOf(v))
 }
 
 // ReflectFromType generates root schema
 func (r *Reflector) ReflectFromType(t reflect.Type) *Schema {
+	if r == nil {
+		r = &Reflector{}
+	}
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem() // re-assign from pointer
 	}
