@@ -18,7 +18,11 @@ const EmptyID ID = ""
 // This is done by parsing the ID as a URL and checking it has all the
 // relevant parts.
 func (id ID) Validate() error {
-	u, err := url.Parse(id.String())
+	s := strings.TrimSpace(id.String())
+	if s == "" {
+		return errors.New("empty id")
+	}
+	u, err := url.Parse(s)
 	if err != nil {
 		return fmt.Errorf("invalid URL: %w", err)
 	}
