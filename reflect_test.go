@@ -784,3 +784,18 @@ func TestJSONStringTagRequiresExactOptionMatch(t *testing.T) {
 	require.Nil(t, pa.MinLength)
 	require.Equal(t, json.Number("3"), pa.Minimum)
 }
+
+func TestReflect_NetIPAcceptsIPv4AndIPv6(t *testing.T) {
+	type withIP struct {
+		Addr net.IP `json:"addr"`
+	}
+	data, err := json.Marshal(Reflect(&withIP{}))
+	require.NoError(t, err)
+	s := string(data)
+	if !strings.Contains(s, `"format":"ipv6"`) {
+		t.Fatalf("net.IP schema missing ipv6 (net.ParseIP accepts both): %s", s)
+	}
+	if !strings.Contains(s, `"format":"ipv4"`) {
+		t.Fatalf("net.IP schema missing ipv4: %s", s)
+	}
+}

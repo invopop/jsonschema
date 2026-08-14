@@ -319,9 +319,11 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	// RFC draft-wright-json-schema-validation-00, section 7.3
 	// TODO email RFC section 7.3.2, hostname RFC section 7.3.3, uriref RFC section 7.3.7
 	if t == ipType {
-		// TODO differentiate ipv4 and ipv6 RFC section 7.3.4, 7.3.5
-		st.Type = "string"
-		st.Format = "ipv4"
+		// net.IP.UnmarshalText uses net.ParseIP, which accepts ipv4 and ipv6.
+		st.AnyOf = []*Schema{
+			{Type: "string", Format: "ipv4"},
+			{Type: "string", Format: "ipv6"},
+		}
 		return st
 	}
 

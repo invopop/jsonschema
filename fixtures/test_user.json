@@ -96,8 +96,16 @@
           "format": "uri"
         },
         "network_address": {
-          "type": "string",
-          "format": "ipv4"
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "ipv4"
+            },
+            {
+              "type": "string",
+              "format": "ipv6"
+            }
+          ]
         },
         "photo": {
           "type": "string",
@@ -127,11 +135,6 @@
           "type": "string",
           "format": "email"
         },
-        "extra_with_commas": {
-          "type": "string",
-          "foo":  "bar, and also baz",
-          "quux": "qux"
-        },
         "uuid": {
           "type": "string",
           "format": "uuid"
@@ -148,6 +151,11 @@
           "type": "string",
           "isFalse": false,
           "isTrue": true
+        },
+        "extra_with_commas": {
+          "type": "string",
+          "foo": "bar, and also baz",
+          "quux": "qux"
         },
         "color": {
           "type": "string",
