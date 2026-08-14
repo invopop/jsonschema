@@ -787,7 +787,8 @@ func TestJSONStringTagRequiresExactOptionMatch(t *testing.T) {
 
 func TestReflect_NetIPAcceptsIPv4AndIPv6(t *testing.T) {
 	type withIP struct {
-		Addr net.IP `json:"addr"`
+		Addr     net.IP `json:"addr"`
+		Nullable net.IP `json:"nullable" jsonschema:"oneof_type=string;null"`
 	}
 
 	schema := Reflect(&withIP{})
@@ -797,7 +798,13 @@ func TestReflect_NetIPAcceptsIPv4AndIPv6(t *testing.T) {
 	require.True(t, found)
 	require.Equal(t, "string", addr.Type)
 	require.Equal(t, []*Schema{
-		{Type: "string", Format: "ipv4"},
-		{Type: "string", Format: "ipv6"},
+		{Format: "ipv4"},
+		{Format: "ipv6"},
 	}, addr.AnyOf)
+
+	nullable, found := definition.Properties.Get("nullable")
+	require.True(t, found)
+	require.Empty(t, nullable.Type)
+	require.Equal(t, []*Schema{{Type: "string"}, {Type: "null"}}, nullable.OneOf)
+	require.Equal(t, []*Schema{{Format: "ipv4"}, {Format: "ipv6"}}, nullable.AnyOf)
 }

@@ -11,11 +11,9 @@
         "ip_addr": {
           "anyOf": [
             {
-              "type": "string",
               "format": "ipv4"
             },
             {
-              "type": "string",
               "format": "ipv6"
             }
           ],

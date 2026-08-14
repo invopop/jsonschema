@@ -100,11 +100,9 @@
         "network_address": {
           "anyOf": [
             {
-              "type": "string",
               "format": "ipv4"
             },
             {
-              "type": "string",
               "format": "ipv6"
             }
           ],
@@ -138,6 +136,11 @@
           "type": "string",
           "format": "email"
         },
+        "extra_with_commas": {
+          "type": "string",
+          "foo":  "bar, and also baz",
+          "quux": "qux"
+        },
         "uuid": {
           "type": "string",
           "format": "uuid"
@@ -154,11 +157,6 @@
           "type": "string",
           "isFalse": false,
           "isTrue": true
-        },
-        "extra_with_commas": {
-          "type": "string",
-          "foo": "bar, and also baz",
-          "quux": "qux"
         },
         "color": {
           "type": "string",

@@ -322,8 +322,8 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 		// net.IP.UnmarshalText uses net.ParseIP, which accepts ipv4 and ipv6.
 		st.Type = "string"
 		st.AnyOf = []*Schema{
-			{Type: "string", Format: "ipv4"},
-			{Type: "string", Format: "ipv6"},
+			{Format: "ipv4"},
+			{Format: "ipv6"},
 		}
 		return st
 	}
