@@ -9,8 +9,15 @@
           "type": "string"
         },
         "ip_addr": {
-          "type": "string",
-          "format": "ipv4"
+          "anyOf": [
+            {
+              "format": "ipv4"
+            },
+            {
+              "format": "ipv6"
+            }
+          ],
+          "type": "string"
         }
       },
       "additionalProperties": false,
