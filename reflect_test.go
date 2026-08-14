@@ -789,13 +789,15 @@ func TestReflect_NetIPAcceptsIPv4AndIPv6(t *testing.T) {
 	type withIP struct {
 		Addr net.IP `json:"addr"`
 	}
-	data, err := json.Marshal(Reflect(&withIP{}))
-	require.NoError(t, err)
-	s := string(data)
-	if !strings.Contains(s, `"format":"ipv6"`) {
-		t.Fatalf("net.IP schema missing ipv6 (net.ParseIP accepts both): %s", s)
-	}
-	if !strings.Contains(s, `"format":"ipv4"`) {
-		t.Fatalf("net.IP schema missing ipv4: %s", s)
-	}
+
+	schema := Reflect(&withIP{})
+	definition := schema.Definitions["withIP"]
+	require.NotNil(t, definition)
+	addr, found := definition.Properties.Get("addr")
+	require.True(t, found)
+	require.Equal(t, "string", addr.Type)
+	require.Equal(t, []*Schema{
+		{Type: "string", Format: "ipv4"},
+		{Type: "string", Format: "ipv6"},
+	}, addr.AnyOf)
 }

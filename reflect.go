@@ -320,6 +320,7 @@ func (r *Reflector) reflectTypeToSchema(definitions Definitions, t reflect.Type)
 	// TODO email RFC section 7.3.2, hostname RFC section 7.3.3, uriref RFC section 7.3.7
 	if t == ipType {
 		// net.IP.UnmarshalText uses net.ParseIP, which accepts ipv4 and ipv6.
+		st.Type = "string"
 		st.AnyOf = []*Schema{
 			{Type: "string", Format: "ipv4"},
 			{Type: "string", Format: "ipv6"},

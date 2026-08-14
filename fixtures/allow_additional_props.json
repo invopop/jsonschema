@@ -104,7 +104,8 @@
               "type": "string",
               "format": "ipv6"
             }
-          ]
+          ],
+          "type": "string"
         },
         "photo": {
           "type": "string",
