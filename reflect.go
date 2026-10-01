@@ -744,6 +744,8 @@ func (t *Schema) genericKeywords(tags []string, parent *Schema, propertyName str
 			default:
 				unprocessed = append(unprocessed, tag)
 			}
+		} else {
+			unprocessed = append(unprocessed, tag)
 		}
 	}
 	return unprocessed
@@ -857,6 +859,14 @@ func (t *Schema) arrayKeywords(tags []string) {
 	unprocessed := make([]string, 0, len(tags))
 	for _, tag := range tags {
 		nameValue := strings.Split(tag, "=")
+		if len(nameValue) == 1 {
+			if nameValue[0] == "uniqueItems" {
+				t.UniqueItems = true
+			} else {
+				unprocessed = append(unprocessed, tag)
+			}
+			continue
+		}
 		if len(nameValue) == 2 {
 			name, val := nameValue[0], nameValue[1]
 			switch name {
@@ -865,7 +875,11 @@ func (t *Schema) arrayKeywords(tags []string) {
 			case "maxItems":
 				t.MaxItems = parseUint(val)
 			case "uniqueItems":
-				t.UniqueItems = true
+				if b, err := strconv.ParseBool(val); err == nil {
+					t.UniqueItems = b
+				} else {
+					t.UniqueItems = true
+				}
 			case "default":
 				defaultValues = append(defaultValues, val)
 			case "format":
@@ -875,6 +889,8 @@ func (t *Schema) arrayKeywords(tags []string) {
 			default:
 				unprocessed = append(unprocessed, tag) // left for further processing by underlying type
 			}
+		} else {
+			unprocessed = append(unprocessed, tag)
 		}
 	}
 	if len(defaultValues) > 0 {

@@ -555,6 +555,66 @@ func TestArrayExtraTags(t *testing.T) {
 	require.Equal(t, pt, "^https://.*")
 }
 
+func TestArrayUniqueItems(t *testing.T) {
+	type UniqueItemsStruct struct {
+		FlagSyntax    []string `json:"flag_syntax" jsonschema:"uniqueItems"`
+		ValueTrue     []string `json:"value_true" jsonschema:"uniqueItems=true"`
+		ValueFalse    []string `json:"value_false" jsonschema:"uniqueItems=false"`
+		WithTitleFlag []string `json:"with_title_flag" jsonschema:"title=Cluster,uniqueItems"`
+		DefaultSlice  []string `json:"default_slice"`
+	}
+
+	r := new(Reflector)
+	schema := r.Reflect(&UniqueItemsStruct{})
+	d := schema.Definitions["UniqueItemsStruct"]
+	require.NotNil(t, d)
+	props := d.Properties
+	require.NotNil(t, props)
+
+	pFlag, found := props.Get("flag_syntax")
+	require.True(t, found)
+	require.True(t, pFlag.UniqueItems)
+
+	pValueTrue, found := props.Get("value_true")
+	require.True(t, found)
+	require.True(t, pValueTrue.UniqueItems)
+
+	pValueFalse, found := props.Get("value_false")
+	require.True(t, found)
+	require.False(t, pValueFalse.UniqueItems)
+
+	pWithTitleFlag, found := props.Get("with_title_flag")
+	require.True(t, found)
+	require.True(t, pWithTitleFlag.UniqueItems)
+	require.Equal(t, "Cluster", pWithTitleFlag.Title)
+
+	pDefault, found := props.Get("default_slice")
+	require.True(t, found)
+	require.False(t, pDefault.UniqueItems)
+
+	data, err := json.Marshal(schema)
+	require.NoError(t, err)
+	var raw map[string]any
+	require.NoError(t, json.Unmarshal(data, &raw))
+
+	defs := raw["$defs"].(map[string]any)
+	structDef := defs["UniqueItemsStruct"].(map[string]any)
+	rawProps := structDef["properties"].(map[string]any)
+
+	flagProp := rawProps["flag_syntax"].(map[string]any)
+	require.Equal(t, true, flagProp["uniqueItems"])
+
+	trueProp := rawProps["value_true"].(map[string]any)
+	require.Equal(t, true, trueProp["uniqueItems"])
+
+	falseProp := rawProps["value_false"].(map[string]any)
+	_, hasUniqueItems := falseProp["uniqueItems"]
+	require.False(t, hasUniqueItems)
+
+	titleFlagProp := rawProps["with_title_flag"].(map[string]any)
+	require.Equal(t, true, titleFlagProp["uniqueItems"])
+}
+
 func TestFieldNameTag(t *testing.T) {
 	type Config struct {
 		Name  string `yaml:"name"`
