@@ -41,6 +41,13 @@ func prepareCommentReflector(t *testing.T, opts ...CommentOption) *Reflector {
 	return r
 }
 
+func TestCommentImportPathUsesSlashes(t *testing.T) {
+	got := commentImportPath("github.com/invopop/jsonschema", `examples\nested`)
+	require.Equal(t, "github.com/invopop/jsonschema/examples/nested", got)
+	got = commentImportPath("github.com/invopop/jsonschema", "examples/nested")
+	require.Equal(t, "github.com/invopop/jsonschema/examples/nested", got)
+}
+
 func TestAddGoCommentsSkipsUnexportedTypes(t *testing.T) {
 	dir := t.TempDir()
 	src := `package sample

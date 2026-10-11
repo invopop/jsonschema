@@ -72,7 +72,7 @@ func (r *Reflector) extractGoComments(base, path string, commentMap map[string]s
 		if err != nil {
 			return err
 		}
-		k := gopath.Join(base, filepath.Dir(p))
+		k := commentImportPath(base, filepath.Dir(p))
 		if dict[k] == nil {
 			dict[k] = make(map[string][]*ast.File)
 		}
@@ -96,6 +96,16 @@ func (r *Reflector) extractGoComments(base, path string, commentMap map[string]s
 	}
 
 	return nil
+}
+
+// commentImportPath joins the module base with a directory from filepath.Walk.
+// Walk uses the OS separator, so a nested directory on Windows is
+// examples\nested. The comment map is keyed by the import path, which
+// uses slashes.
+func commentImportPath(base, dir string) string {
+	dir = filepath.ToSlash(dir)
+	dir = strings.ReplaceAll(dir, `\`, `/`)
+	return gopath.Join(base, dir)
 }
 
 func collectFileComments(docPkg *doc.Package, f *ast.File, pkg string, commentMap map[string]string, opts *commentOptions) {
