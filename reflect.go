@@ -434,7 +434,7 @@ func (r *Reflector) reflectMap(definitions Definitions, t reflect.Type, st *Sche
 	switch t.Key().Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		st.PatternProperties = map[string]*Schema{
-			"^[0-9]+$": r.refOrReflectTypeToSchema(definitions, t.Elem()),
+			"^-?[0-9]+$": r.refOrReflectTypeToSchema(definitions, t.Elem()),
 		}
 		st.AdditionalProperties = FalseSchema
 		return
